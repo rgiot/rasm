@@ -23,7 +23,7 @@ You may send requests/bugs in the same topic
 -----------------------------------------------------------------------------------------------------
 This software is using MIT "expat" license
 
-´ Copyright © BERGE Edouard (roudoudou)
+¬´ Copyright ¬© BERGE Edouard (roudoudou)
 
 Permission  is  hereby  granted,  free  of charge,to any person obtaining a copy  of  this  software
 and  associated  documentation/source   files   of RASM, to deal in the Software without restriction,
@@ -38,7 +38,7 @@ including  but  not  limited  to the warranties of merchantability,   fitness   
 purpose  and  noninfringement.  In  no event shall the  authors  or  copyright  holders be liable for
 any  claim, damages  or other  liability,  whether in  an  action  of  contract, tort  or  otherwise,
 arising from,  out of  or in connection  with  the software  or  the  use  or  other  dealings in the
-Software. ª
+Software. ¬ª
 -----------------------------------------------------------------------------------------------------
 Linux compilation with GCC or Clang:
 cc rasm.c -O2 -lm -lrt -march=native -o rasm
@@ -85,9 +85,23 @@ int MAX_OFFSET_ZX0=32640;
 #ifndef NO_3RD_PARTIES
 #define __FILENAME__ "3rd parties"
 /* 3rd parties compression */
+#ifndef NOAPULTRA
+#include"z80-master/z80.h"
+#endif
 #include"zx7.h"
 #include"lz4.h"
 #include"exomizer.h"
+
+#ifndef remainder
+	#define remainder fmod
+#endif
+
+#ifndef fdim
+double fdim(double x,double y) {
+	if (x-y>0) return x-y; else return 0.0;
+}
+#endif
+
 
 void zx0_reverse(unsigned char *first, unsigned char *last) {
     unsigned char c;
@@ -112,10 +126,14 @@ BLOCK *allocate(int bits, int index, int offset, BLOCK *chain);
 
 void assign(BLOCK **ptr, BLOCK *chain);
 
-BLOCK *zx0_optimize(unsigned char *input_data, int input_size, int skip, int offset_limit);
+//BLOCK *zx0_optimize(unsigned char *input_data, int input_size, int skip, int offset_limit);
+//unsigned char *zx0_compress(BLOCK *optimal, unsigned char *input_data, int input_size, int skip, int backwards_mode, int invert_mode, int *output_size, int *delta);
 
-unsigned char *zx0_compress(BLOCK *optimal, unsigned char *input_data, int input_size, int skip, int backwards_mode, int invert_mode, int *output_size, int *delta);
-
+#ifndef _WIN32
+size_t salvador_compress(const unsigned char *pInputData, unsigned char *pOutBuffer, const size_t nInputSize, const size_t nMaxOutBufferSize,
+   const unsigned int nFlags, const size_t nMaxOffset, const size_t nDictionarySize, void(*progress)(long long nOriginalSize, long long nCompressedSize), void *pStats);
+size_t salvador_get_max_compressed_size(const size_t nInputSize);
+#endif
 #endif
 
 #ifdef __MORPHOS__
@@ -218,7 +236,7 @@ E_COMPUTE_OPERATION_GREATER=17,
 E_COMPUTE_OPERATION_EQUAL=18,
 E_COMPUTE_OPERATION_NOTEQUAL=19,
 E_COMPUTE_OPERATION_LOWEREQ=20,
-E_COMPUTE_OPERATION_GREATEREQ=21,
+E_COMPUTE_OPERATION_GREATEREQ=21, // this one MUST be the last before math function!
 /* math functions */
 E_COMPUTE_OPERATION_SIN=22,
 E_COMPUTE_OPERATION_COS=23,
@@ -247,14 +265,40 @@ E_COMPUTE_OPERATION_SET_B=45,
 E_COMPUTE_OPERATION_SOFT2HARD=46,
 E_COMPUTE_OPERATION_HARD2SOFT=47,
 E_COMPUTE_OPERATION_PEEK=48,
+E_COMPUTE_OPERATION_POW2=49,
+E_COMPUTE_OPERATION_POW=50,
+E_COMPUTE_OPERATION_FMOD=51,
+E_COMPUTE_OPERATION_ATAN2=52,
+E_COMPUTE_OPERATION_HYPOT=53,
+E_COMPUTE_OPERATION_LDEXP=54,
+E_COMPUTE_OPERATION_FDIM=55,  // diff√©rence positive
+E_COMPUTE_OPERATION_FSTEP=56, // seuil, valeur dessous 0, dessus 1
+E_COMPUTE_OPERATION_FMAX=57,
+E_COMPUTE_OPERATION_FMIN=58,
+E_COMPUTE_OPERATION_CLAMP=60, // x min,max contraindre dans l'intervale
+E_COMPUTE_OPERATION_LERP=61, // a,b,x interpolation lin√©aire  a+x*(b-a)
+E_COMPUTE_OPERATION_ISGREATER=62,
+E_COMPUTE_OPERATION_ISLESS=63, 
+// noise x,y,z (perlin 2D/3D) => r√©p√©titif
+// rnd born√© (min,max)  mod(rnd,max-min)+min
+// wrap(min,max,x) faire boucler valeur dans l'intervale mod(x,max-min)+min
+// fonction de bias pour att√©nuer les extr√™mes bias(x,b) avec x entre 0 et 1 et le bias aussi => return pow(x,log(b)/log(0.5));
+// gain utilise bias pour √©taler ou resserer les valeurs autour de 0.5 if x<0.5 return 0.5*bias(2*x,1-g); else return 1-0.5*bias(2-2*x,1-g); @@TOCHECK
+// pulse(edgeMin,edgeMax,v) si v dans l'intervale alors 1 sinon 0
+// gravity(x,gx)
+// 	d=abs(gx-x) ; distance
+// 	influence=1/(1+d)*(1+d) ; influence entre 1 et tend vers z√©ro + on s'√©loigne
+// 	x=x+(gx-x)*influence
+//
 /* string functions */
-E_COMPUTE_OPERATION_GETNOP=49,
-E_COMPUTE_OPERATION_GETTICK=50,
-E_COMPUTE_OPERATION_DURATION=51,
-E_COMPUTE_OPERATION_FILESIZE=52,
-E_COMPUTE_OPERATION_GETSIZE=53,
-E_COMPUTE_OPERATION_IS_REGISTER=54,
-E_COMPUTE_OPERATION_END=55
+E_COMPUTE_OPERATION_GETNOP=64,
+E_COMPUTE_OPERATION_GETTICK=65,
+E_COMPUTE_OPERATION_DURATION=66,
+E_COMPUTE_OPERATION_FILESIZE=67,
+E_COMPUTE_OPERATION_GETSIZE=68,
+E_COMPUTE_OPERATION_IS_REGISTER=69,
+E_COMPUTE_OPERATION_FILEBYTE=70,
+E_COMPUTE_OPERATION_END=71
 };
 
 struct s_compute_element {
@@ -267,7 +311,7 @@ char *string;
 struct s_compute_core_data {
 	/* evaluator v3 may be recursive */
 	char *varbuffer;
-	int maxivar;
+	//int maxivar;
 	struct s_compute_element *tokenstack;
 	int maxtokenstack;
 	struct s_compute_element *operatorstack;
@@ -378,7 +422,7 @@ struct s_memory_localisation {
 struct s_label {
 	char *name;   /* is alloced for local repeat or struct OR generated global -> in this case iw=-1 */
 	int localsize;
-	int iw;       /* index of the word of label name */
+	//int iw;       /* index of the word of label name  => DEPRECATED!
 	int crc;      /* crc of the label name */
 	int ptr;      /* "physical" address */
 	int lz;       /* is the label in a crunched section (or after)? */
@@ -418,6 +462,11 @@ struct s_crclabel_tree {
 	struct s_crclabel_tree *radix[256];
 	struct s_label *label;
 	int nlabel,mlabel;
+};
+struct s_crcalias_tree {
+	struct s_crcalias_tree *radix[256];
+	struct s_alias *alias;
+	int nalias,malias;
 };
 struct s_crcdico_tree {
 	struct s_crcdico_tree *radix[256];
@@ -488,6 +537,7 @@ enum e_hfe_action {
 	E_HFE_ACTION_START_CRC,
 	E_HFE_ACTION_OUTPUT_CRC,
 	E_HFE_ACTION_CLOSE,
+	E_HFE_ACTION_COMPLETE_TRACK,
 	E_HFE_ACTION_END
 };
 
@@ -498,7 +548,7 @@ struct s_hfe_action {
 	int ioffset;
 	// deferred calculation info
 	int iw,nbparam;
-	// copie intÈgrale des paramËtres?
+	// copie int√©grale des param√®tres?
 	char **param;
 	int iparam,mparam;
 	// extended sector definition
@@ -523,6 +573,44 @@ struct s_hfe_floppy {
 /**************************************************
           e d s k    m a n a g e m e n t        
 **************************************************/
+
+struct s_amsdos_block {
+        unsigned char track1,sectorID1;
+        unsigned char track2,sectorID2;
+        unsigned char data[1024];
+        int isdata; // 0:vendor 1:data
+        int isvalid; // 0:invalid 1:1st sector 2:2nd sector 3:both sects
+        int isallocated; // is used by a dir entry
+	int istowrite;
+};
+
+// rasm legacy
+//it is given multiple entries, distinguished by their EX and S2 bytes. The
+//    formula is: Entry number = ((32*S2)+EX) / (exm+1) where exm is the
+//    extent mask value from the Disc Parameter Block.
+struct s_amsdos_dir_wrapper_entry {
+unsigned char user;     // 0-15 user => 0xE5 is deleted file
+unsigned char filename[11];
+unsigned char subcpt;        // value 0-31
+unsigned char S1;            // set to 0
+unsigned char extendcounter; // upper part of subcpt
+unsigned char rc;            // 128 bytes records in this entry
+unsigned char blocks[16];
+};
+
+struct s_amsdos_reentry {
+	unsigned char user;
+	char filename[13];
+	int allocsize;
+	int realsize;
+	int isprotected;
+	int ishidden;
+	int isdisplayable;
+	int isondisk;
+	int wrapentry; // start of wrapper_entry
+	unsigned char *data; // size == realsize
+};
+
 struct s_edsk_sector_global_struct {
 unsigned char track;
 unsigned char side;
@@ -554,6 +642,11 @@ int tracknumber;
 int sidenumber;
 int tracksize; /* DSK legacy */
 struct s_edsk_track_global_struct *track;
+// amsdos layer
+struct s_amsdos_block floppy_block[180]; // DATA format Max legacy size
+struct s_amsdos_dir_wrapper_entry floppy_directory[64];
+struct s_amsdos_reentry floppy_entries[64];
+int bstart;
 };
 
 struct s_edsk_location {
@@ -566,6 +659,8 @@ enum e_edsk_action {
 	/* immediate */
 	E_EDSK_ACTION_CREATE=0,
 	E_EDSK_ACTION_READSECT,
+	E_EDSK_ACTION_READFILE,
+	E_EDSK_ACTION_DELFILE,
 	E_EDSK_ACTION_UPGRADE,
 	E_EDSK_ACTION_MERGE,
 	/* deferred */
@@ -576,6 +671,7 @@ enum e_edsk_action {
 	E_EDSK_ACTION_RESIZE,
 	E_EDSK_ACTION_GAPFIX,
 	E_EDSK_ACTION_REORDER,
+	E_EDSK_ACTION_CHECK,
 	E_EDSK_ACTION_END
 };
 
@@ -620,6 +716,7 @@ struct s_save {
 	int ioffset;
 	int isize;
 	int iw,irun;
+	int iprotect,ihidden;
 	char *filename;
 	int amsdos,hobeta;
 	int tape,dsk,face,iwdskname;
@@ -691,12 +788,6 @@ struct s_ifthen {
 /**************************************************
           w o r d    p r o c e s s i n g
 **************************************************/
-struct s_wordlist {
-	char *w;
-	int l,t,e; /* e=1 si egalite dans le mot */
-	int ifile;
-	int ml,mifile;
-};
 
 struct s_macro {
 	char *mnemo;
@@ -704,6 +795,8 @@ struct s_macro {
 	/* une macro concatene des chaines et des parametres */
 	struct s_wordlist *wc;
 	int nbword,maxword;
+	int *replaceidx;
+	int nbreplace,maxreplace;
 	/**/
 	char **param;
 	int nbparam;
@@ -719,11 +812,12 @@ struct s_macro_position {
 struct s_macro_fast {
 	char *mnemo;
 	int crc;
+	int len;
 };
 
 struct s_math_keyword {
 	char *mnemo;
-	int crc;
+	int crc,length;
 	enum e_compute_operation_type operation;
 };
 
@@ -764,7 +858,7 @@ struct s_rasm_thread {
 /*********************************************************
             S N A P S H O T     E X P O R T
 *********************************************************/
-/* extension 4Mo = 256 slots + 4 slots 64K de RAM par dÈfaut => 260 */
+/* extension 4Mo = 256 slots + 4 slots 64K de RAM par d√©faut => 260 */
 
 #define BANK_MAX_NUMBER 260
 
@@ -885,6 +979,19 @@ struct s_breakpoint {
 	int address;
 	int bank;
 };
+struct s_ace_breakpoint {
+	char brkType[16];
+	char aMode[16];
+	char runMode[16];
+	unsigned int addr;     int iaddr;
+	unsigned int mask;     int imask;
+	unsigned int size;     int isize;
+	unsigned char value;   int ivalue;
+	unsigned char valmask; int ivalmask;
+	unsigned int step;     int istep;
+	char condition[256];
+	char name[256];
+};
 
 struct s_comz {
 	int idx;
@@ -942,6 +1049,7 @@ E_POKER_CIPHER001=2,
 E_POKER_CIPHER002=3,
 E_POKER_CIPHER003=4,
 E_POKER_CIPHER004=5,
+E_POKER_SUM16=6,
 E_POKER_END
 };
 
@@ -952,6 +1060,7 @@ char *strpoker[]={
 	"CIPHER002 running XOR initialised with memory location",
 	"CIPHER003 XOR with LSB of memory location",
 	"CIPHER004 XOR with key looping",
+	"SUM16",
 	NULL
 };
 
@@ -981,6 +1090,20 @@ struct s_relocation_write {
 	int dest;
 };
 
+struct s_utf8Remap {
+	unsigned char utf8Code[16];
+	int utf8Len;
+	unsigned char ccode;
+};
+
+struct s_filebyte_cache {
+	char *zename;
+	unsigned char *data;
+	unsigned int zelen;
+	unsigned int occ;
+};
+
+
 /*******************************************
         G L O B A L     S T R U C T
 *******************************************/
@@ -989,11 +1112,12 @@ struct s_assenv {
 	int maxptr;
 	/* CPR memory */
 	int iwnamebank[BANK_MAX_NUMBER];
+	int iwnameromsna[256]; // ROM with snapshots
 	unsigned char **mem;
 	int nbbank,maxbank;
 	int *memsize;
 	int nbmemsize,maxmemsize;
-	int forcetape,forcezx,forcecpr,forceROM,forceROMconcat,bankmode;
+	int forcetape,forcezx,forcecpr,forceROM,forceROMconcat,bankmode,snacpr;
 	int amsdos,forcesnapshot,packedbank,extendedCPR,xpr,cprinfo,cprinfo_export,dsksnapshot;
 	int lastbank,activebank; // current used bank where data/code has to be written | used with outputadr (see ORG tracking)
 	char *cprinfo_filename;
@@ -1004,7 +1128,7 @@ struct s_assenv {
 	int bankused[BANK_MAX_NUMBER];   /* 16K selected flag */
 	int bankgate[BANK_MAX_NUMBER+1];
 	int setgate[BANK_MAX_NUMBER+1];
-	int rombank[257];
+	int rombank[257]; // rom translation table for snapshots
 	int rundefined;
 	/* parsing */
 	struct s_wordlist *wl;
@@ -1019,8 +1143,12 @@ struct s_assenv {
 	int nberr,flux;
 #define INSTRUCTION_MAXLENGTH 14
 	int fastmatch[256][INSTRUCTION_MAXLENGTH];
+#define FUNCTION_MAXLENGTH 14
+	int fastmath[256][FUNCTION_MAXLENGTH];
 	unsigned char charset[256];
-	int maxerr,extended_error,nowarning,erronwarn,utf8enable,freequote;
+	struct s_utf8Remap *utf8Remap;
+	int iUtf8Remap,mUtf8Remap;
+	int maxerr,extended_error,nowarning,nocrunchwarning,erronwarn,utf8enable,freequote;
 	/* ORG tracking */
 	int codeadr,outputadr,nocode;      // codeadr is logical code position | outputadr is physical code position | nocode is a flag 1: no code to output 0: output code
 	int codeadrbackup,outputadrbackup; // when using NOCODE, switching back to CODE will restore physical AND logical addresses
@@ -1044,6 +1172,7 @@ struct s_assenv {
 	int maxam,as80,dams,pasmo;  // compatibility flags
 	float rough;
 	struct s_compute_core_data *computectx,ctx1,ctx2;
+	char *fastVarBuffer;
 	struct s_crcstring_tree stringtree;
 	/* label */
 	struct s_label *label;
@@ -1079,6 +1208,7 @@ struct s_assenv {
 	/* expression dictionnary */
 	struct s_expr_dico *dico;
 	int idic,mdic;
+	struct s_crcalias_tree *aliastree[65536]; /* fast alias access */
 	struct s_crcdico_tree *dicotree[65536]; /* fast dico access */
 	struct s_crcused_tree *usedtree[65536]; /* fast used access */
 	/* ticker */
@@ -1111,6 +1241,9 @@ struct s_assenv {
 	int ih,mh;
 	char **includepath;
 	int ipath,mpath;
+	/* file cache */
+	struct s_filebyte_cache *fbcache;
+	int nbfbcache,maxfbcache;
 	/* automates */
 	char AutomateExpressionValidCharExtended[256];
 	char AutomateExpressionValidCharFirst[256];
@@ -1143,6 +1276,10 @@ struct s_assenv {
 	struct s_save *save;
 	int nbsave,maxsave;
 	int current_run_idx;
+	struct s_ace_breakpoint *acebrk;
+	int iacebrk,macebrk;
+	int *winapeBRK;
+	int winapeBRKidx,winapeBRKmax;
 	/* HFE */
 	struct s_hfe_action *hfe_action;
 	int nbhfeaction,maxhfeaction;
@@ -1189,6 +1326,14 @@ struct s_assenv {
 /*************************************
          D I R E C T I V E S
 *************************************/
+struct s_wordlist {
+	char *w;
+	int l,t,e; /* e=1 si egalite dans le mot */
+	int ifile;
+	int ml,mifile;
+	int len;
+	//void (*fastptr)(struct s_assenv *ae);
+};
 struct s_asm_keyword {
 	char *mnemo;
 	int crc,length;
@@ -1196,152 +1341,231 @@ struct s_asm_keyword {
 };
 
 struct s_math_keyword math_keyword[]={
-{"SIN",0,E_COMPUTE_OPERATION_SIN},
-{"COS",0,E_COMPUTE_OPERATION_COS},
-{"INT",0,E_COMPUTE_OPERATION_INT},
-{"ABS",0,E_COMPUTE_OPERATION_ABS},
-{"LN",0,E_COMPUTE_OPERATION_LN},
-{"LOG10",0,E_COMPUTE_OPERATION_LOG10},
-{"SQRT",0,E_COMPUTE_OPERATION_SQRT},
-{"FLOOR",0,E_COMPUTE_OPERATION_FLOOR},
-{"ASIN",0,E_COMPUTE_OPERATION_ASIN},
-{"ACOS",0,E_COMPUTE_OPERATION_ACOS},
-{"ATAN",0,E_COMPUTE_OPERATION_ATAN},
-{"EXP",0,E_COMPUTE_OPERATION_EXP},
-{"LO",0,E_COMPUTE_OPERATION_LOW},
-{"HI",0,E_COMPUTE_OPERATION_HIGH},
-{"PSGVALUE",0,E_COMPUTE_OPERATION_PSG},
-{"RND",0,E_COMPUTE_OPERATION_RND},
-{"FRAC",0,E_COMPUTE_OPERATION_FRAC},
-{"CEIL",0,E_COMPUTE_OPERATION_CEIL},
-{"GETR",0,E_COMPUTE_OPERATION_GET_R},
-{"GETV",0,E_COMPUTE_OPERATION_GET_V},
-{"GETG",0,E_COMPUTE_OPERATION_GET_V},
-{"GETB",0,E_COMPUTE_OPERATION_GET_B},
-{"SETR",0,E_COMPUTE_OPERATION_SET_R},
-{"SETV",0,E_COMPUTE_OPERATION_SET_V},
-{"SETG",0,E_COMPUTE_OPERATION_SET_V},
-{"SETB",0,E_COMPUTE_OPERATION_SET_B},
-{"SOFT2HARD_INK",0,E_COMPUTE_OPERATION_SOFT2HARD},
-{"S2H_INK",0,E_COMPUTE_OPERATION_SOFT2HARD},
-{"HARD2SOFT_INK",0,E_COMPUTE_OPERATION_HARD2SOFT},
-{"H2S_INK",0,E_COMPUTE_OPERATION_HARD2SOFT},
-{"PEEK",0,E_COMPUTE_OPERATION_PEEK},
-{"GETNOP",0,E_COMPUTE_OPERATION_GETNOP},
-{"GETTICK",0,E_COMPUTE_OPERATION_GETTICK},
-{"DURATION",0,E_COMPUTE_OPERATION_DURATION},
-{"FILESIZE",0,E_COMPUTE_OPERATION_FILESIZE},
-{"GETSIZE",0,E_COMPUTE_OPERATION_GETSIZE},
-{"IS_REGISTER",0,E_COMPUTE_OPERATION_IS_REGISTER},
-{"",0,-1}
+{"SIN",0,0,E_COMPUTE_OPERATION_SIN},
+{"COS",0,0,E_COMPUTE_OPERATION_COS},
+{"INT",0,0,E_COMPUTE_OPERATION_INT},
+{"ABS",0,0,E_COMPUTE_OPERATION_ABS},
+{"LN",0,0,E_COMPUTE_OPERATION_LN},
+{"LOG10",0,0,E_COMPUTE_OPERATION_LOG10},
+{"SQRT",0,0,E_COMPUTE_OPERATION_SQRT},
+{"FLOOR",0,0,E_COMPUTE_OPERATION_FLOOR},
+{"ASIN",0,0,E_COMPUTE_OPERATION_ASIN},
+{"ACOS",0,0,E_COMPUTE_OPERATION_ACOS},
+{"ATAN",0,0,E_COMPUTE_OPERATION_ATAN},
+{"EXP",0,0,E_COMPUTE_OPERATION_EXP},
+{"LO",0,0,E_COMPUTE_OPERATION_LOW},
+{"HI",0,0,E_COMPUTE_OPERATION_HIGH},
+{"PSGVALUE",0,0,E_COMPUTE_OPERATION_PSG},
+{"RND",0,0,E_COMPUTE_OPERATION_RND},
+{"FRAC",0,0,E_COMPUTE_OPERATION_FRAC},
+{"CEIL",0,0,E_COMPUTE_OPERATION_CEIL},
+{"GETR",0,0,E_COMPUTE_OPERATION_GET_R},
+{"GETV",0,0,E_COMPUTE_OPERATION_GET_V},
+{"GETG",0,0,E_COMPUTE_OPERATION_GET_V},
+{"GETB",0,0,E_COMPUTE_OPERATION_GET_B},
+{"SETR",0,0,E_COMPUTE_OPERATION_SET_R},
+{"SETV",0,0,E_COMPUTE_OPERATION_SET_V},
+{"SETG",0,0,E_COMPUTE_OPERATION_SET_V},
+{"SETB",0,0,E_COMPUTE_OPERATION_SET_B},
+{"SOFT2HARD_INK",0,0,E_COMPUTE_OPERATION_SOFT2HARD},
+{"S2H_INK",0,0,E_COMPUTE_OPERATION_SOFT2HARD},
+{"HARD2SOFT_INK",0,0,E_COMPUTE_OPERATION_HARD2SOFT},
+{"H2S_INK",0,0,E_COMPUTE_OPERATION_HARD2SOFT},
+{"PEEK",0,0,E_COMPUTE_OPERATION_PEEK},
+{"POW2",0,0,E_COMPUTE_OPERATION_POW2},
+{"POW",0,0,E_COMPUTE_OPERATION_POW},
+{"FMOD",0,0,E_COMPUTE_OPERATION_FMOD},
+{"ATAN2",0,0,E_COMPUTE_OPERATION_ATAN2},
+{"HYPOT",0,0,E_COMPUTE_OPERATION_HYPOT},
+{"LDEXP",0,0,E_COMPUTE_OPERATION_LDEXP},
+{"FDIM",0,0,E_COMPUTE_OPERATION_FDIM},
+{"FSTEP",0,0,E_COMPUTE_OPERATION_FSTEP},
+{"FMAX",0,0,E_COMPUTE_OPERATION_FMAX},
+{"FMIN",0,0,E_COMPUTE_OPERATION_FMIN},
+{"CLAMP",0,0,E_COMPUTE_OPERATION_CLAMP},
+{"LERP",0,0,E_COMPUTE_OPERATION_LERP},
+{"ISGREATER",0,0,E_COMPUTE_OPERATION_ISGREATER},
+{"ISLESS",0,0,E_COMPUTE_OPERATION_ISLESS},
+{"FREMAIN",0,0,E_COMPUTE_OPERATION_FMOD},
+
+{"GETNOP",0,0,E_COMPUTE_OPERATION_GETNOP},
+{"GETTICK",0,0,E_COMPUTE_OPERATION_GETTICK},
+{"DURATION",0,0,E_COMPUTE_OPERATION_DURATION},
+{"FILESIZE",0,0,E_COMPUTE_OPERATION_FILESIZE},
+{"GETSIZE",0,0,E_COMPUTE_OPERATION_GETSIZE},
+{"IS_REGISTER",0,0,E_COMPUTE_OPERATION_IS_REGISTER},
+{"FILEBYTE",0,0,E_COMPUTE_OPERATION_FILEBYTE},
+{"",0,0,-1}
 };
 
-#define CRC_SWITCH    0x01AEDE4A
-#define CRC_CASE      0x0826B794
-#define CRC_DEFAULT   0x9A0DAC7D
-#define CRC_BREAK     0xCD364DDD
-#define CRC_ENDSWITCH 0x18E9FB21
+#define CRC_SWITCH 0x5449141B
+#define CRC_CASE 0x45534143
+#define CRC_DEFAULT 0x41130910
+#define CRC_BREAK 0x41455209
+#define CRC_ENDSWITCH 0x1010075A
+#define CRC_ELSEIFNOT 0x0A1D0A58
+#define CRC_ELSEIF 0x45530503
+#define CRC_ELSE 0x45534C45
+#define CRC_ENDIF 0x49444E03
+#define CRC_IF 0x00004946
+#define CRC_IFDEF 0x4544460F
+#define CRC_UNDEF 0x45444E13
+#define CRC_IFNDEF 0x444E030F
+#define CRC_IFNOT 0x4F4E461D
+#define CRC_WHILE 0x4C494812
+#define CRC_UNTIL 0x49544E19
+#define CRC_MEND 0x444E454D
+#define CRC_ENDM 0x4D444E45
+#define CRC_MACRO 0x52434102
+#define CRC_IFUSED 0x5355030D
+#define CRC_IFNUSED 0x551D030D
+#define CRC_SIN 0x0053494E
+#define CRC_COS 0x00434F53
+#define CRC_0 0x00000030
+#define CRC_1 0x00000031
+#define CRC_2 0x00000032
+#define CRC_NC 0x00004E43
+#define CRC_Z 0x0000005A
+#define CRC_NZ 0x00004E5A
+#define CRC_P 0x00000050
+#define CRC_PO 0x0000504F
+#define CRC_PE 0x00005045
+#define CRC_M 0x0000004D
+#define CRC_HL_LOW 0x4C5F031F
+#define CRC_HL_HIGH 0x48160B00
+#define CRC_DE_LOW 0x4C5F0A13
+#define CRC_DE_HIGH 0x4816020C
+#define CRC_BC_LOW 0x4C5F0C15
+#define CRC_BC_HIGH 0x4816040A
+#define CRC_IX_LOW 0x4C5F171E
+#define CRC_IX_HIGH 0x48161F01
+#define CRC_IY_LOW 0x4C5F161E
+#define CRC_IY_HIGH 0x48161E01
+#define CRC_AF_LOW 0x4C5F0916
+#define CRC_AF_HIGH 0x48160109
+#define CRC_F 0x00000046
+#define CRC_I 0x00000049
+#define CRC_R 0x00000052
+#define CRC_A 0x00000041
+#define CRC_B 0x00000042
+#define CRC_C 0x00000043
+#define CRC_D 0x00000044
+#define CRC_E 0x00000045
+#define CRC_H 0x00000048
+#define CRC_L 0x0000004C
+#define CRC_XH 0x00005848
+#define CRC_XL 0x0000584C
+#define CRC_YH 0x00005948
+#define CRC_YL 0x0000594C
+#define CRC_HX 0x00004858
+#define CRC_LX 0x00004C58
+#define CRC_HY 0x00004859
+#define CRC_LY 0x00004C59
+#define CRC_IXL 0x0049584C
+#define CRC_IXH 0x00495848
+#define CRC_IYL 0x0049594C
+#define CRC_IYH 0x00495948
+#define CRC_BC 0x00004243
+#define CRC_DE 0x00004445
+#define CRC_HL 0x0000484C
+#define CRC_IX 0x00004958
+#define CRC_IY 0x00004959
+#define CRC_SP 0x00005350
+#define CRC_AF 0x00004146
+#define CRC_MHL 0x294C4828
+#define CRC_MDE 0x29454428
+#define CRC_MBC 0x29434228
+#define CRC_MIX 0x29584928
+#define CRC_MIY 0x29594928
+#define CRC_MSP 0x29505328
+#define CRC_MC 0x00284329
+#define CRC_DEFB 0x42464544
+#define CRC_DB 0x00004442
+#define CRC_DEFW 0x57464544
+#define CRC_DW 0x00004457
+#define CRC_DEFI 0x49464544
+#define CRC_DEFS 0x53464544
+#define CRC_DS 0x00004453
+#define CRC_DEFR 0x52464544
+#define CRC_DR 0x00004452
+#define CRC_DEFF 0x46464544
+#define CRC_DF 0x00004446
+#define CRC_REPEAT 0x45500406
+#define CRC_REND 0x444E4552
+#define CRC_WEND 0x444E4557
+#define CRC_ORG 0x004F5247
+#define CRC_BANK 0x4B4E4142
+#define CRC_HALT 0x544C4148
+#define CRC_NOP 0x004E4F50
+#define CRC_LDI 0x004C4449
+#define CRC_LDD 0x004C4444
+#define CRC_DEC 0x00444543
+#define CRC_INC 0x00494E43
+#define CRC_CPI 0x00435049
+#define CRC_CPD 0x00435044
+#define CRC_BIT 0x00424954
+#define CRC_RES 0x00524553
+#define CRC_SET 0x00534554
+#define CRC_CCF 0x00434346
+#define CRC_IND 0x00494E44
+#define CRC_INI 0x00494E49
+#define CRC_DAA 0x00444141
+#define CRC_CPL 0x0043504C
+#define CRC_EI 0x00004549
+#define CRC_DI 0x00004449
+#define CRC_IM 0x0000494D
+#define CRC_SCF 0x00534346
+#define CRC_NEG 0x004E4547
+#define CRC_OUTI 0x4954554F
+#define CRC_OUTD 0x4454554F
+#define CRC_OUT 0x004F5554
+#define CRC_IN 0x0000494E
+#define CRC_RLA 0x00524C41
+#define CRC_RLCA 0x41434C52
+#define CRC_RRCA 0x41435252
+#define CRC_RRA 0x00525241
+#define CRC_RLD 0x00524C44
+#define CRC_RRD 0x00525244
+#define CRC_RST 0x00525354
+#define CRC_RR 0x00005252
+#define CRC_RL 0x0000524C
+#define CRC_RRC 0x00525243
+#define CRC_RLC 0x00524C43
+#define CRC_SLA 0x00534C41
+#define CRC_SLL 0x00534C4C
+#define CRC_SRA 0x00535241
+#define CRC_SRL 0x0053524C
+#define CRC_ADD 0x00414444
+#define CRC_ADC 0x00414443
+#define CRC_SBC 0x00534243
+#define CRC_SUB 0x00535542
+#define CRC_XOR 0x00584F52
+#define CRC_AND 0x00414E44
+#define CRC_OR 0x00004F52
+#define CRC_CP 0x00004350
+#define CRC_PUSH 0x48535550
+#define CRC_POP 0x00504F50
+#define CRC_CALL 0x4C4C4143
+#define CRC_JR 0x00004A52
+#define CRC_JP 0x00004A50
+#define CRC_DJNZ 0x5A4E4A44
+#define CRC_RET 0x00524554
+#define CRC_RETN 0x4E544552
+#define CRC_RETI 0x49544552
+#define CRC_LD 0x00004C44
+#define CRC_EX 0x00004558
+#define CRC_EXX 0x00455858
+#define CRC_LDIR 0x5249444C
+#define CRC_LDDR 0x5244444C
+#define CRC_INIR 0x52494E49
+#define CRC_INDR 0x52444E49
+#define CRC_OTIR 0x5249544F
+#define CRC_OTDR 0x5244544F
+#define CRC_CPIR 0x52495043
+#define CRC_CPDR 0x52445043
 
-#define CRC_ELSEIFNOT 0x348E521
-#define CRC_ELSEIF 0xE175E230
-#define CRC_ELSE   0x3FF177A1
-#define CRC_ENDIF  0xCD5265DE
-#define CRC_IF     0x4BD52507
-#define CRC_IFDEF  0x4CB29DD6
-#define CRC_UNDEF  0xCCD2FDEA
-#define CRC_IFNDEF 0xD9AD0824
-#define CRC_IFNOT  0x4CCAC9F8
-#define CRC_WHILE  0xBC268FF1
-#define CRC_UNTIL  0xCC12A604
-#define CRC_MEND   0xFFFD899C
-#define CRC_ENDM   0x3FF9559C
-#define CRC_MACRO  0x64AA85EA
-#define CRC_IFUSED 0x91752638
-#define CRC_IFNUSED 0x1B39A886
-
-#define CRC_SIN 0xE1B71962
-#define CRC_COS 0xE077C55D
-
-#define CRC_0    0x7A98A6A8
-#define CRC_1    0x7A98A6A9
-#define CRC_2    0x7A98A6AA
 
 
-#define CRC_NC   0x4BD52B09
-#define CRC_Z    0x7A98A6D2
-#define CRC_NZ   0x4BD52B20
-#define CRC_P    0x7A98A6C8
-#define CRC_PO   0x4BD53717
-#define CRC_PE   0x4BD5370D
-#define CRC_M    0x7A98A6C5
-
-/* cut registers */
-#define CRC_HL_LOW	0xF9FDE22C
-#define CRC_HL_HIGH	0x2261E25A
-#define CRC_DE_LOW	0x3A3CE221
-#define CRC_DE_HIGH	0x23D0E04F
-#define CRC_BC_LOW	0xFDFF1E1D
-#define CRC_BC_HIGH	0x222BE44B
-#define CRC_IX_LOW	0xB9FD0439
-#define CRC_IX_HIGH	0xA3FD0667
-#define CRC_IY_LOW	0xD9ED6C3A
-#define CRC_IY_HIGH	0x23DD5068
-#define CRC_AF_LOW	0xDDCF141F
-#define CRC_AF_HIGH	0x223FEA4D
-
-/* 8 bits registers */
-#define CRC_F    0x7A98A6BE
-#define CRC_I    0x7A98A6C1
-#define CRC_R    0x7A98A6CA
-#define CRC_A    0x7A98A6B9
-#define CRC_B    0x7A98A6BA
-#define CRC_C    0x7A98A6BB
-#define CRC_D    0x7A98A6BC
-#define CRC_E    0x7A98A6BD
-#define CRC_H    0x7A98A6C0
-#define CRC_L    0x7A98A6C4
-/* dual naming */
-#define CRC_XH   0x4BD50718
-#define CRC_XL   0x4BD5071C
-#define CRC_YH   0x4BD50519
-#define CRC_YL   0x4BD5051D
-#define CRC_HX   0x4BD52718
-#define CRC_LX   0x4BD52F1C
-#define CRC_HY   0x4BD52719
-#define CRC_LY   0x4BD52F1D
-#define CRC_IXL  0xE19F1765
-#define CRC_IXH  0xE19F1761
-#define CRC_IYL  0xE19F1166
-#define CRC_IYH  0xE19F1162
-
-/* 16 bits registers */
-#define CRC_BC   0x4BD5D2FD
-#define CRC_DE   0x4BD5DF01
-#define CRC_HL   0x4BD5270C
-#define CRC_IX   0x4BD52519
-#define CRC_IY   0x4BD5251A
-#define CRC_SP   0x4BD5311B
-#define CRC_AF   0x4BD5D4FF
-/* memory convention */
-#define CRC_MHL  0xD0765F5D
-#define CRC_MDE  0xD0467D52
-#define CRC_MBC  0xD05E694E
-#define CRC_MIX  0xD072B76A
-#define CRC_MIY  0xD072B16B
-#define CRC_MSP  0xD01A876C
-#define CRC_MC   0xE018210C
-/* struct parsing */
-#define CRC_DEFB	0x37D15389
-#define CRC_DB		0x4BD5DEFE
-#define CRC_DEFW	0x37D1539E
-#define CRC_DW		0x4BD5DF13
-#define CRC_DEFI	0x37D15390
-#define CRC_DEFS	0x37D1539A
-#define CRC_DS		0x4BD5DF0F
-#define CRC_DEFR	0x37D15399
-#define CRC_DR		0x4BD5DF0E
-#define CRC_DEFF	0x37D1538D
-#define CRC_DF	        0x4BD5DF02
 
 /* struct declaration use special instructions for defines */
 int ICRC_DEFB,ICRC_DEFW,ICRC_DEFI,ICRC_DEFR,ICRC_DEFF,ICRC_DF,ICRC_DEFS,ICRC_DB,ICRC_DW,ICRC_DR,ICRC_DS;
@@ -1356,7 +1580,7 @@ A-Z variable ou fonction (cos, sin, tan, sqr, pow, mod, and, xor, mod, ...)
 +*-/&^m| operateur
 */
 
-#define AutomateExpressionValidCharExtendedDefinition "0123456789.ABCDEFGHIJKLMNOPQRSTUVWXYZ_{}@+-*/~^$#%<=>|&" /* ß */
+#define AutomateExpressionValidCharExtendedDefinition "0123456789.ABCDEFGHIJKLMNOPQRSTUVWXYZ_{}@+-*/~^$#%<=>|&" /* ¬ß */
 #define AutomateExpressionValidCharFirstDefinition "#%0123456789.ABCDEFGHIJKLMNOPQRSTUVWXYZ_@${"
 #define AutomateExpressionValidCharDefinition "0123456789.ABCDEFGHIJKLMNOPQRSTUVWXYZ_{}@$"
 #define AutomateValidLabelFirstDefinition ".ABCDEFGHIJKLMNOPQRSTUVWXYZ_@"
@@ -1408,18 +1632,19 @@ int APULTRA_crunch(unsigned char *data, int len, unsigned char **dataout, int *l
 
 size_t lzsa_compress_inmem(unsigned char *pInputData, unsigned char *pOutBuffer, size_t nInputSize, size_t nMaxOutBufferSize,
                              const unsigned int nFlags, const int nMinMatchSize, const int nFormatVersion);
+size_t lzsa_get_max_compressed_size_inmem(size_t nInputSize);
 
 int LZSA_crunch(unsigned char *datain, int lenin, unsigned char **dataout, int *lenout, int version, int matchsize) {
    size_t nCompressedSize = 0L, nMaxCompressedSize;
    int nFlags = 0;
    unsigned char *pCompressedData;
 
-pCompressedData=(unsigned char *)MemMalloc(65536);
-nMaxCompressedSize=65536;
+nMaxCompressedSize=lzsa_get_max_compressed_size_inmem(lenin);
+pCompressedData=(unsigned char *)MemMalloc(nMaxCompressedSize);
 
 /* RAW */
 nFlags=1<<1; // nFlags=LZSA_FLAG_RAW_BLOCK;
-/* par dÈfaut du LZSA1-Fast */
+/* par d√©faut du LZSA1-Fast */
 if (version<1 || version>2) {
 	version=1;
 }
@@ -1431,10 +1656,10 @@ if (matchsize<2 || matchsize>5) {
 	}
 }
 
-nCompressedSize=lzsa_compress_inmem(datain, pCompressedData, lenin, nMaxCompressedSize, nFlags, matchsize, version);
+	nCompressedSize=lzsa_compress_inmem(datain, pCompressedData, lenin, nMaxCompressedSize, nFlags, matchsize, version);
 
-   if (nCompressedSize == -1) {
-      fprintf(stderr, "LZSA compression error\n");
+   if (nCompressedSize == -1 || nCompressedSize>65536) {
+      //fprintf(stderr, KERROR"LZSA compression error (outsize=%ld maxOut=%ld)\n"KNORMAL,nCompressedSize,nMaxCompressedSize);
       *lenout=0;
       *dataout=NULL;
       return 100;
@@ -1948,7 +2173,6 @@ char *MergePath(struct s_assenv *ae,char *dadfilename, char *filename) {
 
 	static char curpath[PATH_MAX];
 
-
 #ifdef OS_WIN
 	TxtReplace(filename,"/","\\",1);
 
@@ -1968,6 +2192,18 @@ char *MergePath(struct s_assenv *ae,char *dadfilename, char *filename) {
 		}
 	}
 #else
+	int idxr;
+	for (idxr=0;filename[idxr];idxr++) {
+		if (filename[idxr]=='\\' && (
+			filename[idxr+1]=='-' ||
+			filename[idxr+1]=='_' ||
+			(filename[idxr+1]>='0' && filename[idxr+1]<='9') ||
+			(filename[idxr+1]>='a' && filename[idxr+1]<='z') ||
+			(filename[idxr+1]>='A' && filename[idxr+1]<='Z')
+		)) {
+			filename[idxr]='/';
+		}
+	}
 	if (filename[0]=='/') {
 		/* chemin absolu */
 		strcpy(curpath,filename);
@@ -1992,15 +2228,17 @@ void InitAutomate(char *autotab, const unsigned char *def)
 	int i;
 
 	memset(autotab,0,256);
-	for (i=0;def[i];i++) {
+	for (i=0;def[i] && i<256;i++) {
 		autotab[(unsigned int)def[i]]=1;
 	}
 }
+// supposed to be used
 void StateMachineResizeBuffer(char **ABuf, int idx, int *ASize) {
 	#undef FUNC
 	#define FUNC "StateMachineResizeBuffer"
 
 	if (idx>=*ASize) {
+		*ASize=idx;
 		if (*ASize<16384) {
 			*ASize=(*ASize)*2;
 		} else {
@@ -2010,7 +2248,15 @@ void StateMachineResizeBuffer(char **ABuf, int idx, int *ASize) {
 	}
 }
 
-int GetCRC(char *label) {
+#if 0
+#ifdef _WIN32
+__forceinline int GetCRC(char *label) {
+#else
+static inline int GetCRC(char *label) {
+#endif
+#endif
+
+int _oldGetCRC(char *label) {
 	#undef FUNC
 	#define FUNC "GetCRC"
 	int crc=0x12345678;
@@ -2021,17 +2267,58 @@ int GetCRC(char *label) {
 	}
 	return crc;
 }
+
+int GetCRC(char *label) {
+        #undef FUNC
+        #define FUNC "GetCRC"
+        int crc;
+        int i;
+
+        // first bytes with fast exit
+        if (label[1]) {
+                if (label[2]) {
+                        if (label[3]) {
+                                crc=*(int *)label;
+                                i=4;
+                        } else {
+                                return (label[0]<<16)|(label[1]<<8)|label[2];
+                        }
+                } else {
+                        return (label[0]<<8)|label[1];
+                }
+        } else {
+                return label[0];
+        }
+
+        // batch CRC
+        while (label[i]!=0) {
+                if (label[i+1]) {
+                        if (label[i+2]) {
+                                if (label[i+3]) {
+                                        crc^=*(int *)(&label[i]);
+                                        i+=4;
+                                } else {
+                                        crc^=(label[i]<<16)|(label[i+1]<<8)|label[i+2];
+                                        return crc;
+                                }
+                        } else {
+                                crc^=(label[i]<<8)|label[i+1];
+                                return crc;
+                        }
+                } else {
+                        crc^=label[i];
+                        return crc;
+                }
+        }
+        return crc;
+}
+
 int GetCRCandLength(char *label, int *ilength) {
 	#undef FUNC
 	#define FUNC "GetCRC"
-	int crc=0x12345678;
-	int i=0;
 
-	while (label[i]!=0) {
-		crc=(crc<<9)^(crc+label[i++]);
-	}
-	*ilength=i;
-	return crc;
+	*ilength=strlen(label);
+	return GetCRC(label);
 }
 
 int IsDirective(char *expr);
@@ -2092,14 +2379,14 @@ int StringIsMem(char *w)
 					break;
 				case '(':p++;break;
 				case ')':p--;
-					/* si on sort de la premiËre parenthËse */
+					/* si on sort de la premi√®re parenth√®se */
 					if (!p && w[idx+1]) return 0;
 					break;
 				default:break;
 			}
 			idx++;
 		}
-		/* si on ne termine pas par une parenthËse */
+		/* si on ne termine pas par une parenth√®se */
 		if (w[idx-1]!=')') return 0;
 	} else {
 		return 0;
@@ -2219,11 +2506,11 @@ char *StringLooksLike(struct s_assenv *ae, char *str)
 
 	/* search in labels */
 	for (i=0;i<ae->il;i++) {
-		if (!ae->label[i].name && strlen(ae->wl[ae->label[i].iw].w)>4) {
-			curs=_internal_LevenshteinDistance(ae->wl[ae->label[i].iw].w,str);
+		if (strlen(ae->label[i].name)>4) {
+			curs=_internal_LevenshteinDistance(ae->label[i].name,str);
 			if (curs<score) {
 				score=curs;
-				ret=ae->wl[ae->label[i].iw].w;
+				ret=ae->label[i].name;
 			}
 		}
 	}
@@ -2656,6 +2943,7 @@ char *GetCurrentFile(struct s_assenv *ae)
 *******************************************************************************************/
 void FreeLabelTree(struct s_assenv *ae);
 void FreeDicoTree(struct s_assenv *ae);
+void FreeAliasTree(struct s_assenv *ae);
 void FreeUsedTree(struct s_assenv *ae);
 void ExpressionFastTranslate(struct s_assenv *ae, char **ptr_expr, int fullreplace);
 char *TradExpression(char *zexp);
@@ -2711,25 +2999,16 @@ void FreeAssenv(struct s_assenv *ae)
 
 		for (i=0;i<ae->il;i++) {
 			/* on exporte tout */
-			if (!ae->label[i].name) {
-				/* les labels entiers */
-				debug_symbol.name=TxtStrDup(ae->wl[ae->label[i].iw].w);
-				debug_symbol.v=ae->label[i].ptr;
-				ObjectArrayAddDynamicValueConcat((void**)&ae->debug.symbol,&ae->debug.nbsymbol,&ae->debug.maxsymbol,&debug_symbol,sizeof(struct s_debug_symbol));
-			} else {
-				/* les labels locaux et gÈnÈrÈs */
-				debug_symbol.name=TxtStrDup(ae->label[i].name);
-				if (ae->label[i].localsize) debug_symbol.name[ae->label[i].localsize]=0;
-				debug_symbol.v=ae->label[i].ptr;
-				ObjectArrayAddDynamicValueConcat((void**)&ae->debug.symbol,&ae->debug.nbsymbol,&ae->debug.maxsymbol,&debug_symbol,sizeof(struct s_debug_symbol));
-			}
+			/* les labels locaux et g√©n√©r√©s */
+			debug_symbol.name=TxtStrDup(ae->label[i].name);
+			if (ae->label[i].localsize) debug_symbol.name[ae->label[i].localsize]=0;
+			debug_symbol.v=ae->label[i].ptr;
+			ObjectArrayAddDynamicValueConcat((void**)&ae->debug.symbol,&ae->debug.nbsymbol,&ae->debug.maxsymbol,&debug_symbol,sizeof(struct s_debug_symbol));
 		}
 		for (i=0;i<ae->ialias;i++) {
-			if (strcmp(ae->alias[i].alias,"IX") && strcmp(ae->alias[i].alias,"IY")) {
-				debug_symbol.name=TxtStrDup(ae->alias[i].alias);
-				debug_symbol.v=RoundComputeExpression(ae,ae->alias[i].translation,0,0,0);
-				ObjectArrayAddDynamicValueConcat((void**)&ae->debug.symbol,&ae->debug.nbsymbol,&ae->debug.maxsymbol,&debug_symbol,sizeof(struct s_debug_symbol));
-			}
+			debug_symbol.name=TxtStrDup(ae->alias[i].alias);
+			debug_symbol.v=RoundComputeExpression(ae,ae->alias[i].translation,0,0,0);
+			ObjectArrayAddDynamicValueConcat((void**)&ae->debug.symbol,&ae->debug.nbsymbol,&ae->debug.maxsymbol,&debug_symbol,sizeof(struct s_debug_symbol));
 		}
 
 		/* export struct */
@@ -2745,13 +3024,13 @@ void FreeAssenv(struct s_assenv *ae)
 	}
 
 	for (i=0;i<ae->nbbank;i++) {
-		MemFree(ae->mem[i]);
+		if (ae->mem[i]) MemFree(ae->mem[i]);
 	}
 	MemFree(ae->mem);
 	
 	/* expression core buffer free */
 	ComputeExpressionCore(NULL,NULL,0,0);
-	ExpressionFastTranslate(NULL,NULL,0);
+	//ExpressionFastTranslate(NULL,NULL,0);
 	/* free labels, expression, orgzone, repeat, ... */
 	if (ae->mo) MemFree(ae->orgzone);
 	if (ae->me) {
@@ -2775,7 +3054,7 @@ void FreeAssenv(struct s_assenv *ae)
 		MemFree(ae->hexbin);
 	}
 	for (i=0;i<ae->il;i++) {
-		if (ae->label[i].name && ae->label[i].iw==-1) MemFree(ae->label[i].name);
+		MemFree(ae->label[i].name);
 	}
 	/* structures */
 	for (i=0;i<ae->irasmstructalias;i++) {
@@ -2866,6 +3145,9 @@ void FreeAssenv(struct s_assenv *ae)
 	}
 	MemFree(ae->wl);
 
+	if (ae->fastVarBuffer) {
+		MemFree(ae->fastVarBuffer);
+	}
 	if (ae->ctx1.varbuffer) {
 		MemFree(ae->ctx1.varbuffer);
 	}
@@ -2890,8 +3172,14 @@ void FreeAssenv(struct s_assenv *ae)
 	}
 	if (ae->mticker) MemFree(ae->ticker);
 
+	for (i=0;i<ae->nbfbcache;i++) {
+		MemFree(ae->fbcache[i].zename);
+		MemFree(ae->fbcache[i].data);
+	}
+	MemFree(ae->fbcache);
 	MemFree(ae->outputfilename);
 	FreeLabelTree(ae);
+	FreeAliasTree(ae);
 	FreeDicoTree(ae);
 	FreeUsedTree(ae);
 	if (ae->mmacropos) MemFree(ae->macropos);
@@ -3168,7 +3456,7 @@ int cmpmacros(const void * a, const void * b)
 	sb=(struct s_macro *)b;
 	if (sa->crc<sb->crc) return -1; else return 1;
 }
-int SearchAlias(struct s_assenv *ae, int crc, char *zemot)
+int _deprecated_SearchAlias(struct s_assenv *ae, int crc, char *zemot)
 {
     int dw,dm,du,i;
 
@@ -3218,6 +3506,33 @@ int SearchMacro(struct s_assenv *ae, int crc, char *zemot)
 	return -1;
 }
 
+
+void InsertAliasToTree(struct s_assenv *ae, struct s_alias *alias)
+{
+	#undef FUNC
+	#define FUNC "InsertAliasToTree"
+
+	struct s_crcalias_tree *curaliastree;
+	int radix,dek=16;
+ 
+	if ((curaliastree=ae->aliastree[(alias->crc>>16)&0xFFFF])==NULL) { //@@FAST
+		curaliastree=MemMalloc(sizeof(struct s_crcalias_tree));
+		memset(curaliastree,0,sizeof(struct s_crcalias_tree));
+		ae->aliastree[(alias->crc>>16)&0xFFFF]=curaliastree;
+	}
+	while (dek) {
+		dek=dek-8;
+		radix=(alias->crc>>dek)&0xFF;
+		if (curaliastree->radix[radix]) {
+			curaliastree=curaliastree->radix[radix];
+		} else {
+			curaliastree->radix[radix]=MemMalloc(sizeof(struct s_crcalias_tree));
+			curaliastree=curaliastree->radix[radix];
+			memset(curaliastree,0,sizeof(struct s_crcalias_tree));
+		}
+	}
+	ObjectArrayAddDynamicValueConcat((void**)&curaliastree->alias,&curaliastree->nalias,&curaliastree->malias,alias,sizeof(struct s_alias));
+}
 void CheckAndSortAliases(struct s_assenv *ae)
 {
 	#undef FUNC
@@ -3235,11 +3550,12 @@ void CheckAndSortAliases(struct s_assenv *ae)
 			break;
 		}
 	}
-	
-	/* cas particuliers pour insertion en dÈbut ou fin de liste */
+	InsertAliasToTree(ae,&ae->alias[ae->ialias-1]);
+#if 0
+	/* cas particuliers pour insertion en d√©but ou fin de liste */
 	if (ae->ialias-1) {
 		if (ae->alias[ae->ialias-1].crc>ae->alias[ae->ialias-2].crc) {
-			/* pas de tri il est dÈj‡ au bon endroit */
+			/* pas de tri il est d√©j√† au bon endroit */
 		} else if (ae->alias[ae->ialias-1].crc<ae->alias[0].crc) {
 			/* insertion tout en bas de liste */
 			tmpalias=ae->alias[ae->ialias-1];
@@ -3270,8 +3586,8 @@ void CheckAndSortAliases(struct s_assenv *ae)
 	} else {
 		/* one alias need no sort */
 	}
+#endif
 }
-
 void InsertDicoToTree(struct s_assenv *ae, struct s_expr_dico *dico)
 {
 	#undef FUNC
@@ -3348,7 +3664,7 @@ void SnapshotDicoTreeRecurse(struct s_crcdico_tree *lt)
 	}
 	if (lt->mdico) {
 		for (i=0;i<lt->ndico;i++) {
-			if (strcmp(lt->dico[i].name,"IX") && strcmp(lt->dico[i].name,"IY") && strcmp(lt->dico[i].name,"PI") && strcmp(lt->dico[i].name,"ASSEMBLER_RASM")) {
+			if (strcmp(lt->dico[i].name,"PI") && strcmp(lt->dico[i].name,"ASSEMBLER_RASM")) {
 				SnapshotDicoInsert(lt->dico[i].name,(int)floor(lt->dico[i].v+0.5),NULL);
 			}
 		}
@@ -3388,13 +3704,8 @@ void WarnLabelTreeRecurse(struct s_assenv *ae, struct s_crclabel_tree *lt)
 	}
 	for (i=0;i<lt->nlabel;i++) {
 		if (!lt->label[i].used) {
-			if (!lt->label[i].name) {
-				rasm_printf(ae,KWARNING"[%s:%d] Warning: label %s declared but not used\n",ae->filename[lt->label[i].fileidx],lt->label[i].fileline,ae->wl[lt->label[i].iw].w);
-				if (ae->erronwarn) MaxError(ae);
-			} else {
-				rasm_printf(ae,KWARNING"[%s:%d] Warning: label %s declared but not used\n",ae->filename[lt->label[i].fileidx],lt->label[i].fileline,lt->label[i].name);
-				if (ae->erronwarn) MaxError(ae);
-			}
+			rasm_printf(ae,KWARNING"[%s:%d] Warning: label %s declared but not used\n",ae->filename[lt->label[i].fileidx],lt->label[i].fileline,lt->label[i].name);
+			if (ae->erronwarn) MaxError(ae);
 		}
 	}
 }
@@ -3425,7 +3736,7 @@ void WarnDicoTreeRecurse(struct s_assenv *ae, struct s_crcdico_tree *lt)
 		}
 	}
 	for (i=0;i<lt->ndico;i++) {
-		if (strcmp(lt->dico[i].name,"IX") && strcmp(lt->dico[i].name,"IY") && strcmp(lt->dico[i].name,"PI") && strcmp(lt->dico[i].name,"ASSEMBLER_RASM") && !lt->dico[i].used) {
+		if (strcmp(lt->dico[i].name,"PI") && strcmp(lt->dico[i].name,"ASSEMBLER_RASM") && !lt->dico[i].used) {
 			rasm_printf(ae,KWARNING"[%s:%d] Warning: variable %s declared but not used\n",ae->filename[ae->wl[lt->dico[i].iw].ifile],ae->wl[lt->dico[i].iw].l,lt->dico[i].name);
 				if (ae->erronwarn) MaxError(ae);
 		}
@@ -3459,7 +3770,7 @@ void ExportDicoTreeRecurse(struct s_crcdico_tree *lt, char *zefile, char *zeform
 	}
 	if (lt->mdico) {
 		for (i=0;i<lt->ndico;i++) {
-			if (strcmp(lt->dico[i].name,"IX") && strcmp(lt->dico[i].name,"IY") && strcmp(lt->dico[i].name,"PI") && strcmp(lt->dico[i].name,"ASSEMBLER_RASM") && lt->dico[i].autorise_export) {
+			if (strcmp(lt->dico[i].name,"PI") && strcmp(lt->dico[i].name,"ASSEMBLER_RASM") && lt->dico[i].autorise_export) {
 				snprintf(symbol_line,sizeof(symbol_line)-1,zeformat,lt->dico[i].name,(int)floor(lt->dico[i].v+0.5));
 				symbol_line[sizeof(symbol_line)-1]=0xD;
 				FileWriteLine(zefile,symbol_line);
@@ -3483,7 +3794,7 @@ void ExportDicoTreeRecurseCase(struct s_assenv *ae,struct s_crcdico_tree *lt, ch
 	}
 	if (lt->mdico) {
 		for (i=0;i<lt->ndico;i++) {
-			if (strcmp(lt->dico[i].name,"IX") && strcmp(lt->dico[i].name,"IY") && strcmp(lt->dico[i].name,"PI") && strcmp(lt->dico[i].name,"ASSEMBLER_RASM") && lt->dico[i].autorise_export) {
+			if (strcmp(lt->dico[i].name,"PI") && strcmp(lt->dico[i].name,"ASSEMBLER_RASM") && lt->dico[i].autorise_export) {
 				// case search
 				char *casefound;
 				int namelen;
@@ -3524,6 +3835,36 @@ void ExportDicoTree(struct s_assenv *ae, char *zefile, char *zeformat)
 		}
 	}
 }
+void FreeAliasTreeRecurse(struct s_crcalias_tree *lt)
+{
+	#undef FUNC
+	#define FUNC "FreeAliasTreeRecurse"
+
+	int i;
+
+	for (i=0;i<256;i++) {
+		if (lt->radix[i]) {
+			FreeAliasTreeRecurse(lt->radix[i]);
+		}
+	}
+	if (lt->malias) {
+		MemFree(lt->alias);
+	}
+	MemFree(lt);
+}
+void FreeAliasTree(struct s_assenv *ae)
+{
+	#undef FUNC
+	#define FUNC "FreeAliasTree"
+
+	int i;
+
+	for (i=0;i<65536;i++) {
+		if (ae->aliastree[i]) {
+			FreeAliasTreeRecurse(ae->aliastree[i]);
+		}
+	}
+}
 void FreeDicoTreeRecurse(struct s_crcdico_tree *lt)
 {
 	#undef FUNC
@@ -3557,29 +3898,65 @@ void FreeDicoTree(struct s_assenv *ae)
 		}
 	}
 }
+struct s_alias *SearchAlias(struct s_assenv *ae, int crc, char *zemot) {
+	#undef FUNC
+	#define FUNC "SearchAlias"
+	struct s_crcalias_tree *curaliastree;
+	int i,radix;
+
+	if ((curaliastree=ae->aliastree[(crc>>16)&0xFFFF])==NULL) return NULL; //@@FAST
+
+	radix=(crc>>8)&0xFF;
+	if (curaliastree->radix[radix]) {
+		curaliastree=curaliastree->radix[radix];
+	} else {
+		/* radix not found, dico is not in index */
+		return NULL;
+	}
+	radix=crc&0xFF;
+	if (curaliastree->radix[radix]) {
+		curaliastree=curaliastree->radix[radix];
+	} else {
+		/* radix not found, dico is not in index */
+		return NULL;
+	}
+
+	for (i=0;i<curaliastree->nalias;i++) {
+		if (strcmp(curaliastree->alias[i].alias,zemot)==0) {
+			//curaliastree->alias[i].used=1;
+			return &curaliastree->alias[i];
+		}
+	}
+	return NULL;
+}
 struct s_expr_dico *SearchDico(struct s_assenv *ae, char *dico, int crc)
 {
 	#undef FUNC
 	#define FUNC "SearchDico"
 
 	struct s_crcdico_tree *curdicotree;
-	int i,radix,dek=16;
+	int i,radix;
 
 	if ((curdicotree=ae->dicotree[(crc>>16)&0xFFFF])==NULL) return NULL; //@@FAST
 
-	while (dek) {
-		dek=dek-8;
-		radix=(crc>>dek)&0xFF;
-		if (curdicotree->radix[radix]) {
-			curdicotree=curdicotree->radix[radix];
-		} else {
-			/* radix not found, dico is not in index */
-			return NULL;
-		}
+	radix=(crc>>8)&0xFF;
+	if (curdicotree->radix[radix]) {
+		curdicotree=curdicotree->radix[radix];
+	} else {
+		/* radix not found, dico is not in index */
+		return NULL;
 	}
+	radix=crc&0xFF;
+	if (curdicotree->radix[radix]) {
+		curdicotree=curdicotree->radix[radix];
+	} else {
+		/* radix not found, dico is not in index */
+		return NULL;
+	}
+
 	for (i=0;i<curdicotree->ndico;i++) {
 		if (strcmp(curdicotree->dico[i].name,dico)==0) {
-			curdicotree->dico[i].used++;
+			//curdicotree->dico[i].used++;
 
 			if (curdicotree->dico[i].external) {
 				if (ae->external_mapping_size) {
@@ -3617,19 +3994,23 @@ int DelDico(struct s_assenv *ae, char *dico, int crc)
 	#define FUNC "DelDico"
 
 	struct s_crcdico_tree *curdicotree;
-	int i,radix,dek=16;
+	int i,radix;
 
 	if ((curdicotree=ae->dicotree[(crc>>16)&0xFFFF])==NULL) return 0; //@@FAST
 
-	while (dek) {
-		dek=dek-8;
-		radix=(crc>>dek)&0xFF;
-		if (curdicotree->radix[radix]) {
-			curdicotree=curdicotree->radix[radix];
-		} else {
-			/* radix not found, dico is not in index */
-			return 0;
-		}
+	radix=(crc>>8)&0xFF;
+	if (curdicotree->radix[radix]) {
+		curdicotree=curdicotree->radix[radix];
+	} else {
+		/* radix not found, dico is not in index */
+		return 0;
+	}
+	radix=crc&0xFF;
+	if (curdicotree->radix[radix]) {
+		curdicotree=curdicotree->radix[radix];
+	} else {
+		/* radix not found, dico is not in index */
+		return 0;
 	}
 	for (i=0;i<curdicotree->ndico;i++) {
 		if (strcmp(curdicotree->dico[i].name,dico)==0) {
@@ -3660,22 +4041,27 @@ void InsertUsedToTree(struct s_assenv *ae, char *used, int crc)
 		ae->usedtree[(crc>>16)&0xFFFF]=curusedtree;
 	}
 
-	while (dek) {
-		dek=dek-8;
-		radix=(crc>>dek)&0xFF;
-		if (curusedtree->radix[radix]) {
-			curusedtree=curusedtree->radix[radix];
-		} else {
-			curusedtree->radix[radix]=MemMalloc(sizeof(struct s_crcused_tree));
-			curusedtree=curusedtree->radix[radix];
-			memset(curusedtree,0,sizeof(struct s_crcused_tree));
-		}
+	radix=(crc>>8)&0xFF;
+	if (curusedtree->radix[radix]) {
+		curusedtree=curusedtree->radix[radix];
+	} else {
+		curusedtree->radix[radix]=MemMalloc(sizeof(struct s_crcused_tree));
+		curusedtree=curusedtree->radix[radix];
+		memset(curusedtree,0,sizeof(struct s_crcused_tree));
 	}
-	for (i=0;i<curusedtree->nused;i++) if (strcmp(used,curusedtree->used[i])==0) break;
-	/* no double */
-	if (i==curusedtree->nused) {
-		FieldArrayAddDynamicValueConcat(&curusedtree->used,&curusedtree->nused,&curusedtree->mused,used);
+	radix=crc&0xFF;
+	if (curusedtree->radix[radix]) {
+		curusedtree=curusedtree->radix[radix];
+	} else {
+		curusedtree->radix[radix]=MemMalloc(sizeof(struct s_crcused_tree));
+		curusedtree=curusedtree->radix[radix];
+		memset(curusedtree,0,sizeof(struct s_crcused_tree));
 	}
+
+	for (i=0;i<curusedtree->nused;i++) if (strcmp(used,curusedtree->used[i])==0) return; // already defined
+											     //
+	/* not found ok, but now used! ^_^ */
+	FieldArrayAddDynamicValueConcat(&curusedtree->used,&curusedtree->nused,&curusedtree->mused,used);
 }
 
 void FreeUsedTreeRecurse(struct s_crcused_tree *lt)
@@ -3867,19 +4253,23 @@ struct s_label *SearchLabel(struct s_assenv *ae, char *label, int crc)
 	#define FUNC "SearchLabel"
 
 	struct s_crclabel_tree *curlabeltree;
-	int i,radix,dek=16;
+	int radix,i;
 
 	if ((curlabeltree=ae->labeltree[(crc>>16)&0xFFFF])==NULL) return NULL; //@@FAST
 
-	while (dek) {
-		dek=dek-8;
-		radix=(crc>>dek)&0xFF;
+	radix=(crc>>8)&0xFF;
+	if (curlabeltree->radix[radix]) {
+		curlabeltree=curlabeltree->radix[radix];
+		radix=crc&0xFF;
 		if (curlabeltree->radix[radix]) {
 			curlabeltree=curlabeltree->radix[radix];
 		} else {
 			/* radix not found, label is not in index */
 			return NULL;
 		}
+	} else {
+		/* radix not found, label is not in index */
+		return NULL;
 	}
 
 #define PUSH_LABEL_OBJ		/* outside crunched section of in intermediate section */ \
@@ -3890,15 +4280,10 @@ struct s_label *SearchLabel(struct s_assenv *ae, char *label, int crc)
 					mapping.iorgzone=ae->io-1; mapping.ptr=ae->outputadr; mapping.size=2; mapping.value=curlabeltree->label[i].ptr; \
 					printf("add mapping for label [%s] ptr=%d size=%d value=%d\n",label,mapping.ptr,mapping.size,mapping.value); \
 					ObjectArrayAddDynamicValueConcat((void**)&ae->relocation,&ae->imapping,&ae->mmapping,&mapping,sizeof(mapping)); }
-
 	for (i=0;i<curlabeltree->nlabel;i++) {
-		if (!curlabeltree->label[i].name && strcmp(ae->wl[curlabeltree->label[i].iw].w,label)==0) {
+		if (strcmp(curlabeltree->label[i].name,label)==0) {
 			//PUSH_LABEL_OBJ;
-			curlabeltree->label[i].used++;
-			return &curlabeltree->label[i];
-		} else if (curlabeltree->label[i].name && strcmp(curlabeltree->label[i].name,label)==0) {
-			//PUSH_LABEL_OBJ;
-			curlabeltree->label[i].used++;
+			//curlabeltree->label[i].used=1;
 			return &curlabeltree->label[i];
 		}
 	}
@@ -4113,82 +4498,6 @@ char *TranslateTag(struct s_assenv *ae, char *varbuffer, int *touched, int enabl
 
 	return varbuffer;
 }
-
-#define CRC_HALT	0xD7D1BFA1
-#define CRC_NOP		0xE1830165
-#define CRC_LDI		0xE18B3F51
-#define CRC_LDD		0xE18B3F4C
-#define CRC_DEC		0xE06BDD44
-#define CRC_INC		0xE19F3B52
-#define CRC_CPI		0xE077C754
-#define CRC_CPD		0xE077C74F
-#define CRC_BIT		0xE073D557
-#define CRC_RES		0xE1B32D62
-#define CRC_SET		0xE1B71164
-#define CRC_CCF		0xE0742D44
-#define CRC_IND		0xE19F3B53
-#define CRC_INI		0xE19F3B58
-#define CRC_DAA		0xE068253E
-#define CRC_CPL		0xE077C757
-#define CRC_EI		0x4BD5DD06
-#define CRC_DI		0x4BD5DF05
-#define CRC_IM		0x4BD5250E
-#define CRC_SCF		0xE1B72D54
-#define CRC_NEG		0xE1833D52
-#define CRC_OUTI	0xEFA5F1B9
-#define CRC_OUTD	0xEFA5F1B4
-#define CRC_OUT		0xE1871170
-#define CRC_IN		0x4BD5250F
-
-#define CRC_RLA		0xE1B31F57
-#define CRC_RLCA	0x878DAD9A
-#define CRC_RRCA	0x87A5B5A0
-#define CRC_RRA		0xE1B30B5D
-#define CRC_RLD		0xE1B31F5A
-#define CRC_RRD		0xE1B30B60
-#define CRC_RST		0xE1B30971
-#define CRC_RR		0x4BD5331C
-#define CRC_RL		0x4BD53316
-#define CRC_RRC		0xE1B30B5F
-#define CRC_RLC		0xE1B31F59
-#define CRC_SLA		0xE1B71F58
-#define CRC_SLL		0xE1B71F63
-#define CRC_SRA		0xE1B70B5E
-#define CRC_SRL		0xE1B70B69
-
-#define CRC_ADD		0xE07C2F41
-#define CRC_ADC		0xE07C2F40
-#define CRC_SBC		0xE1B72B50
-#define CRC_SUB		0xE1B77162
-#define CRC_XOR		0xE1DB3971
-#define CRC_AND		0xE07FDB4B
-#define CRC_OR		0x4BD52919
-#define CRC_CP		0x4BD5D10B
-
-#define CRC_PUSH	0x97A1EDB8
-#define CRC_POP		0xE1BB1967
-
-#define CRC_CALL	0x826B994
-#define CRC_JR		0x4BD52314
-#define CRC_JP		0x4BD52312
-#define CRC_DJNZ	0x37CD7BAE
-#define CRC_RET		0xE1B32D63
-#define CRC_RETN	0x87E9EBB1
-#define CRC_RETI	0x87E9EBAC
-
-#define CRC_LD		0x4BD52F08
-
-#define CRC_EX		0x4BD5DD15
-#define CRC_EXX		0xE06FF76D
-#define CRC_LDIR	0xF7F59DA3
-#define CRC_LDDR	0xF7F5A79E
-#define CRC_INIR	0xDFE98BAA
-#define CRC_INDR	0xDFE99DA5
-#define CRC_OTIR	0xEFB9D7B6
-#define CRC_OTDR	0xEFB9A1B1
-#define CRC_CPIR	0xFF96FA6
-#define CRC_CPDR	0xFF959A1
-
 
 
 int __GETNOP(struct s_assenv *ae,char *oplist, int didx)
@@ -5022,7 +5331,7 @@ int __GETTICK(struct s_assenv *ae,char *oplist, int didx)
 							}
 					}
 				} else {
-					MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"unsupported opcode LD for GETTICK, need 2 arguments [%s]\n",zearg);
+					MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"unsupported opcode LD for GETTICK, requires 2 arguments [%s]\n",zearg);
 				}
 				break;
 
@@ -5034,6 +5343,68 @@ int __GETTICK(struct s_assenv *ae,char *oplist, int didx)
 	MemFree(opref);
 	if (opcode) MemFree(opcode);
 	return tick;
+}
+
+int __FILEBYTE(struct s_assenv *ae,char *argstr, unsigned int offset, int didx)
+{
+	#undef FUNC
+	#define FUNC "__FILEBYTE"
+
+	struct s_filebyte_cache newcache={0};
+	FILE *f;
+	int i;
+	unsigned char zebyte;
+#ifdef OS_WIN
+	int sr;
+#endif
+
+	for (i=0;i<ae->nbfbcache;i++) {
+		if (strcmp(argstr,ae->fbcache[i].zename)==0) {
+			if (offset<ae->fbcache[i].zelen) {
+				return (int)ae->fbcache[i].data[offset]&0xFF;
+			} else {
+				MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"invalid offset %d for FILEBYTE function and file [%s]\n",offset,argstr);
+				return 0;
+			}
+		}
+	}
+	// no entry in cache, how bgi is the file?
+	f=fopen(argstr,"rb");
+	if (!f) {
+		MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"invalid filename [%s] for FILEBYTE function \n",argstr);
+		return 0;
+	}
+#ifdef OS_WIN
+sr=_setmode(_fileno(f), _O_BINARY );
+if (sr==-1) {
+logerr("FATAL: cannot set binary mode for reading");
+exit(ABORT_ERROR);
+}
+#endif
+	fseek(f,0,SEEK_END);
+	newcache.zelen=ftell(f);
+
+	// no cache for files bigger than 128k
+	if (newcache.zelen>128*1024) {
+		fseek(f,offset,SEEK_SET);
+		if (fread(&zebyte,1,1,f)!=1) MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"FILEBYTE function had read error with file [%s]\n",argstr);
+		fclose(f);
+		return (int)zebyte&0xFF;
+	}
+
+	newcache.zename=strdup(argstr);
+	newcache.data=MemMalloc(newcache.zelen);
+	fseek(f,0,SEEK_SET);
+	if (fread(newcache.data,1,newcache.zelen,f)!=newcache.zelen) MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"FILEBYTE function had read error with file [%s]\n",argstr);
+	fclose(f);
+
+	ObjectArrayAddDynamicValueConcat((void **)&ae->fbcache,&ae->nbfbcache,&ae->maxfbcache,&newcache,sizeof(newcache));
+	if (offset<newcache.zelen) {
+		return (int)newcache.data[offset]&0xFF;
+	} else {
+		MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"invalid offset %d for FILEBYTE function and file [%s]\n",offset,argstr);
+		return 0;
+	}
 }
 int __IS_REGISTER(struct s_assenv *ae,char *argstr)
 {
@@ -5458,7 +5829,7 @@ int __DURATION(struct s_assenv *ae,char *opcode, int didx)
 int __FILESIZE(struct s_assenv *ae,char *zefile, int didx)
 {
 	#undef FUNC
-	#define FUNC "__DURATION"
+	#define FUNC "__FILESIZE"
 
 	FILE *f;
 	int zesize;
@@ -5549,6 +5920,85 @@ int __Hard2SoftInk(struct s_assenv *ae,int hard, int didx) {
 	return 0;
 }
 
+char *getOperatorStr(int operator) {
+	static char opStr[128];
+	switch (operator) {
+		case E_COMPUTE_OPERATION_PUSH_DATASTC:strcpy(opStr,"*not an operator (data)*");break;
+			//printf("%lf %s",ae->computectx->tokenstack[itoken].value,ae->computectx->tokenstack[itoken].string?ae->computectx->tokenstack[itoken].string:"(null)");break;
+		case E_COMPUTE_OPERATION_OPEN:strcpy(opStr,"(");break;
+		case E_COMPUTE_OPERATION_CLOSE:strcpy(opStr,")");break;
+		case E_COMPUTE_OPERATION_ADD:strcpy(opStr,"+");break;
+		case E_COMPUTE_OPERATION_SUB:strcpy(opStr,"-");break;
+		case E_COMPUTE_OPERATION_DIV:strcpy(opStr,"/");break;
+		case E_COMPUTE_OPERATION_MUL:strcpy(opStr,"*");break;
+		case E_COMPUTE_OPERATION_AND:strcpy(opStr,"and");break;
+		case E_COMPUTE_OPERATION_OR:strcpy(opStr,"or");break;
+		case E_COMPUTE_OPERATION_MOD:strcpy(opStr,"mod");break;
+		case E_COMPUTE_OPERATION_XOR:strcpy(opStr,"xor");break;
+		case E_COMPUTE_OPERATION_NOT:strcpy(opStr,"!");break;
+		case E_COMPUTE_OPERATION_SHL:strcpy(opStr,"<<");break;
+		case E_COMPUTE_OPERATION_SHR:strcpy(opStr,">>");break;
+		case E_COMPUTE_OPERATION_BAND:strcpy(opStr,"&&");break;
+		case E_COMPUTE_OPERATION_BOR:strcpy(opStr,"||");break;
+		case E_COMPUTE_OPERATION_LOWER:strcpy(opStr,"<");break;
+		case E_COMPUTE_OPERATION_GREATER:strcpy(opStr,">");break;
+		case E_COMPUTE_OPERATION_EQUAL:strcpy(opStr,"==");break;
+		case E_COMPUTE_OPERATION_NOTEQUAL:strcpy(opStr,"!=");break;
+		case E_COMPUTE_OPERATION_LOWEREQ:strcpy(opStr,"<=");break;
+		case E_COMPUTE_OPERATION_GREATEREQ:strcpy(opStr,">=");break;
+		case E_COMPUTE_OPERATION_SIN:strcpy(opStr,"sin");break;
+		case E_COMPUTE_OPERATION_COS:strcpy(opStr,"cos");break;
+		case E_COMPUTE_OPERATION_INT:strcpy(opStr,"int");break;
+		case E_COMPUTE_OPERATION_FLOOR:strcpy(opStr,"floor");break;
+		case E_COMPUTE_OPERATION_ABS:strcpy(opStr,"abs");break;
+		case E_COMPUTE_OPERATION_LN:strcpy(opStr,"ln");break;
+		case E_COMPUTE_OPERATION_LOG10:strcpy(opStr,"log10");break;
+		case E_COMPUTE_OPERATION_SQRT:strcpy(opStr,"sqrt");break;
+		case E_COMPUTE_OPERATION_ASIN:strcpy(opStr,"asin");break;
+		case E_COMPUTE_OPERATION_ACOS:strcpy(opStr,"acos");break;
+		case E_COMPUTE_OPERATION_ATAN:strcpy(opStr,"atan");break;
+		case E_COMPUTE_OPERATION_EXP:strcpy(opStr,"exp");break;
+		case E_COMPUTE_OPERATION_LOW:strcpy(opStr,"low");break;
+		case E_COMPUTE_OPERATION_HIGH:strcpy(opStr,"high");break;
+		case E_COMPUTE_OPERATION_PSG:strcpy(opStr,"psg");break;
+		case E_COMPUTE_OPERATION_RND:strcpy(opStr,"rnd");break;
+		case E_COMPUTE_OPERATION_FRAC:strcpy(opStr,"frac");break;
+		case E_COMPUTE_OPERATION_CEIL:strcpy(opStr,"ceil");break;
+		case E_COMPUTE_OPERATION_GET_R:strcpy(opStr,"get_r");break;
+		case E_COMPUTE_OPERATION_GET_V:strcpy(opStr,"get_v");break;
+		case E_COMPUTE_OPERATION_GET_B:strcpy(opStr,"get_b");break;
+		case E_COMPUTE_OPERATION_SET_R:strcpy(opStr,"set_r");break;
+		case E_COMPUTE_OPERATION_SET_V:strcpy(opStr,"set_v");break;
+		case E_COMPUTE_OPERATION_SET_B:strcpy(opStr,"set_b");break;
+		case E_COMPUTE_OPERATION_SOFT2HARD:strcpy(opStr,"soft2hard");break;
+		case E_COMPUTE_OPERATION_HARD2SOFT:strcpy(opStr,"hard2soft");break;
+		case E_COMPUTE_OPERATION_PEEK:strcpy(opStr,"peek");break;
+		case E_COMPUTE_OPERATION_POW2:strcpy(opStr,"pow2");break;
+		case E_COMPUTE_OPERATION_POW:strcpy(opStr,"pow");break;
+		case E_COMPUTE_OPERATION_FMOD:strcpy(opStr,"fmod");break;
+		case E_COMPUTE_OPERATION_ATAN2:strcpy(opStr,"atan2");break;
+		case E_COMPUTE_OPERATION_HYPOT:strcpy(opStr,"hypot");break;
+		case E_COMPUTE_OPERATION_LDEXP:strcpy(opStr,"ldexp");break;
+		case E_COMPUTE_OPERATION_FDIM:strcpy(opStr,"fdim");break;
+		case E_COMPUTE_OPERATION_FSTEP:strcpy(opStr,"fstep");break;
+		case E_COMPUTE_OPERATION_FMAX:strcpy(opStr,"fmax");break;
+		case E_COMPUTE_OPERATION_FMIN:strcpy(opStr,"fmin");break;
+		case E_COMPUTE_OPERATION_CLAMP:strcpy(opStr,"clamp");break;
+		case E_COMPUTE_OPERATION_LERP:strcpy(opStr,"lerp");break;
+		case E_COMPUTE_OPERATION_ISGREATER:strcpy(opStr,"isgreater");break;
+		case E_COMPUTE_OPERATION_ISLESS:strcpy(opStr,"isless");break;
+		case E_COMPUTE_OPERATION_GETNOP:strcpy(opStr,"getnop");break;
+		case E_COMPUTE_OPERATION_GETTICK:strcpy(opStr,"gettick");break;
+		case E_COMPUTE_OPERATION_DURATION:strcpy(opStr,"duration");break;
+		case E_COMPUTE_OPERATION_FILESIZE:strcpy(opStr,"filesize");break;
+		case E_COMPUTE_OPERATION_GETSIZE:strcpy(opStr,"getsize");break;
+		case E_COMPUTE_OPERATION_IS_REGISTER:strcpy(opStr,"is_register");break;
+		case E_COMPUTE_OPERATION_FILEBYTE:strcpy(opStr,"filebyte");break;
+		default:strcpy(opStr,"*internal error* ");break;
+	}
+	return opStr;
+}
+
 double ComputeExpressionCore(struct s_assenv *ae,char *original_zeexpression,int ptr, int didx)
 {
 	#undef FUNC
@@ -5575,8 +6025,9 @@ double ComputeExpressionCore(struct s_assenv *ae,char *original_zeexpression,int
 	/* backup alias replace */
 	char *zeexpression,*expr;
 	int original=1;
-	int ialias,startvar=0;
+	int startvar=0;
 	int newlen,lenw;
+	struct s_alias *curalias;
 	/* dictionnary */
 	struct s_expr_dico *curdic;
 	struct s_label *curlabel;
@@ -5600,8 +6051,12 @@ double ComputeExpressionCore(struct s_assenv *ae,char *original_zeexpression,int
 	}
 
 	/* be sure to have at least some bytes allocated */
-	StateMachineResizeBuffer(&ae->computectx->varbuffer,128,&ae->computectx->maxivar);
+	//StateMachineResizeBuffer(&ae->computectx->varbuffer,128,&ae->computectx->maxivar);
 
+#define DEBUG_STACK 0
+#if DEBUG_STACK
+	printf("-------------------------------------\n");
+#endif
 
 #if TRACE_COMPUTE_EXPRESSION
 	printf("expression=[%s]\n",original_zeexpression);
@@ -5678,7 +6133,7 @@ double ComputeExpressionCore(struct s_assenv *ae,char *original_zeexpression,int
 				idx++;
 				while (zeexpression[idx] && zeexpression[idx]!=c) {
 					ae->computectx->varbuffer[ivar++]=zeexpression[idx];
-					StateMachineResizeBuffer(&ae->computectx->varbuffer,ivar,&ae->computectx->maxivar);
+					//StateMachineResizeBuffer(&ae->computectx->varbuffer,ivar,&ae->computectx->maxivar);
 					idx++;
 				}
 				if (zeexpression[idx]) idx++; else MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"ComputeExpression [%s] quote bug!\n",TradExpression(zeexpression));
@@ -5688,12 +6143,22 @@ double ComputeExpressionCore(struct s_assenv *ae,char *original_zeexpression,int
 
 			/* parenthesis */
 			case ')':
+#if TRACE_COMPUTE_EXPRESSION
+	printf("parenth--\n");
+#endif
 				/* next to a closing parenthesis, a minus is an operator */
 				allow_minus_as_sign=0;
 				parenth--;
 				break;
 			case '(':
 				parenth++;
+			/* comma */
+			case ',':
+#if TRACE_COMPUTE_EXPRESSION
+	if (c=='(') printf("parenth++\n");
+	if (c==',') printf("comma\n");
+#endif
+				if (!parenth) printf(" invalid comma in expression, must only be used for multiple param functions...\n");
 			/* operator detection */
 			case '*':
 			case '/':
@@ -5769,16 +6234,43 @@ double ComputeExpressionCore(struct s_assenv *ae,char *original_zeexpression,int
 					/* previous char was an opening parenthesis or an operator */
 					ivar=0;
 					ae->computectx->varbuffer[ivar++]='-';
-					StateMachineResizeBuffer(&ae->computectx->varbuffer,ivar,&ae->computectx->maxivar);
+					//StateMachineResizeBuffer(&ae->computectx->varbuffer,ivar,&ae->computectx->maxivar);
 					c=zeexpression[++idx];
 					if (ae->AutomateExpressionValidCharFirst[(int)c&0xFF]) {
 						ae->computectx->varbuffer[ivar++]=c;
-						StateMachineResizeBuffer(&ae->computectx->varbuffer,ivar,&ae->computectx->maxivar);
+						//StateMachineResizeBuffer(&ae->computectx->varbuffer,ivar,&ae->computectx->maxivar);
 						c=zeexpression[++idx];
 						while (ae->AutomateExpressionValidChar[(int)c&0xFF]) {
 							ae->computectx->varbuffer[ivar++]=c;
-							StateMachineResizeBuffer(&ae->computectx->varbuffer,ivar,&ae->computectx->maxivar);
+							//StateMachineResizeBuffer(&ae->computectx->varbuffer,ivar,&ae->computectx->maxivar);
 							c=zeexpression[++idx];
+						}
+					} else {
+#if 0
+						// hack " (-( " model
+						if (c=='(') {
+							zeexpression=TxtReplace(zeexpression,"(-(","(0-(",0);
+							original=0; // not an original string anymore
+							// restart engine in a proper state...
+							nboperatorstack=parenth=ivar=idx=maccu=accu_err=0;
+							startvar=is_string=allow_minus_as_sign=0;
+							nbtokenstack=nbcomputestack=0;
+							continue;
+						}
+#endif
+						//  handling properly this particular case without realloc or restarting engine
+						if (c=='(' && idx>1 && zeexpression[idx-2]=='(') {
+							// add a literal value ZERO in the stack before minus sign
+							stackelement.operator=E_COMPUTE_OPERATION_PUSH_DATASTC;
+							stackelement.value=0;
+							stackelement.string=NULL;
+							ObjectArrayAddDynamicValueConcat((void **)&ae->computectx->tokenstack,&nbtokenstack,&ae->computectx->maxtokenstack,&stackelement,sizeof(stackelement));
+							allow_minus_as_sign=0;
+							ivar=0;
+							// cheat parser to let him continue like it is supposed to be
+							c='-';
+							idx--; // because there is a ++ afterward
+							break;
 						}
 					}
 					ae->computectx->varbuffer[ivar]=0;
@@ -5851,7 +6343,7 @@ double ComputeExpressionCore(struct s_assenv *ae,char *original_zeexpression,int
 						/* not a formula but only a prefix tag */
 						curly++;
 					}
-					StateMachineResizeBuffer(&ae->computectx->varbuffer,ivar,&ae->computectx->maxivar);
+					//StateMachineResizeBuffer(&ae->computectx->varbuffer,ivar,&ae->computectx->maxivar);
 					idx++;
 					c=zeexpression[idx];
 					Automate=ae->AutomateExpressionValidChar;
@@ -5867,7 +6359,7 @@ double ComputeExpressionCore(struct s_assenv *ae,char *original_zeexpression,int
 							}
 						}
 						ae->computectx->varbuffer[ivar++]=c;
-						StateMachineResizeBuffer(&ae->computectx->varbuffer,ivar,&ae->computectx->maxivar);
+						//StateMachineResizeBuffer(&ae->computectx->varbuffer,ivar,&ae->computectx->maxivar);
 						idx++;
 						c=zeexpression[idx];
 					}
@@ -5888,24 +6380,28 @@ double ComputeExpressionCore(struct s_assenv *ae,char *original_zeexpression,int
 				}
 		}
 		if (c && !ivar) idx++;
+#if TRACE_COMPUTE_EXPRESSION
+	printf("c=%c ivar=%d\n",c>31?c:'.',ivar);
+#endif
 	
 		/************************************
 		   S T A C K   D I S P A T C H E R
 		************************************/
 		/* push operator or stack value */
 		if (!ivar) {
-#if TRACE_COMPUTE_EXPRESSION
-	printf("pushoperator [%c]\n",c);
-#endif
 			/************************************
 			          O P E R A T O R 
 			************************************/
 			stackelement=ae->AutomateElement[c];
 			if (stackelement.operator>E_COMPUTE_OPERATION_GREATEREQ) {
+				if (c==',') continue; // this is a comma, nothing to see here, please disperse to a new value :)
 				MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"expression [%s] has unknown operator %c (%d)\n",TradExpression(zeexpression),c>31?c:'.',c);
 			}
 			/* stackelement.value isn't used */
 			stackelement.string=NULL;
+#if TRACE_COMPUTE_EXPRESSION
+	printf("pushoperator [%c]\n",c);
+#endif
 		} else if (is_string) {
 #if TRACE_COMPUTE_EXPRESSION
 	printf("pushstring [%s]\n",ae->computectx->varbuffer);
@@ -5947,13 +6443,13 @@ double ComputeExpressionCore(struct s_assenv *ae,char *original_zeexpression,int
 						break;
 					}
 					/* 0o octal value hack */
-					if (ae->computectx->varbuffer[minusptr+1]=='O' && (ae->computectx->varbuffer[minusptr+2]>='0' && ae->computectx->varbuffer[minusptr+2]<='5')) {
+					if (ae->computectx->varbuffer[minusptr+1]=='O' && (ae->computectx->varbuffer[minusptr+2]>='0' && ae->computectx->varbuffer[minusptr+2]<='7')) {
 						for (icheck=minusptr+3;ae->computectx->varbuffer[icheck];icheck++) {
-							if (ae->computectx->varbuffer[icheck]>='0' && ae->computectx->varbuffer[icheck]<='5') continue;
+							if (ae->computectx->varbuffer[icheck]>='0' && ae->computectx->varbuffer[icheck]<='7') continue;
 							MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"expression [%s] - %s is not a valid octal number\n",TradExpression(zeexpression),ae->computectx->varbuffer);
 							break;
 						}
-						curval=strtol(ae->computectx->varbuffer+minusptr+2,NULL,2);
+						curval=strtol(ae->computectx->varbuffer+minusptr+2,NULL,8);
 						break;
 					}
 				case '1':
@@ -6065,63 +6561,72 @@ double ComputeExpressionCore(struct s_assenv *ae,char *original_zeexpression,int
 #endif
 						minivarbuffer=TranslateTag(ae,minivarbuffer, &touched,0,E_TAGOPTION_NONE);
 #if TRACE_COMPUTE_EXPRESSION
-	printf("aprËs curly [%s]\n",minivarbuffer);
+	printf("apr√®s curly [%s]\n",minivarbuffer);
 #endif
 						ae->computectx=&ae->ctx1;
-						if (!touched) {
-							strcpy(ae->computectx->varbuffer+minusptr,minivarbuffer);
-						} else {
-							StateMachineResizeBuffer(&ae->computectx->varbuffer,strlen(minivarbuffer)+2,&ae->computectx->maxivar);
-							strcpy(ae->computectx->varbuffer+minusptr,minivarbuffer);
-						}
+						strcpy(ae->computectx->varbuffer+minusptr,minivarbuffer);
+						//if (!touched) {
+						//	strcpy(ae->computectx->varbuffer+minusptr,minivarbuffer);
+						//} else {
+							//StateMachineResizeBuffer(&ae->computectx->varbuffer,strlen(minivarbuffer)+2,&ae->computectx->maxivar);
+						//	strcpy(ae->computectx->varbuffer+minusptr,minivarbuffer);
+						//}
 						MemFree(minivarbuffer);
 						curlyflag=0;
 					}
 
-					crc=GetCRC(ae->computectx->varbuffer+minusptr);
-					/***************************************************
-					     L O O K I N G   F O R   A   F U N C T I O N
-					***************************************************/
-					for (imkey=0;math_keyword[imkey].mnemo[0];imkey++) {
-						if (crc==math_keyword[imkey].crc && strcmp(ae->computectx->varbuffer+minusptr,math_keyword[imkey].mnemo)==0) {
-							if (c=='(') {
-								/* push function as operator! */
-								stackelement.operator=math_keyword[imkey].operation;
-								stackelement.string=NULL;
-								/************************************************
-								      C R E A T E    E X T R A     T O K E N
-								************************************************/
-								ObjectArrayAddDynamicValueConcat((void **)&ae->computectx->tokenstack,&nbtokenstack,&ae->computectx->maxtokenstack,&stackelement,sizeof(stackelement));
-								stackelement.operator=E_COMPUTE_OPERATION_OPEN;
-								ObjectArrayAddDynamicValueConcat((void **)&ae->computectx->tokenstack,&nbtokenstack,&ae->computectx->maxtokenstack,&stackelement,sizeof(stackelement));
-								allow_minus_as_sign=1;
-								idx++;
-								parenth++;
-							} else {
-								MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"expression [%s] - %s is a reserved keyword!\n",TradExpression(zeexpression),math_keyword[imkey].mnemo);
-								curval=0;
-								idx++;
-							}
-							ivar=0;
-							break;
-						}
-					}
-					if (math_keyword[imkey].mnemo[0]) continue;
-					
-					if (ae->computectx->varbuffer[minusptr+0]=='$' && ae->computectx->varbuffer[minusptr+1]==0) {
+					if (ae->computectx->varbuffer[minusptr+0]=='$' && ivar==1) { //ae->computectx->varbuffer[minusptr+1]==0) {
 						curval=ptr;
 					} else {
+						int fastlen=ivar-minusptr;
+
+						crc=GetCRC(ae->computectx->varbuffer+minusptr);
+						/***************************************************
+						     L O O K I N G   F O R   A   F U N C T I O N
+						***************************************************/
+						if (fastlen<FUNCTION_MAXLENGTH && (imkey=ae->fastmath[(int)ae->computectx->varbuffer[minusptr]][fastlen])!=-1) {
+							do {
+								if (math_keyword[imkey].crc==crc && strcmp(math_keyword[imkey].mnemo+1,ae->computectx->varbuffer+minusptr+1)==0) {
+									if (c=='(') {
+										/* push function as operator! */
+										stackelement.operator=math_keyword[imkey].operation;
+										stackelement.string=NULL;
+										/************************************************
+										      C R E A T E    E X T R A     T O K E N
+										************************************************/
+										ObjectArrayAddDynamicValueConcat((void **)&ae->computectx->tokenstack,&nbtokenstack,&ae->computectx->maxtokenstack,&stackelement,sizeof(stackelement));
+										stackelement.operator=E_COMPUTE_OPERATION_OPEN;
+										ObjectArrayAddDynamicValueConcat((void **)&ae->computectx->tokenstack,&nbtokenstack,&ae->computectx->maxtokenstack,&stackelement,sizeof(stackelement));
+										allow_minus_as_sign=1;
+										parenth++;
+									} else {
+										MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"expression [%s] - %s is a reserved keyword!\n",TradExpression(zeexpression),math_keyword[imkey].mnemo);
+										curval=0;
+									}
+									idx++;
+									ivar=0;
+									break;
+								}
+								imkey++;
+							} while (math_keyword[imkey].mnemo[0]==ae->computectx->varbuffer[minusptr]);
+							if (!ivar) continue;
+						}
+					
 #if TRACE_COMPUTE_EXPRESSION
 	printf("search dico [%s]\n",ae->computectx->varbuffer+minusptr);
 #endif
 						curdic=SearchDico(ae,ae->computectx->varbuffer+minusptr,crc);
 						if (curdic) {
 #if TRACE_COMPUTE_EXPRESSION
-	printf("trouvÈ valeur=%.2lf\n",curdic->v);
+	printf("trouv√© valeur=%.2lf\n",curdic->v);
 #endif
 							curval=curdic->v;
+							curdic->used=1;
 							break;
 						} else {
+#if TRACE_COMPUTE_EXPRESSION
+	printf("recherche de bracket\n");
+#endif
 							/* getbank hack */
 							if (ae->computectx->varbuffer[minusptr]!='{') {
 								bank=0;
@@ -6129,22 +6634,22 @@ double ComputeExpressionCore(struct s_assenv *ae,char *original_zeexpression,int
 							} else if (strncmp(ae->computectx->varbuffer+minusptr,"{BANK}",6)==0) {
 								bank=6;
 								page=0;
-								/* obligÈ de recalculer le CRC */
+								/* oblig√© de recalculer le CRC */
 								crc=GetCRC(ae->computectx->varbuffer+minusptr+bank);
 							} else if (strncmp(ae->computectx->varbuffer+minusptr,"{PAGE}",6)==0) {
 								bank=6;
 								page=1;
-								/* obligÈ de recalculer le CRC */
+								/* oblig√© de recalculer le CRC */
 								crc=GetCRC(ae->computectx->varbuffer+minusptr+bank);
 							} else if (strncmp(ae->computectx->varbuffer+minusptr,"{PAGESET}",9)==0) {
 								bank=9;
 								page=2;
-								/* obligÈ de recalculer le CRC */
+								/* oblig√© de recalculer le CRC */
 								crc=GetCRC(ae->computectx->varbuffer+minusptr+bank);
 							} else if (strncmp(ae->computectx->varbuffer+minusptr,"{SIZEOF}",8)==0) {
 								bank=8;
 								page=3;
-								/* obligÈ de recalculer le CRC */
+								/* oblig√© de recalculer le CRC */
 								crc=GetCRC(ae->computectx->varbuffer+minusptr+bank);
 								curval=-1;
 								/* search in structures aliases */
@@ -6171,10 +6676,8 @@ double ComputeExpressionCore(struct s_assenv *ae,char *original_zeexpression,int
 								}
 
 								if (curval==-1) {
-									if (i==ae->irasmstructalias) {
-										MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"cannot SIZEOF unknown structure [%s]!\n",ae->computectx->varbuffer+minusptr+bank);
+										MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"cannot SIZEOF unknown structure or field [%s]!\n",ae->computectx->varbuffer+minusptr+bank);
 										curval=0;
-									}
 								}
 							} else {
 								MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"expression [%s] - %s is an unknown prefix!\n",TradExpression(zeexpression),ae->computectx->varbuffer);
@@ -6184,10 +6687,11 @@ double ComputeExpressionCore(struct s_assenv *ae,char *original_zeexpression,int
 							/* limited label translation while processing crunched blocks
 							   ae->curlz == current crunched block processed
 							   expression->crunch_block=0 -> oui
-							   expression->crunch_block=1 -> oui si mÍme block
-							   expression->crunch_block=2 -> non car sera relogÈe
+							   expression->crunch_block=1 -> oui si m√™me block
+							   expression->crunch_block=2 -> non car sera relog√©e
 							*/
-							if (page!=3) {
+
+							if (page!=3) { // si page vaut 3, on a d√©j√† calcul√© la valeur √† renvoyer
 
 
 
@@ -6213,7 +6717,7 @@ if (didx>0 && didx<ae->ie) {
 		curlabel=NULL;
 	}
 
-	/* pas trouvÈ on cherche LEGACY */
+	/* pas trouv√© on cherche LEGACY */
 	if (!curlabel) {
 		curlabel=SearchLabel(ae,ae->computectx->varbuffer+minusptr+bank,crc);
 #if TRACE_LABEL || TRACE_COMPUTE_EXPRESSION
@@ -6237,7 +6741,7 @@ if (didx>0 && didx<ae->ie) {
 
 		/* on essaie toujours de trouver le label du module courant */	
 		curlabel=SearchLabel(ae,dblvarbuffer,GetCRC(dblvarbuffer));
-		/* pas trouvÈ on cherche LEGACY */
+		/* pas trouv√© on cherche LEGACY */
 		if (!curlabel) curlabel=SearchLabel(ae,ae->computectx->varbuffer+minusptr+bank,crc);
 #if TRACE_LABEL || TRACE_COMPUTE_EXPRESSION
 		else printf("label trouve via ajout du MODULE\n");
@@ -6247,7 +6751,7 @@ if (didx>0 && didx<ae->ie) {
 	} else {
 		curlabel=SearchLabel(ae,ae->computectx->varbuffer+minusptr+bank,crc);
 #if TRACE_LABEL || TRACE_COMPUTE_EXPRESSION
-		if (curlabel) printf("label trouve sans avoir ajoutÈ de MODULE\n");
+		if (curlabel) printf("label trouve sans avoir ajout√© de MODULE\n");
 #endif
 	}
 }
@@ -6255,6 +6759,7 @@ if (didx>0 && didx<ae->ie) {
 
 
 								if (curlabel) {
+									curlabel->used=1;
 									if (ae->stage<2) {
 										if (curlabel->lz==-1) {
 											if (!bank) {
@@ -6307,7 +6812,7 @@ printf("page=%d | ptr=%X ibank=%d\n",page,curlabel->ptr,curlabel->ibank);
 										} else {
 											int process_label=1;
 
-											// si on est dans une section crunchÈe, on doit faire un contrÙle Ètendu du scope du label
+											// si on est dans une section crunch√©e, on doit faire un contr√¥le √©tendu du scope du label
 											if (ae->lzsection[curlabel->lz].lzversion) {
 												/* label MUST be intermediate OR in the crunched block */
 												//if (curlabel->iorgzone==ae->expression[didx].iorgzone) {
@@ -6427,7 +6932,6 @@ printf("stage 2 | page=%d | ptr=%X ibank=%d\n",page,curlabel->ptr,curlabel->iban
 									/***********************************************
 										to allow aliases declared after use
 									***********************************************/
-									ialias=-1;
 									if (didx>0 && didx<ae->ie) {
 										if (ae->expression[didx].module) {
 											// build module+alias
@@ -6436,11 +6940,11 @@ printf("stage 2 | page=%d | ptr=%X ibank=%d\n",page,curlabel->ptr,curlabel->iban
                 									strcpy(dblvarbuffer,ae->expression[didx].module);
 											strcat(dblvarbuffer,ae->module_separator);
 											strcat(dblvarbuffer,ae->computectx->varbuffer+minusptr);
-											ialias=SearchAlias(ae,GetCRC(dblvarbuffer),dblvarbuffer);
+											curalias=SearchAlias(ae,GetCRC(dblvarbuffer),dblvarbuffer);
 											MemFree(dblvarbuffer);
-										}
-										if (ialias==-1) {
-											ialias=SearchAlias(ae,crc,ae->computectx->varbuffer+minusptr);
+											if (!curalias) curalias=SearchAlias(ae,crc,ae->computectx->varbuffer+minusptr);
+										} else {
+											curalias=SearchAlias(ae,crc,ae->computectx->varbuffer+minusptr);
 										}
 									} else {
 										if (ae->module) {
@@ -6449,16 +6953,17 @@ printf("stage 2 | page=%d | ptr=%X ibank=%d\n",page,curlabel->ptr,curlabel->iban
 											strcpy(dblvarbuffer,ae->module);
 											strcat(dblvarbuffer,ae->module_separator);
 											strcat(dblvarbuffer,ae->computectx->varbuffer+minusptr);
-											ialias=SearchAlias(ae,GetCRC(dblvarbuffer),dblvarbuffer);
+											curalias=SearchAlias(ae,GetCRC(dblvarbuffer),dblvarbuffer);
 											MemFree(dblvarbuffer);
-										}
-										if (ialias==-1) {
-											ialias=SearchAlias(ae,crc,ae->computectx->varbuffer+minusptr);
+											if (!curalias) curalias=SearchAlias(ae,crc,ae->computectx->varbuffer+minusptr);
+										} else {
+											curalias=SearchAlias(ae,crc,ae->computectx->varbuffer+minusptr);
 										}
 									}
 
-									if (ialias>=0) { // IX alias is always declared in the very beginning so ialias cannot be zero
-										newlen=ae->alias[ialias].len;
+									if (curalias) {
+										curalias->used=1;
+										newlen=curalias->len;
 										lenw=strlen(zeexpression);
 										if (newlen>ivar) {
 											/* realloc bigger */
@@ -6475,7 +6980,7 @@ printf("stage 2 | page=%d | ptr=%X ibank=%d\n",page,curlabel->ptr,curlabel->iban
 										if (newlen!=ivar) {
 											MemMove(zeexpression+startvar+newlen,zeexpression+startvar+ivar,lenw-startvar-ivar+1);
 										}
-										strncpy(zeexpression+startvar,ae->alias[ialias].translation,newlen); /* copy without zero terminator */
+										strncpy(zeexpression+startvar,curalias->translation,newlen); /* copy without zero terminator */
 										idx=startvar;
 										ivar=0;
 										continue;
@@ -6486,7 +6991,7 @@ printf("stage 2 | page=%d | ptr=%X ibank=%d\n",page,curlabel->ptr,curlabel->iban
 
 										reverse_idx=strlen(ae->computectx->varbuffer)-1;
 										if (ae->computectx->varbuffer[reverse_idx]>='0' && ae->computectx->varbuffer[reverse_idx]<='9') {
-											/* vu que Áa ne PEUT PAS Ítre une valeur litÈrale, on ne fait pas de test de dÈbordement */
+											/* vu que √ßa ne PEUT PAS √™tre une valeur lit√©rale, on ne fait pas de test de d√©bordement */
 											reverse_idx--;
 											while (ae->computectx->varbuffer[reverse_idx]>='0' && ae->computectx->varbuffer[reverse_idx]<='9') {
 												reverse_idx--;
@@ -6558,11 +7063,7 @@ if (!ae->extended_error) {
 }
 printf("DUMP des labels\n");
 	for (i=0;i<ae->il;i++) {
-		if (!ae->label[i].name) {
-			printf("%d:%04X %s\n",ae->label[i].ibank,ae->label[i].ptr,ae->wl[ae->label[i].iw].w);
-		} else {
-			printf("%d:%04X %s\n",ae->label[i].ibank,ae->label[i].ptr,ae->label[i].name);
-		}
+		printf("%d:%04X %s\n",ae->label[i].ibank,ae->label[i].ptr,ae->label[i].name);
 	}
 #endif
 
@@ -6602,9 +7103,9 @@ printf("DUMP des labels\n");
 	/*******************************************************
 	      C R E A T E    E X E C U T I O N    S T A C K
 	*******************************************************/
-#define DEBUG_STACK 0
 #if DEBUG_STACK
 	for (itoken=0;itoken<nbtokenstack;itoken++) {
+		if (itoken) printf(" | ");
 		switch (ae->computectx->tokenstack[itoken].operator) {
 			case E_COMPUTE_OPERATION_PUSH_DATASTC:printf("%lf %s",ae->computectx->tokenstack[itoken].value,ae->computectx->tokenstack[itoken].string?ae->computectx->tokenstack[itoken].string:"(null)");break;
 			case E_COMPUTE_OPERATION_OPEN:printf("(");break;
@@ -6655,12 +7156,27 @@ printf("DUMP des labels\n");
 			case E_COMPUTE_OPERATION_SOFT2HARD:printf("soft2hard ");break;
 			case E_COMPUTE_OPERATION_HARD2SOFT:printf("hard2soft ");break;
 			case E_COMPUTE_OPERATION_PEEK:printf("peek ");break;
+			case E_COMPUTE_OPERATION_POW2:printf("pow2 ");break;
+			case E_COMPUTE_OPERATION_POW:printf("pow ");break;
+			case E_COMPUTE_OPERATION_FMOD:printf("fmod ");break;
+			case E_COMPUTE_OPERATION_ATAN2:printf("atan2 ");break;
+			case E_COMPUTE_OPERATION_HYPOT:printf("hypot ");break;
+			case E_COMPUTE_OPERATION_LDEXP:printf("ldexp ");break;
+			case E_COMPUTE_OPERATION_FDIM:printf("fdim ");break;
+			case E_COMPUTE_OPERATION_FSTEP:printf("fstep ");break;
+			case E_COMPUTE_OPERATION_FMAX:printf("fmax ");break;
+			case E_COMPUTE_OPERATION_FMIN:printf("fmin ");break;
+			case E_COMPUTE_OPERATION_CLAMP:printf("clamp ");break;
+			case E_COMPUTE_OPERATION_LERP:printf("lerp ");break;
+			case E_COMPUTE_OPERATION_ISGREATER:printf("isgreater ");break;
+			case E_COMPUTE_OPERATION_ISLESS:printf("isless ");break;
 			case E_COMPUTE_OPERATION_GETNOP:printf("getnop ");break;
 			case E_COMPUTE_OPERATION_GETTICK:printf("gettick ");break;
 			case E_COMPUTE_OPERATION_DURATION:printf("duration ");break;
 			case E_COMPUTE_OPERATION_FILESIZE:printf("filesize ");break;
 			case E_COMPUTE_OPERATION_GETSIZE:printf("getsize ");break;
 			case E_COMPUTE_OPERATION_IS_REGISTER:printf("is_register ");break;
+			case E_COMPUTE_OPERATION_FILEBYTE:printf("filebyte ");break;
 			default:printf("bug\n");break;
 		}
 		
@@ -6785,12 +7301,28 @@ printf("operator string=%X\n",ae->computectx->operatorstack[o2].string);
 			case E_COMPUTE_OPERATION_SOFT2HARD:
 			case E_COMPUTE_OPERATION_HARD2SOFT:
 			case E_COMPUTE_OPERATION_PEEK:
+			case E_COMPUTE_OPERATION_POW2:
+			case E_COMPUTE_OPERATION_POW:
+			case E_COMPUTE_OPERATION_FMOD:
+			case E_COMPUTE_OPERATION_ATAN2:
+			case E_COMPUTE_OPERATION_HYPOT:
+			case E_COMPUTE_OPERATION_LDEXP:
+			case E_COMPUTE_OPERATION_FDIM:
+			case E_COMPUTE_OPERATION_FSTEP:
+			case E_COMPUTE_OPERATION_FMAX:
+			case E_COMPUTE_OPERATION_FMIN:
+			case E_COMPUTE_OPERATION_CLAMP:
+			case E_COMPUTE_OPERATION_LERP:
+			case E_COMPUTE_OPERATION_ISGREATER:
+			case E_COMPUTE_OPERATION_ISLESS:
+				// with strings
 			case E_COMPUTE_OPERATION_GETNOP:
 			case E_COMPUTE_OPERATION_GETTICK:
 			case E_COMPUTE_OPERATION_DURATION:
 			case E_COMPUTE_OPERATION_FILESIZE:
 			case E_COMPUTE_OPERATION_GETSIZE:
 			case E_COMPUTE_OPERATION_IS_REGISTER:
+			case E_COMPUTE_OPERATION_FILEBYTE:
 #if DEBUG_STACK
 printf("ajout de la fonction\n");
 #endif
@@ -6813,18 +7345,18 @@ printf("final POP string=%X\n",ae->computectx->operatorstack[nboperatorstack+1].
 	if (ae->maxam || ae->as80) {
 		int workinterval;
 		if (ae->as80) workinterval=0xFFFFFFFF; else workinterval=0xFFFF;
+		if (maccu<=nbcomputestack) {
+			maccu=16+nbcomputestack;
+			accu=MemRealloc(accu,sizeof(double)*maccu);
+		}
 		for (i=0;i<nbcomputestack;i++) {
 			switch (computestack[i].operator) {
 				/************************************************
 				  c a s e s   s h o u l d    b e    s o r t e d
 				************************************************/
 				case E_COMPUTE_OPERATION_PUSH_DATASTC:
-					if (maccu<=paccu) {
-						maccu=16+paccu;
-						accu=MemRealloc(accu,sizeof(double)*maccu);
-					}
 					if (computestack[i].string) {
-						/* string hack */
+						/* string hack => store string index in the computestack array */
 						accu[paccu]=i+0.1;
 					} else {
 						accu[paccu]=computestack[i].value;
@@ -6906,6 +7438,80 @@ printf("final POP string=%X\n",ae->computectx->operatorstack[nboperatorstack+1].
 				case E_COMPUTE_OPERATION_SOFT2HARD:if (paccu>0) accu[paccu-1]=__Soft2HardInk(ae,accu[paccu-1],didx);break;
 				case E_COMPUTE_OPERATION_HARD2SOFT:if (paccu>0) accu[paccu-1]=__Hard2SoftInk(ae,accu[paccu-1],didx);break;
 				case E_COMPUTE_OPERATION_PEEK:if (paccu>0) accu[paccu-1]=ae->mem[ae->activebank][(unsigned short int)accu[paccu-1]];break;
+				case E_COMPUTE_OPERATION_POW2:if (paccu>0) accu[paccu-1]=(int)pow(2,accu[paccu-1])&workinterval;break;
+				// multi-param functions
+				case E_COMPUTE_OPERATION_POW: if (paccu>1) {
+								      accu[paccu-2]=(int)pow(accu[paccu-2],accu[paccu-1])&workinterval; paccu--; // on ajuste car DEUX param√®tres
+							       } else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"POW requires 2 parameters\n");
+							       }
+							      break;
+				case E_COMPUTE_OPERATION_FMOD: if (paccu>1) {accu[paccu-2]=(int)fmod(accu[paccu-2],accu[paccu-1])&workinterval; paccu--;
+							       } else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"FMOD requires 2 parameters\n");
+							       }
+							       break;
+				case E_COMPUTE_OPERATION_ATAN2:if (paccu>1) {accu[paccu-2]=(int)atan2(accu[paccu-2],accu[paccu-1])&workinterval; paccu--;
+							       } else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"ATAN2 requires 2 parameters\n");
+							       }
+							       break;
+				case E_COMPUTE_OPERATION_HYPOT:if (paccu>1) {accu[paccu-2]=(int)hypot(accu[paccu-2],accu[paccu-1])&workinterval; paccu--;
+							       } else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"HYPOT requires 2 parameters\n");
+							       }
+							       break;
+				case E_COMPUTE_OPERATION_LDEXP:if (paccu>1) {accu[paccu-2]=(int)ldexp(accu[paccu-2],accu[paccu-1])&workinterval; paccu--;
+							       } else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"LDEXP requires 2 parameters\n");
+							       }
+							       break;
+				case E_COMPUTE_OPERATION_FDIM: if (paccu>1) {accu[paccu-2]=(int)fdim(accu[paccu-2],accu[paccu-1])&workinterval; paccu--;
+							       } else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"FDIM requires 2 parameters\n");
+							       }
+							       break;
+				case E_COMPUTE_OPERATION_FSTEP: if (paccu>1) {accu[paccu-2]=(accu[paccu-2]<=accu[paccu-1])?1:0; paccu--;
+							       } else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"FSTEP requires 2 parameters\n");
+							       }
+							       break;
+				case E_COMPUTE_OPERATION_FMAX: if (paccu>1) {accu[paccu-2]=(accu[paccu-2]<accu[paccu-1])?(int)accu[paccu-1]&workinterval:(int)accu[paccu-2]&workinterval; paccu--;
+							       } else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"FMAX requires 2 parameters\n");
+							       }
+							       break;
+				case E_COMPUTE_OPERATION_FMIN: if (paccu>1) {
+								       accu[paccu-2]=(accu[paccu-2]>accu[paccu-1])?(int)accu[paccu-1]&workinterval:(int)accu[paccu-2]&workinterval; paccu--;
+							       } else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"FMIN requires 2 parameters\n");
+							       }
+							       break;
+				case E_COMPUTE_OPERATION_CLAMP:if (paccu>2) {
+								       if (accu[paccu-3]<accu[paccu-2]) accu[paccu-3]=(int)accu[paccu-2]&workinterval; else
+								       if (accu[paccu-3]>accu[paccu-1]) accu[paccu-3]=(int)accu[paccu-1]&workinterval;
+								       paccu-=2;
+							       } else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"CLAMP requires 3 parameters (val,min,max)\n");
+							       }
+							       break;
+				case E_COMPUTE_OPERATION_LERP:if (paccu>2) {
+								      accu[paccu-3]=(int)(accu[paccu-3]+accu[paccu-1]*(accu[paccu-2]-accu[paccu-3]))&workinterval;
+								      paccu-=2;
+							       } else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"LERP requires 3 parameters (x,y,alpha)\n");
+							       }
+							      break;
+				case E_COMPUTE_OPERATION_ISGREATER: if (paccu>1) {accu[paccu-2]=(accu[paccu-2]>accu[paccu-1])?1:0; paccu--;
+							       } else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"ISGREATER requires 2 parameters\n");
+							       }
+							       break;
+				case E_COMPUTE_OPERATION_ISLESS:    if (paccu>1) {accu[paccu-2]=(accu[paccu-2]<accu[paccu-1])?1:0; paccu--;
+							       } else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"ISLESS requires 2 parameters\n");
+							       }
+							       break;
 				/* functions with strings */
 				case E_COMPUTE_OPERATION_GETNOP:if (paccu>0) {
 								      int integeridx;
@@ -6982,7 +7588,7 @@ printf("final POP string=%X\n",ae->computectx->operatorstack[nboperatorstack+1].
 										}
 									}
 								} else {
-									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"DURATION is empty\n");
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"FILESIZE is empty\n");
 								}
 							       break;
 							       /* CC GETNOP */
@@ -7016,29 +7622,55 @@ printf("final POP string=%X\n",ae->computectx->operatorstack[nboperatorstack+1].
 									      computestack[integeridx].string=NULL;
 								      } else {
 									      if (integeridx>=0 && integeridx<nbcomputestack) {
-											MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"IS_REGISTER function needs a proper string\n");
+											MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"IS_REGISTER function requires a proper string\n");
 										} else {
 											MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"IS_REGISTER internal error (wrong string index)\n");
 										}
 									}
 								} else {
-									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"IS_REGISTERGETTICK is empty\n");
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"IS_REGISTER is empty\n");
 								}
 							       break;
 							       /* CC GETNOP */
+				case E_COMPUTE_OPERATION_FILEBYTE:if (paccu>1) {
+								      int integeridx;
+								      integeridx=floor(accu[paccu-2]);
+								      if (integeridx>=0 && integeridx<nbcomputestack && computestack[integeridx].string) {
+									      accu[paccu-2]=__FILEBYTE(ae,computestack[integeridx].string,accu[paccu-1]+0.5,didx);
+									      MemFree(computestack[integeridx].string);
+									      computestack[integeridx].string=NULL;
+									      paccu--;
+								      } else {
+									      if (integeridx>=0 && integeridx<nbcomputestack) {
+											MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"FILEBYTE function needs a proper string\n");
+										} else {
+											MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"FILEBYTE internal error (wrong string index)\n");
+										}
+									}
+								} else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"FILEBYTE need 2 parameters, '<filename>' and offset\n");
+								}
+							       break;
 				default:MakeError(ae,GetExpIdx(ae,didx),GetCurrentFile(ae),GetExpLine(ae,didx),"invalid computing state! (%d)\n",computestack[i].operator);paccu=0;
 			}
 			if (!paccu) {
 				if (zeexpression[0]=='&') {
 					MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"Missing operand for calculation [%s] Did you use & for an hexadecimal value?\n",TradExpression(zeexpression));
 				} else {
-					MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"Missing operand for calculation [%s]\n",TradExpression(zeexpression));
+					char *operatorStr;
+					operatorStr=getOperatorStr(computestack[i].operator);
+					MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"Missing operand for calculation [%s] at operator or function [%s]\n",TradExpression(zeexpression),operatorStr);
 				}
 				accu_err=1;
 				break;
 			}
 		}
 	} else {
+		// paccu vaut z√©ro :)
+		if (maccu<=nbcomputestack) {
+			maccu=16+nbcomputestack;
+			accu=MemRealloc(accu,sizeof(double)*maccu);
+		}
 		for (i=0;i<nbcomputestack;i++) {
 #if 0
 			int kk;
@@ -7068,12 +7700,8 @@ printf("final POP string=%X\n",ae->computectx->operatorstack[nboperatorstack+1].
 #endif
 			switch (computestack[i].operator) {
 				case E_COMPUTE_OPERATION_PUSH_DATASTC:
-					if (maccu<=paccu) {
-						maccu=16+paccu;
-						accu=MemRealloc(accu,sizeof(double)*maccu);
-					}
 					if (computestack[i].string) {
-						/* string hack */
+						/* string hack => send string index in the computestack array */
 						accu[paccu]=i+0.1;
 					} else {
 						accu[paccu]=computestack[i].value;
@@ -7140,7 +7768,7 @@ printf("final POP string=%X\n",ae->computectx->operatorstack[nboperatorstack+1].
 								     if (zemod>0) {
 									     accu[paccu-1]=FastRand()%zemod;
 								     } else {
-									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"RND function needs a value greater than zero to perform a random value\n");
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"RND function requires a value greater than zero to perform a random value\n");
 								        accu[paccu-1]=0;
 								     }
 							     }
@@ -7156,6 +7784,80 @@ printf("final POP string=%X\n",ae->computectx->operatorstack[nboperatorstack+1].
 				case E_COMPUTE_OPERATION_SOFT2HARD:if (paccu>0) accu[paccu-1]=__Soft2HardInk(ae,accu[paccu-1],didx);break;
 				case E_COMPUTE_OPERATION_HARD2SOFT:if (paccu>0) accu[paccu-1]=__Hard2SoftInk(ae,accu[paccu-1],didx);break;
 				case E_COMPUTE_OPERATION_PEEK:if (paccu>0) accu[paccu-1]=ae->mem[ae->activebank][(unsigned short int)accu[paccu-1]];break;
+				case E_COMPUTE_OPERATION_POW2:if (paccu>0) accu[paccu-1]=pow(2.0,accu[paccu-1]);break;
+				// multi-param functions
+				case E_COMPUTE_OPERATION_POW: if (paccu>1) {
+								      accu[paccu-2]=pow(accu[paccu-2],accu[paccu-1]); paccu--; // on ajuste car DEUX param√®tres
+							       } else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"POW requires 2 parameters\n");
+							       }
+							      break;
+				case E_COMPUTE_OPERATION_FMOD: if (paccu>1) {accu[paccu-2]=fmod(accu[paccu-2],accu[paccu-1]); paccu--;
+							       } else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"FMOD requires 2 parameters\n");
+							       }
+							       break;
+				case E_COMPUTE_OPERATION_ATAN2:if (paccu>1) {accu[paccu-2]=atan2(accu[paccu-2],accu[paccu-1]); paccu--;
+							       } else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"ATAN2 requires 2 parameters\n");
+							       }
+							       break;
+				case E_COMPUTE_OPERATION_HYPOT:if (paccu>1) {accu[paccu-2]=hypot(accu[paccu-2],accu[paccu-1]); paccu--;
+							       } else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"HYPOT requires 2 parameters\n");
+							       }
+							       break;
+				case E_COMPUTE_OPERATION_LDEXP:if (paccu>1) {accu[paccu-2]=ldexp(accu[paccu-2],accu[paccu-1]); paccu--;
+							       } else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"LDEXP requires 2 parameters\n");
+							       }
+							       break;
+				case E_COMPUTE_OPERATION_FDIM: if (paccu>1) {accu[paccu-2]=fdim(accu[paccu-2],accu[paccu-1]); paccu--;
+							       } else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"FDIM requires 2 parameters\n");
+							       }
+							       break;
+				case E_COMPUTE_OPERATION_FSTEP: if (paccu>1) {accu[paccu-2]=(accu[paccu-2]<=accu[paccu-1])?1:0; paccu--;
+							       } else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"FSTEP requires 2 parameters\n");
+							       }
+							       break;
+				case E_COMPUTE_OPERATION_FMAX: if (paccu>1) {accu[paccu-2]=(accu[paccu-2]<accu[paccu-1])?accu[paccu-1]:accu[paccu-2]; paccu--;
+							       } else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"FMAX requires 2 parameters\n");
+							       }
+							       break;
+				case E_COMPUTE_OPERATION_FMIN: if (paccu>1) {
+								       accu[paccu-2]=(accu[paccu-2]>accu[paccu-1])?accu[paccu-1]:accu[paccu-2]; paccu--;
+							       } else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"FMIN requires 2 parameters\n");
+							       }
+							       break;
+				case E_COMPUTE_OPERATION_CLAMP:if (paccu>2) {
+								       if (accu[paccu-3]<accu[paccu-2]) accu[paccu-3]=accu[paccu-2]; else
+								       if (accu[paccu-3]>accu[paccu-1]) accu[paccu-3]=accu[paccu-1];
+								       paccu-=2;
+							       } else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"CLAMP requires 3 parameters (val,min,max)\n");
+							       }
+							       break;
+				case E_COMPUTE_OPERATION_LERP:if (paccu>2) {
+								      accu[paccu-3]=accu[paccu-3]+accu[paccu-1]*(accu[paccu-2]-accu[paccu-3]);
+								      paccu-=2;
+							       } else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"LERP requires 3 parameters (x,y,alpha)\n");
+							       }
+							      break;
+				case E_COMPUTE_OPERATION_ISGREATER: if (paccu>1) {accu[paccu-2]=(accu[paccu-2]>accu[paccu-1])?1:0; paccu--;
+							       } else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"ISGREATER requires 2 parameters\n");
+							       }
+							       break;
+				case E_COMPUTE_OPERATION_ISLESS:    if (paccu>1) {accu[paccu-2]=(accu[paccu-2]<accu[paccu-1])?1:0; paccu--;
+							       } else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"ISLESS requires 2 parameters\n");
+							       }
+							       break;
 				/* functions with strings */
 				case E_COMPUTE_OPERATION_GETNOP:if (paccu>0) {
 								      int integeridx;
@@ -7167,7 +7869,7 @@ printf("final POP string=%X\n",ae->computectx->operatorstack[nboperatorstack+1].
 									      computestack[integeridx].string=NULL;
 								      } else {
 									      if (integeridx>=0 && integeridx<nbcomputestack) {
-											MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"GETNOP function needs a proper string\n");
+											MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"GETNOP function requires a proper string\n");
 										} else {
 											MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"GETNOP internal error (wrong string index)\n");
 										}
@@ -7187,7 +7889,7 @@ printf("final POP string=%X\n",ae->computectx->operatorstack[nboperatorstack+1].
 									      computestack[integeridx].string=NULL;
 								      } else {
 									      if (integeridx>=0 && integeridx<nbcomputestack) {
-											MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"GETTICK function needs a proper string\n");
+											MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"GETTICK function requires a proper string\n");
 										} else {
 											MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"GETTICK internal error (wrong string index)\n");
 										}
@@ -7207,7 +7909,7 @@ printf("final POP string=%X\n",ae->computectx->operatorstack[nboperatorstack+1].
 									      computestack[integeridx].string=NULL;
 								      } else {
 									      if (integeridx>=0 && integeridx<nbcomputestack) {
-											MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"DURATION function needs a proper string\n");
+											MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"DURATION function requires a proper string\n");
 										} else {
 											MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"DURATION internal error (wrong string index)\n");
 										}
@@ -7226,7 +7928,7 @@ printf("final POP string=%X\n",ae->computectx->operatorstack[nboperatorstack+1].
 									      computestack[integeridx].string=NULL;
 								      } else {
 									      if (integeridx>=0 && integeridx<nbcomputestack) {
-											MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"FILESIZE function needs a proper string\n");
+											MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"FILESIZE function requires a proper string\n");
 										} else {
 											MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"FILESIZE internal error (wrong string index)\n");
 										}
@@ -7246,7 +7948,7 @@ printf("final POP string=%X\n",ae->computectx->operatorstack[nboperatorstack+1].
 									      computestack[integeridx].string=NULL;
 								      } else {
 									      if (integeridx>=0 && integeridx<nbcomputestack) {
-											MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"GETSIZE function needs a proper string\n");
+											MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"GETSIZE function requires a proper string\n");
 										} else {
 											MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"GETSIZE internal error (wrong string index)\n");
 										}
@@ -7266,23 +7968,44 @@ printf("final POP string=%X\n",ae->computectx->operatorstack[nboperatorstack+1].
 									      computestack[integeridx].string=NULL;
 								      } else {
 									      if (integeridx>=0 && integeridx<nbcomputestack) {
-											MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"IS_REGISTER function needs a proper string\n");
+											MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"IS_REGISTER function requires a proper string\n");
 										} else {
 											MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"IS_REGISTER internal error (wrong string index)\n");
 										}
 									}
 								} else {
-									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"IS_REGISTERGETTICK is empty\n");
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"IS_REGISTER is empty\n");
 								}
 							       break;
 							       /* CC GETNOP */
+				case E_COMPUTE_OPERATION_FILEBYTE:if (paccu>1) {
+								      int integeridx;
+								      integeridx=floor(accu[paccu-2]);
+								      if (integeridx>=0 && integeridx<nbcomputestack && computestack[integeridx].string) {
+									      accu[paccu-2]=__FILEBYTE(ae,computestack[integeridx].string,accu[paccu-1]+0.5,didx);
+									      MemFree(computestack[integeridx].string);
+									      computestack[integeridx].string=NULL;
+									      paccu--;
+								      } else {
+									      if (integeridx>=0 && integeridx<nbcomputestack) {
+											MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"FILEBYTE function needs a proper string\n");
+										} else {
+											MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"FILEBYTE internal error (wrong string index)\n");
+										}
+									}
+								} else {
+									MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"FILEBYTE need 2 parameters, '<filename>' and offset\n");
+								}
+							       break;
 				default:MakeError(ae,GetExpIdx(ae,didx),GetCurrentFile(ae),GetExpLine(ae,didx),"invalid computing state! (%d)\n",computestack[i].operator);paccu=0;
 			}
 			if (!paccu) {
 				if (zeexpression[0]=='&') {
 					MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"Missing operand for calculation [%s] Did you use & for an hexadecimal value?\n",TradExpression(zeexpression));
 				} else {
-					MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"Missing operand for calculation [%s]\n",TradExpression(zeexpression));
+					char *operatorStr;
+					operatorStr=getOperatorStr(computestack[i].operator);
+					MakeError(ae,GetExpIdx(ae,didx),GetExpFile(ae,didx),GetExpLine(ae,didx),"Missing operand for calculation [%s] at operator or function [%s]\n",TradExpression(zeexpression),operatorStr);
 				}
 				accu_err=1;
 				break;
@@ -7321,6 +8044,7 @@ void ExpressionSetDicoVar(struct s_assenv *ae,char *name, double v, int var_exte
 	curdic.name=TxtStrDup(name);
 	curdic.crc=GetCRC(name);
 	curdic.v=v;
+	curdic.used=0;
 	curdic.iw=ae->idx;
 	curdic.autorise_export=ae->autorise_export;
 	curdic.external=var_external;
@@ -7339,7 +8063,7 @@ double ComputeExpression(struct s_assenv *ae,char *expr, int ptr, int didx, int 
 	#define FUNC "ComputeExpression"
 
 	char *ptr_exp,*ptr_exp2;
-	int crc,idx=0,ialias,touched;
+	int crc,idx=0,touched;
 	double v;
 	struct s_alias curalias;
 	struct s_expr_dico *curdic;
@@ -7360,7 +8084,7 @@ double ComputeExpression(struct s_assenv *ae,char *expr, int ptr, int didx, int 
 printf("MakeAlias (1) EXPR=[%s EQU %s]\n",expr,ptr_exp2);
 #endif
 			
-			/* alias locaux ou de proximitÈ */
+			/* alias locaux ou de proximit√© */
 			if (strchr("@.",expr[0])) {
 #if TRACE_COMPUTE_EXPRESSION
 printf("WARNING! alias is local! [%s]\n",expr);
@@ -7396,7 +8120,7 @@ printf("MakeAlias (2) EXPR=[%s EQU %s]\n",expr,ptr_exp2);
 			curalias.ptr=ae->codeadr;
 			curalias.lz=ae->ilz;
 
-			if ((ialias=SearchAlias(ae,curalias.crc,curalias.alias))>=0) {
+			if (SearchAlias(ae,curalias.crc,curalias.alias)) {
 				MakeError(ae,ae->idx,GetCurrentFile(ae),GetExpLine(ae,0),"Duplicate alias [%s]\n",expr);
 				MemFree(curalias.alias);
 			} else if (SearchLabel(ae,curalias.alias,curalias.crc)) {
@@ -7454,7 +8178,7 @@ printf("***********\n");
 						MakeError(ae,ae->idx,GetCurrentFile(ae),GetExpLine(ae,0),"variable name must begin by a letter or '_' [%s]\n",expr);
 						return 0;
 					} else {
-						char *dblexp;
+						char *dblexp,*dexpr;
 						char operatorassignment;
 
 						ptr_exp=expr+idx;
@@ -7477,13 +8201,19 @@ printf("***********\n");
 								operatorassignment=ptr_exp[-1];ptr_exp[-1]=0;break;
 							default:operatorassignment=0;break;
 						}
+						
+						if (strchr(expr,'{')) {
+							dexpr=TranslateTag(ae,TxtStrDup(expr),&touched,0,E_TAGOPTION_NONE);
+						} else {
+							dexpr=expr;
+						}
 
-						crc=GetCRC(expr);
-						if ((ialias=SearchAlias(ae,crc,expr))>=0) {
+						crc=GetCRC(dexpr);
+						if (SearchAlias(ae,crc,dexpr)) {
 							MakeError(ae,ae->idx,GetCurrentFile(ae),GetExpLine(ae,0),"Variable cannot override existing alias [%s]\n",expr);
 							return 0;
 						}
-						curdic=SearchDico(ae,expr,crc);
+						curdic=SearchDico(ae,dexpr,crc);
 						if (curdic) {
 							switch (operatorassignment) {
 								default:printf("warning remover\n");break;
@@ -7522,11 +8252,12 @@ printf("***********\n");
 									MakeError(ae,ae->idx,GetCurrentFile(ae),GetExpLine(ae,0),"Cannot do an operator assignment on non existing variable [%s]\n",expr);
 									return 0;
 								case 0: /* assign a new variable */
-									ExpressionSetDicoVar(ae,expr,v,0);
+									ExpressionSetDicoVar(ae,dexpr,v,0);
 									break;
 							}
 						}
 						*ptr_exp='=';
+						if (dexpr!=expr) MemFree(dexpr);
 						return v;
 					}
 				}
@@ -7557,12 +8288,13 @@ void ExpressionFastTranslate(struct s_assenv *ae, char **ptr_expr, int fullrepla
 	#undef FUNC
 	#define FUNC "ExpressionFastTranslate"
 
+	struct s_alias *curalias;
 	struct s_label *curlabel;
 	struct s_expr_dico *curdic;
 	static char *varbuffer=NULL;
 	static int ivar,maxivar=1;
 	char curval[256]={0};
-	int c,lenw=0,idx=0,crc,startvar=0,newlen,ialias,found_replace,yves,dek,reidx,lenbuf,rlen,tagoffset;
+	int c,lenw=0,idx=0,crc,startvar=0,newlen,found_replace,yves,dek,reidx,lenbuf,rlen,tagoffset;
 	double v;
 	char tmpuchar[16];
 	char *expr,*locallabel;
@@ -7570,15 +8302,8 @@ void ExpressionFastTranslate(struct s_assenv *ae, char **ptr_expr, int fullrepla
 	char *Automate;
 	int recurse=-1,recursecount=0;
 
-	if (!ae || !ptr_expr) {
-		if (varbuffer) MemFree(varbuffer);
-		varbuffer=NULL;
-		maxivar=1;
-		ivar=0;
-		return;
-	}
-	/* be sure to have at least some bytes allocated */
-	StateMachineResizeBuffer(&varbuffer,128,&maxivar);
+	//StateMachineResizeBuffer(&varbuffer,128,&maxivar);
+	varbuffer=ae->fastVarBuffer;
 	expr=*ptr_expr;
 
 	ivar=0;
@@ -7680,6 +8405,7 @@ printf("fast [%s]\n",expr);
 			case 'm':
 			case '|':
 			case '&':
+			case ',':
 				idx++;
 				break;
 			default:
@@ -7690,7 +8416,7 @@ printf("fast [%s]\n",expr);
 						/* this is only tag and not a formula */
 						curly++;
 					}
-					StateMachineResizeBuffer(&varbuffer,ivar,&maxivar);
+					//StateMachineResizeBuffer(&varbuffer,ivar,&maxivar);
 					idx++;
 					c=expr[idx];
 
@@ -7707,7 +8433,7 @@ printf("fast [%s]\n",expr);
 							}
 						}
 						varbuffer[ivar++]=c;
-						StateMachineResizeBuffer(&varbuffer,ivar,&maxivar);
+						//StateMachineResizeBuffer(&varbuffer,ivar,&maxivar);
 						idx++;
 						c=expr[idx];
 					}
@@ -7727,7 +8453,7 @@ printf("fast [%s]\n",expr);
 				char *minivarbuffer;
 				int touched;
 				minivarbuffer=TranslateTag(ae,TxtStrDup(varbuffer), &touched,0,E_TAGOPTION_NONE|(fullreplace?0:E_TAGOPTION_PRESERVE));
-				StateMachineResizeBuffer(&varbuffer,strlen(minivarbuffer)+1,&maxivar);
+				//StateMachineResizeBuffer(&varbuffer,strlen(minivarbuffer)+1,&maxivar);
 				strcpy(varbuffer,minivarbuffer);
 				newlen=strlen(varbuffer);
 				lenw=strlen(expr);
@@ -7784,6 +8510,7 @@ printf("ExpressionFastTranslate (full) => varbuffer=[%s] lz=%d\n",varbuffer,ae->
 					curdic=SearchDico(ae,varbuffer,crc);
 					if (curdic) {
 						v=curdic->v;
+						curdic->used=1;
 #if TRACE_COMPUTE_EXPRESSION
 printf("ExpressionFastTranslate (full) -> replace var (%s=%0.1lf)\n",varbuffer,v);
 #endif
@@ -7810,10 +8537,11 @@ printf("ExpressionFastTranslate (full) -> replace var (%s=%0.1lf)\n",varbuffer,v
 					}
 				}
 			}
-			/* on cherche aussi dans les labels existants => prioritÈ aux modules!!! */   // modulmodif => pas utile?
+			/* on cherche aussi dans les labels existants => priorit√© aux modules!!! */   // modulmodif => pas utile?
 			if (!found_replace) {
 				curlabel=SearchLabel(ae,varbuffer,crc);
 				if (curlabel) {
+					curlabel->used=1;
 					if (!curlabel->lz || ae->stage>1) {
 						yves=curlabel->ptr;
 
@@ -7852,19 +8580,20 @@ printf("ExpressionFastTranslate SearchAlias inside module => varbuffer=[%s]\n",v
 					strcpy(dblvarbuffer,ae->module);
 					strcat(dblvarbuffer,ae->module_separator);
 					strcat(dblvarbuffer,varbuffer);
-					ialias=SearchAlias(ae,GetCRC(dblvarbuffer),dblvarbuffer);
+					curalias=SearchAlias(ae,GetCRC(dblvarbuffer),dblvarbuffer);
 					MemFree(dblvarbuffer);
 				} else {
-					ialias=-1;
+					curalias=NULL;
 				}
 
-				if (ialias>=0 || (ialias=SearchAlias(ae,crc,varbuffer))>=0) {
-					newlen=ae->alias[ialias].len;
+				if (curalias || (curalias=SearchAlias(ae,crc,varbuffer))) {
+					curalias->used=1;
+					newlen=curalias->len;
 					lenw=strlen(expr);
 					/* infinite replacement check */
 					if (recurse<=startvar) {
 						/* recurse maximum count is a mix of alias len and alias number */
-						if (recursecount>ae->ialias+ae->alias[ialias].len) {
+						if (recursecount>ae->ialias) {
 							if (strchr(expr,'~')!=NULL) *strchr(expr,'~')=0;
 							MakeError(ae,ae->idx,GetCurrentFile(ae),GetExpLine(ae,0),"alias definition of %s has infinite recursivity\n",expr);
 							expr[0]=0; /* avoid some errors due to shitty definition */
@@ -7880,7 +8609,7 @@ printf("ExpressionFastTranslate SearchAlias inside module => varbuffer=[%s]\n",v
 					if (newlen!=ivar) {
 						MemMove(expr+startvar+newlen,expr+startvar+ivar,lenw-startvar-ivar+1);
 					}
-					strncpy(expr+startvar,ae->alias[ialias].translation,newlen); /* copy without zero terminator */
+					strncpy(expr+startvar,curalias->translation,newlen); /* copy without zero terminator */
 					found_replace=1;
 					/* need to parse again alias because of delayed declarations */
 					recurse=startvar;
@@ -8014,7 +8743,7 @@ printf("exprout=[%s]\n",expr);
 								}
 							} else if (ae->forcesnapshot) {
 								if (ae->activebank<BANK_MAX_NUMBER) {
-									/* on autorise le prÈfixe BANK en snapshot avec une subtilitÈ */
+									/* on autorise le pr√©fixe BANK en snapshot avec une subtilit√© */
 								if (ae->bankset[ae->activebank>>2]) {
 									tagvalue=ae->activebank+(ae->codeadr>>14); /* dans un bankset on tient compte de l'adresse */
 								} else {
@@ -8143,6 +8872,7 @@ void PushExpression(struct s_assenv *ae,int iw,enum e_expression zetype)
 	
 	struct s_expression curexp={0};
 	int startptr=0;
+	unsigned char bakXY=0;
 
 	if (!ae->nocode) {
 		curexp.iw=iw;
@@ -8176,6 +8906,10 @@ void PushExpression(struct s_assenv *ae,int iw,enum e_expression zetype)
 							break;
 				case E_EXPRESSION_IV8:
 				case E_EXPRESSION_IV81:
+						     // patch IX/IY because they dont exist anymore as constants
+						     bakXY=ae->wl[iw].w[2];
+						     ae->wl[iw].w[1]='%';
+						     ae->wl[iw].w[2]='0';
 				case E_EXPRESSION_IV16:startptr=-2;
 							break;
 				case E_EXPRESSION_3V8:startptr=-3;
@@ -8186,7 +8920,7 @@ void PushExpression(struct s_assenv *ae,int iw,enum e_expression zetype)
 				case E_EXPRESSION_BRS:break;
 				default:break;
 			}
-			/* hack pourri pour gÈrer le $ */
+			/* hack pourri pour g√©rer le $ */
 			ae->codeadr+=startptr;
 			/* ok mais les labels locaux des macros? */
 
@@ -8222,6 +8956,10 @@ void PushExpression(struct s_assenv *ae,int iw,enum e_expression zetype)
 			if (ae->ir || ae->iw || ae->imacro) {
 				curexp.reference=TxtStrDup(ae->wl[iw].w);
 				ExpressionFastTranslate(ae,&curexp.reference,1);
+				if (bakXY) {
+					ae->wl[iw].w[1]='I';
+					ae->wl[iw].w[2]=bakXY;
+				}
 			} else {
 				ExpressionFastTranslate(ae,&ae->wl[iw].w,1);
 			}
@@ -8449,7 +9187,7 @@ char *MakeAMSDOS_name(struct s_assenv *ae, char *reference_filename, int *amsdos
 }
 
 
-void EDSK_load(struct s_assenv *ae,struct s_edsk_wrapper *curwrap, char *edskfilename, int face)
+void _deprecated_EDSK_load(struct s_assenv *ae,struct s_edsk_wrapper *curwrap, char *edskfilename, int face)
 {
 	#undef FUNC
 	#define FUNC "EDSK_load"
@@ -8535,7 +9273,7 @@ void EDSK_load(struct s_assenv *ae,struct s_edsk_wrapper *curwrap, char *edskfil
 					FreeAssenv(ae);exit(ABORT_ERROR);
 				}
 			}
-			/* piste ‡ piste on lit les blocs DANS L'ORDRE LOGIQUE!!! */
+			/* piste √† piste on lit les blocs DANS L'ORDRE LOGIQUE!!! */
 			for (b=0xC1;b<=0xC9;b++)
 			for (s=0;s<sectornumber;s++) {
 				if (data[i+24+8*s+2]==b) {
@@ -8632,7 +9370,7 @@ void EDSK_load(struct s_assenv *ae,struct s_edsk_wrapper *curwrap, char *edskfil
 	printf("\n");
 #endif
 
-				/* piste ‡ piste on lit les blocs DANS L'ORDRE LOGIQUE!!! */
+				/* piste √† piste on lit les blocs DANS L'ORDRE LOGIQUE!!! */
 				for (b=0xC1;b<=0xC9;b++) {
 					tmpcurrentsectorposition=currentsectorposition;
 					for (s=0;s<sectornumber;s++) {
@@ -8661,7 +9399,7 @@ void EDSK_load(struct s_assenv *ae,struct s_edsk_wrapper *curwrap, char *edskfil
 	/* Rasm management of (e)DSK files is AMSDOS compatible, just need to copy CATalog blocks but sort them... */
 	memcpy(&curwrap->entry[0],curwrap->blocks[0],1024);
 	memcpy(&curwrap->entry[32],curwrap->blocks[1],1024);
-	/* tri des entrÈes selon le user */
+	/* tri des entr√©es selon le user */
 	qsort(curwrap->entry,64,sizeof(struct s_edsk_wrapper_entry),cmpAmsdosentry);
 	curwrap->nbentry=64;
 	for (i=0;i<64;i++) {
@@ -8690,57 +9428,48 @@ void EDSK_load(struct s_assenv *ae,struct s_edsk_wrapper *curwrap, char *edskfil
 #endif
 }
 
-struct s_edsk_wrapper *EDSK_select(struct s_assenv *ae,char *edskfilename, int facenumber)
-{
-	#undef FUNC
-	#define FUNC "EDSK_select"
-	
-	struct s_edsk_wrapper newwrap={0},*curwrap=NULL;
-	int i;
-#if TRACE_EDSK
-	printf("EDSK_select('%s',%d);\n",edskfilename,facenumber);
-#endif
-	/* check if there is a DSK in memory */
-	for (i=0;i<ae->nbedskwrapper;i++) {
-		if (!strcmp(ae->edsk_wrapper[i].edsk_filename,edskfilename)) {
-#if TRACE_EDSK
-	printf("Found! return %d\n",i);
-#endif
-			return &ae->edsk_wrapper[i];
-		}
-	}
-	/* not in memory, create an empty struct */
-	newwrap.edsk_filename=TxtStrDup(edskfilename);
-	memset(newwrap.entry,0xE5,sizeof(struct s_edsk_wrapper_entry)*64);
-	memset(newwrap.blocks[0],0xE5,1024);
-	memset(newwrap.blocks[1],0xE5,1024);
-#if TRACE_EDSK
-	printf("Not found! create empty struct\n");
-#endif
-	newwrap.face=facenumber;
-	ObjectArrayAddDynamicValueConcat((void**)&ae->edsk_wrapper,&ae->nbedskwrapper,&ae->maxedskwrapper,&newwrap,sizeof(struct s_edsk_wrapper));
-	/* and load files if the DSK exists on disk */
-	curwrap=&ae->edsk_wrapper[ae->nbedskwrapper-1];
-	if (FileExists(edskfilename)) {
-		EDSK_load(ae,curwrap,edskfilename,facenumber);
-	}
-	return curwrap;
-}
 
-int EDSK_addfile(struct s_assenv *ae,char *edskfilename,int facenumber, char *filename,unsigned char *indata,int insize, int offset, int run)
+struct s_edsk_global_struct *edsktool_NewEDSK(char *format, int nbside);
+struct s_edsk_global_struct *edsktool_EDSK_load(char *edskfilename);
+void edsktool_EDSK_write_file(struct s_edsk_global_struct *edsk, char *output_filename);
+
+void amsdos_init_entries(struct s_edsk_global_struct *edsk);
+void amsdos_init_block(struct s_edsk_global_struct *edsk);
+void amsdos_init_directory(struct s_edsk_global_struct *edsk);
+int amsdos_get_free_block(struct s_edsk_global_struct *edsk);
+int amsdos_available_space(struct s_edsk_global_struct *edsk);
+unsigned char *amsdos_get_free_entry(struct s_edsk_global_struct *edsk);
+int amsdos_available_entries(struct s_edsk_global_struct *edsk);
+void amsdos_update_edsk(struct s_edsk_global_struct *edsk);
+int amsdos_can_write(struct s_edsk_global_struct *edsk,int filesize);
+void amsdos_write_file(struct s_edsk_global_struct *edsk, int side, int user, char *filename, int protection, int hidden, unsigned char *data, int datalen);
+void amsdos_set_flags(struct s_edsk_global_struct *edsk, int side, unsigned char *entry, int protection, int hidden);
+void amsdos_remove_entry(struct s_edsk_global_struct *edsk, int side, unsigned char *entry, int amsdos_user);
+int amsdos_entry_exists(struct s_edsk_global_struct *edsk, int side, unsigned char *entry, int amsdos_user);
+void amsdos_build_entries(struct s_edsk_global_struct *edsk);
+
+int EDSK_addfile(struct s_assenv *ae,char *edskfilename,int facenumber, char *filename,unsigned char *indata,int insize, int offset, int run, int tag_protection, int tag_hidden)
 {
 	#undef FUNC
 	#define FUNC "EDSK_addfile"
 
-	struct s_edsk_wrapper *curwrap=NULL;
+	struct s_edsk_global_struct *edsk;
 	char amsdos_name[12]={0};
 	int j,i,ia,mia,ib,ie,filesize,idxdata;
 	int fb[180],rc,idxb;
 	unsigned char *data=NULL;
 	int size=0;
-	int firstblock,amsdos_user;
+	int firstblock,amsdos_user=0;
 
-	curwrap=EDSK_select(ae,edskfilename,facenumber);
+	if (!FileExists(edskfilename)) {
+		//printf("new DATA because [%s] does not exists");
+		edsk=edsktool_NewEDSK("DATA",facenumber+1);
+	} else {
+		//printf("load [%s]\n",edskfilename);
+		edsk=edsktool_EDSK_load(edskfilename);
+	}
+	amsdos_build_entries(edsk);
+
 	/* update struct */
 	size=insize+128;
 	data=MemMalloc(size);
@@ -8748,136 +9477,22 @@ int EDSK_addfile(struct s_assenv *ae,char *edskfilename,int facenumber, char *fi
 	memcpy(data,MakeAMSDOSHeader(run,offset,offset+insize,amsdos_name,amsdos_user),128);
 	memcpy(data+128,indata,insize);
 	/* overwrite check */
-#if TRACE_EDSK
-	printf("EDSK_addfile will checks %d entr%s for [%s]\n",curwrap->nbentry,curwrap->nbentry>1?"ies":"y",amsdos_name);
-#endif
-	for (i=0;i<curwrap->nbentry;i++) {
-		if (!strncmp((char *)curwrap->entry[i].filename,amsdos_name,11)) {
-			if (!ae->edskoverwrite) {
-				MakeError(ae,0,NULL,0,"Error - Cannot save [%s] in edsk [%s] with overwrite disabled as the file already exists (use -eo command line option)\n",amsdos_name,edskfilename);
-				MemFree(data);
-				return 0;
-			} else {
-				/* overwriting previous file */
-#if TRACE_EDSK
-	printf(" -> reset previous entry %d with 0xE5\n",i);
-#endif
-				memset(&curwrap->entry[i],0xE5,sizeof(struct s_edsk_wrapper_entry));
-			}
-		}
-	}
-	/* find free blocks */
-#if TRACE_EDSK
-	printf("EDSK_addfile find free blocks\n");
-#endif
-	fb[0]=fb[1]=0;
-	for (i=2;i<180;i++) fb[i]=1;
-	for (i=0;i<curwrap->nbentry;i++) {
-		if (curwrap->entry[i].rc!=0xE5 && curwrap->entry[i].rc!=0) {
-			/* entry found, compute number of blocks to read */
-			rc=curwrap->entry[i].rc>>3; // no rounding!
-			if (curwrap->entry[i].rc%8) rc++; /* adjust value */
-			/* mark as used */
-			for (j=0;j<rc;j++) {
-				fb[curwrap->entry[i].blocks[j]]=0;
-			}
-		}
-	}
-	/* set directory, blocks and data in blocks */
-	firstblock=-1;
-	filesize=size;
-	idxdata=0;
-	ia=mia=0;
-
-#if TRACE_EDSK
-	printf("Writing [%s] size=%d\n",amsdos_name,size);
-#endif
-
-	while (filesize>0) {
-		if (filesize>16384) {
-			/* extended entry */
-#if TRACE_EDSK
-	printf("extended entry for file (filesize=%d)\nblocklist: ",filesize);
-#endif
-			if ((ie=EDSK_getdirid(curwrap))==-1)  {
-				MakeError(ae,0,NULL,0,"Error - edsk [%s] DIRECTORY FULL\n",edskfilename);
-				MemFree(data);
-				return 0;
-			}
-			if (curwrap->nbentry<=ie) curwrap->nbentry=ie+1;
-			idxb=0;
-			for (i=0;i<16;i++) {
-				if ((ib=EDSK_getblockid(fb))==-1) {
-					MakeError(ae,0,NULL,0,"Error - edsk [%s] DISK FULL\n",edskfilename);
-					MemFree(data);
-					return 0;
-				} else {
-					if (firstblock==-1) firstblock=ib;
-
-#if TRACE_EDSK
-	printf("%02X ",ib);
-#endif
-					memcpy(curwrap->blocks[ib],data+idxdata,1024);
-					idxdata+=1024;
-					filesize-=1024;
-					fb[ib]=0;
-					curwrap->entry[ie].blocks[idxb++]=ib;
-				}
-			}
-#if TRACE_EDSK
-	printf("\n");
-#endif
-			memcpy(curwrap->entry[ie].filename,amsdos_name,11);
-			curwrap->entry[ie].subcpt=ia;
-			curwrap->entry[ie].extendcounter=mia;
-			curwrap->entry[ie].rc=0x80;
-			curwrap->entry[ie].user=amsdos_user;
-			ia++;if (ia>31) {ia=0;mia++;}
-			idxb=0;
+	if (amsdos_entry_exists(edsk,facenumber,amsdos_name,amsdos_user)) {
+		if (!ae->edskoverwrite) {
+			MakeError(ae,0,NULL,0,"Error - Cannot save [%s] in edsk [%s] with overwrite disabled as the file already exists (use -eo command line option)\n",amsdos_name,edskfilename);
+			MemFree(data);
+			return 0;
 		} else {
-			/* last entry */
-#if TRACE_EDSK
-	printf("last entry for file (filesize=%d)\nblocklist: ",filesize);
-#endif
-			if ((ie=EDSK_getdirid(curwrap))==-1)  {
-				MakeError(ae,0,NULL,0,"Error - edsk [%s] DIRECTORY FULL\n",edskfilename);
-				MemFree(data);
-				return 0;
-			}
-			if (curwrap->nbentry<=ie) curwrap->nbentry=ie+1;
-			/* calcul du nombre de sous blocs de 128 octets */
-			curwrap->entry[ie].rc=filesize/128;
-			if (filesize%128) {
-				curwrap->entry[ie].rc+=1;
-			}
-			idxb=0;
-			for (i=0;i<16 && filesize>0;i++) {
-				if ((ib=EDSK_getblockid(fb))==-1) {
-					MakeError(ae,0,NULL,0,"Error - edsk [%s] DISK FULL\n",edskfilename);
-					MemFree(data);
-					return 0;
-				} else {
-					if (firstblock==-1) firstblock=ib;
-#if TRACE_EDSK
-	printf("%02X ",ib);
-#endif
-
-					memcpy(curwrap->blocks[ib],&data[idxdata],filesize>1024?1024:filesize);
-					idxdata+=1024;
-					filesize-=1024;
-					fb[ib]=0;
-					curwrap->entry[ie].blocks[idxb++]=ib;
-				}
-			}
-#if TRACE_EDSK
-	printf("\n");
-#endif
-			filesize=0;
-			memcpy(curwrap->entry[ie].filename,amsdos_name,11);
-			curwrap->entry[ie].subcpt=ia;
-			curwrap->entry[ie].extendcounter=mia;
-			curwrap->entry[ie].user=amsdos_user;
+			amsdos_remove_entry(edsk,facenumber,amsdos_name,amsdos_user);
 		}
+	}
+
+	if (amsdos_can_write(edsk,size)) {
+		amsdos_write_file(edsk,facenumber,amsdos_user /* user */, amsdos_name, tag_protection, tag_hidden, data, size);
+		edsktool_EDSK_write_file(edsk,edskfilename);
+		rasm_printf(ae,KIO"Write file [%s] on EDSK %s\n",amsdos_name,edskfilename);
+	} else {
+		MakeError(ae,0,NULL,0,"Error - Cannot save [%s] in edsk [%s] because there is not enough free blocks available\n",amsdos_name,edskfilename);
 	}
 
 	MemFree(data);
@@ -8948,10 +9563,10 @@ void EDSK_write_file(struct s_assenv *ae,struct s_edsk_wrapper *faceA,struct s_e
 	
 	if (!faceA && !faceB) return;
 	
-	/* crÈation des deux blocs du directory par face */
+	/* cr√©ation des deux blocs du directory par face */
 	EDSK_build_amsdos_directory(faceA);
 	EDSK_build_amsdos_directory(faceB);
-	/* Ècriture header */
+	/* √©criture header */
 	strcpy((char *)header,"EXTENDED CPC DSK File\r\nDisk-Info\r\n");
 	sprintf(headertag,"%-9.9s",RASM_SNAP_VERSION);
 	strcpy((char *)header+0x22,headertag);
@@ -8972,7 +9587,7 @@ void EDSK_write_file(struct s_assenv *ae,struct s_edsk_wrapper *faceA,struct s_e
 #endif
 	FileWriteBinary(faceA->edsk_filename,(char *)header,256);
 	
-	/* Ècriture des pistes */
+	/* √©criture des pistes */
 	for (t=0;t<40;t++) {
 		strcpy((char *)trackblock,"Track-Info\r\n");
 		trackblock[0x10]=t;
@@ -9013,15 +9628,15 @@ void EDSK_write_file(struct s_assenv *ae,struct s_edsk_wrapper *faceA,struct s_e
 #if TRACE_EDSK
 	if (t<3) printf("\n"); else if (t==3) printf("...\n");
 #endif
-		/* Ècriture du track info */
+		/* √©criture du track info */
 		FileWriteBinary(faceA->edsk_filename,(char *)trackblock,256);
 
 
-		/* il faut convertir les blocs logiques en secteurs physiques ET entrelacÈs */
+		/* il faut convertir les blocs logiques en secteurs physiques ET entrelac√©s */
 		idblock=t*9/2;
 		blockoffset=((t*9)%2)*512;
 
-		/* le premier secteur de la piste est ‡ cheval sur le bloc logique une fois sur deux */
+		/* le premier secteur de la piste est √† cheval sur le bloc logique une fois sur deux */
 		FileWriteBinary(faceA->edsk_filename,(char *)&faceA->blocks[idblock][0]+blockoffset,512); /* C1 */
 		if (!blockoffset) {
 			FileWriteBinary(faceA->edsk_filename,(char *)&faceA->blocks[idblock+2][0]+512,512); /* C6 */
@@ -9043,7 +9658,7 @@ void EDSK_write_file(struct s_assenv *ae,struct s_edsk_wrapper *faceA,struct s_e
 			FileWriteBinary(faceA->edsk_filename,(char *)&faceA->blocks[idblock+2][0]+512,512); /* C5 */
 		}
 
-		/* @@TODO Áa semble un peu foireux comme procÈdÈ */	
+		/* @@TODO √ßa semble un peu foireux comme proc√©d√© */	
 		if (faceB) {
 #if TRACE_EDSK
 	printf("writing EDSK face B /!\\  probably NOT WORKING !!!\n");
@@ -9053,9 +9668,9 @@ void EDSK_write_file(struct s_assenv *ae,struct s_edsk_wrapper *faceA,struct s_e
 				trackblock[0x18+i*8+0]=trackblock[0x10];
 				trackblock[0x18+i*8+1]=trackblock[0x11];
 			}
-			/* Ècriture du track info */
+			/* √©criture du track info */
 			FileWriteBinary(faceB->edsk_filename,(char *)trackblock,256);
-			/* Ècriture des secteurs */
+			/* √©criture des secteurs */
 			idblock=t*9/2;
 			blockoffset=((t*9)%2)*512;
 			FileWriteBinary(faceB->edsk_filename,(char *)&faceB->blocks[idblock][0]+blockoffset,512);
@@ -9253,7 +9868,8 @@ void PopAllSave(struct s_assenv *ae)
 	char *dskfilename;
 	char *filename;
 	int offset,size,run;
-	int i,is,erreur=0,touched,dummy_user;
+	int i,is,erreur=0,touched,dummy_user=0;
+	int tag_protect=0, tag_hidden=0;
 	
 	for (is=0;is<ae->nbsave;is++) {
 		/* avoid quotes */
@@ -9268,6 +9884,9 @@ void PopAllSave(struct s_assenv *ae)
 #if TRACE_EDSK
 	printf("woff=[%s](%d) wsize=[%s](%d)\n",ae->wl[ae->save[is].ioffset].w,ae->save[is].ioffset,ae->wl[ae->save[is].isize].w,ae->save[is].isize);
 #endif
+
+		if (ae->save[is].iprotect) tag_protect=1; else tag_protect=0;
+		if (ae->save[is].ihidden) tag_hidden=1; else tag_hidden=0;
 
 		ae->idx=ae->save[is].ioffset; /* exp hack */
 		//ExpressionFastTranslate(ae,&ae->wl[ae->idx].w,0);
@@ -9303,10 +9922,10 @@ void PopAllSave(struct s_assenv *ae)
 		/* DSK management */
 		if (ae->save[is].dsk) {
 			if (ae->save[is].iwdskname!=-1) {
-				/* obligÈ de dupliquer ‡ cause du reuse */
+				/* oblig√© de dupliquer √† cause du reuse */
 				dskfilename=TxtStrDup(ae->wl[ae->save[is].iwdskname].w);
 				dskfilename[strlen(dskfilename)-1]=0;
-				if (!EDSK_addfile(ae,dskfilename+1,ae->save[is].face,filename,ae->mem[ae->save[is].ibank]+offset,size,offset,run)) {
+				if (!EDSK_addfile(ae,dskfilename+1,ae->save[is].face,filename,ae->mem[ae->save[is].ibank]+offset,size,offset,run,tag_protect,tag_hidden)) {
 					erreur++;
 					//break;
 				}
@@ -9329,6 +9948,7 @@ void PopAllSave(struct s_assenv *ae)
 			rasm_printf(ae,KIO"Write binary file %s (%d byte%s)\n",filename,size,size>1?"s":"");
 			FileRemoveIfExists(filename);
 			if (ae->save[is].amsdos) {
+				MakeAMSDOS_name(ae,filename,&dummy_user);
 				AmsdosHeader=MakeAMSDOSHeader(run,offset,offset+size,MakeAMSDOS_name(ae,filename,&dummy_user),dummy_user);
 				FileWriteBinary(filename,(char *)AmsdosHeader,128);
 			} else if (ae->save[is].hobeta) {
@@ -9341,7 +9961,7 @@ void PopAllSave(struct s_assenv *ae)
 		}
 		MemFree(filename);
 	}
-	if (!erreur) EDSK_write(ae);
+	//if (!erreur) EDSK_write(ae);
 	
 	for (i=0;i<ae->nbedskwrapper;i++) {
 		MemFree(ae->edsk_wrapper[i].edsk_filename);
@@ -9372,7 +9992,7 @@ void PopAllExpression(struct s_assenv *ae, int crunched_zone)
 
 	   idealement on doit tolerer les adresses situees apres le crunch dans une autre ORG zone!
 
-	   on utilise ae->stage pour crÈer un Ètat intermÈdiaire dans le ComputeExpressionCore
+	   on utilise ae->stage pour cr√©er un √©tat interm√©diaire dans le ComputeExpressionCore
 	*/
 	if (crunched_zone>=0) {
 		ae->stage=1;
@@ -9579,25 +10199,29 @@ void InsertLabelToTree(struct s_assenv *ae, struct s_label *label)
 {
 	#undef FUNC
 	#define FUNC "InsertLabelToTree"
-
 	struct s_crclabel_tree *curlabeltree;
-	int radix,dek=16;
+	int radix;
 
 	if ((curlabeltree=ae->labeltree[(label->crc>>16)&0xFFFF])==NULL) { //@@FAST
 		curlabeltree=MemMalloc(sizeof(struct s_crclabel_tree));
 		memset(curlabeltree,0,sizeof(struct s_crclabel_tree));
 		ae->labeltree[(label->crc>>16)&0xFFFF]=curlabeltree;
 	}
-	while (dek) {
-		dek=dek-8;
-		radix=(label->crc>>dek)&0xFF;
-		if (curlabeltree->radix[radix]) {
-			curlabeltree=curlabeltree->radix[radix];
-		} else {
-			curlabeltree->radix[radix]=MemMalloc(sizeof(struct s_crclabel_tree));
-			curlabeltree=curlabeltree->radix[radix];
-			memset(curlabeltree,0,sizeof(struct s_crclabel_tree));
-		}
+	radix=(label->crc>>8)&0xFF;
+	if (curlabeltree->radix[radix]) {
+		curlabeltree=curlabeltree->radix[radix];
+	} else {
+		curlabeltree->radix[radix]=MemMalloc(sizeof(struct s_crclabel_tree));
+		curlabeltree=curlabeltree->radix[radix];
+		memset(curlabeltree,0,sizeof(struct s_crclabel_tree));
+	}
+	radix=label->crc&0xFF;
+	if (curlabeltree->radix[radix]) {
+		curlabeltree=curlabeltree->radix[radix];
+	} else {
+		curlabeltree->radix[radix]=MemMalloc(sizeof(struct s_crclabel_tree));
+		curlabeltree=curlabeltree->radix[radix];
+		memset(curlabeltree,0,sizeof(struct s_crclabel_tree));
 	}
 	ObjectArrayAddDynamicValueConcat((void**)&curlabeltree->label,&curlabeltree->nlabel,&curlabeltree->mlabel,&label[0],sizeof(struct s_label));
 }
@@ -9727,7 +10351,6 @@ void PushLabel(struct s_assenv *ae)
 		/* label is structname+field */
 		curlabel.name=MemMalloc(strlen(ae->rasmstruct[ae->irasmstruct-1].name)+strlen(varbuffer)+2);
 		sprintf(curlabel.name,"%s.%s",ae->rasmstruct[ae->irasmstruct-1].name,varbuffer);
-		curlabel.iw=-1;
 		/* legacy */
 		curlabel.crc=GetCRC(curlabel.name);
 		curlabel.ptr=ae->codeadr;
@@ -9744,7 +10367,6 @@ void PushLabel(struct s_assenv *ae)
 #if TRACE_LABEL
 	printf("PUSH LOCAL\n");
 #endif
-			curlabel.iw=-1;
 			curlabel.local=1;
 			curlabel.localsize=strlen(varbuffer);
 			curlabel.name=MakeLocalLabel(ae,varbuffer,NULL);  MemFree(varbuffer);
@@ -9774,7 +10396,6 @@ void PushLabel(struct s_assenv *ae)
 							i++;
 						} while (varbuffer[i]!=0);
 
-						curlabel.iw=-1;
 						curlabel.name=varbuffer;
 						curlabel.crc=GetCRC(curlabel.name);
 					} else {
@@ -9783,7 +10404,6 @@ void PushLabel(struct s_assenv *ae)
 							curlabel.name=MemMalloc(strlen(varbuffer)+1+ae->lastgloballabellen);
 							sprintf(curlabel.name,"%s%s",ae->lastgloballabel,varbuffer);
 							MemFree(varbuffer);
-							curlabel.iw=-1;
 							curlabel.crc=GetCRC(curlabel.name);
 #if TRACE_LABEL
 printf("PUSH PROXIMITY label that may be exported [%s]->[%s]\n",ae->wl[ae->idx].w,curlabel.name);
@@ -9793,7 +10413,6 @@ printf("PUSH PROXIMITY label that may be exported [%s]->[%s]\n",ae->wl[ae->idx].
 printf("PUSH Orphan PROXIMITY label that cannot be exported [%s]->[%s]\n",ae->wl[ae->idx].w,curlabel.name);
 #endif
 
-							curlabel.iw=-1;
 							curlabel.name=varbuffer;
 							curlabel.crc=GetCRC(varbuffer);
 						}
@@ -9803,7 +10422,6 @@ printf("PUSH Orphan PROXIMITY label that cannot be exported [%s]->[%s]\n",ae->wl
 #if TRACE_LABEL
 	printf("PUSH => GLOBAL [%s]\n",varbuffer);
 #endif
-					curlabel.iw=-1;
 					curlabel.name=varbuffer; 
 					curlabel.crc=GetCRC(varbuffer);
 
@@ -9827,19 +10445,18 @@ printf("PUSH Orphan PROXIMITY label that cannot be exported [%s]->[%s]\n",ae->wl
 				MemFree(curlabel.name);
 				curlabel.name=newlabelname;
 				curlabel.crc=GetCRC(curlabel.name);
-				//curlabel.iw=-1; => deja mis depuis longtemps
 			}
 #if TRACE_LABEL
 	if (curlabel.name[0]!='@') printf("PUSH => ADD MODULE [%s] => [%s]\n",ae->module?ae->module:"(null)",curlabel.name);
 	else printf("PUSH => NO MODULE for local label\n");
 #endif
 
-			/* contrÙle dico uniquement avec des labels non locaux */
+			/* contr√¥le dico uniquement avec des labels non locaux */
 			if (SearchDico(ae,curlabel.name,curlabel.crc)) {
 				MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"cannot create label [%s] as there is already a variable with the same name\n",curlabel.name);
 				return;
 			}
-			if(SearchAlias(ae,curlabel.crc,curlabel.name)!=-1) {
+			if(SearchAlias(ae,curlabel.crc,curlabel.name)) {
 				MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"cannot create label [%s] as there is already an alias with the same name\n",curlabel.name);
 				return;
 			}
@@ -9880,7 +10497,11 @@ unsigned char *EncodeSnapshotRLE(unsigned char *memin, int *lenout, int sizetoen
 
 		for (cpt=1;cpt<255 && i+cpt<sizetoencode;cpt++) if (memin[i]!=memin[i+cpt]) break;
 
-		if (cpt>=3 || memin[i]==0xE5) {
+	      	if (memin[i]==0xE5 && cpt==1) {
+			memout[idx++]=0xE5;
+			memout[idx++]=0x0;
+			i++;
+		} else if (cpt>=3 || memin[i]==0xE5) {
 			memout[idx++]=0xE5;
 			memout[idx++]=cpt;
 			memout[idx++]=memin[i];
@@ -9976,10 +10597,10 @@ void _EX(struct s_assenv *ae) {
 				}
 				break;
 			case CRC_AF:
-				if (strcmp(ae->wl[ae->idx+2].w,"AF'")==0) {
+				if (strcmp(ae->wl[ae->idx+2].w,"AF")==0) {
 					___output(ae,0x08);ae->nop+=1;ae->tick+=4;
 				} else {
-					MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"syntax is EX AF,AF'\n");
+					MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"syntax is EX AF,AF' or EXA\n");
 				}
 				break;
 			case CRC_MSP:
@@ -10039,18 +10660,27 @@ void _SBC(struct s_assenv *ae) {
 			case CRC_IYH:case CRC_HY:case CRC_YH:___output(ae,0xFD);___output(ae,0x9C);ae->nop+=2;ae->tick+=8;break;
 			case CRC_IYL:case CRC_LY:case CRC_YL:___output(ae,0xFD);___output(ae,0x9D);ae->nop+=2;ae->tick+=8;break;
 			case CRC_IX:case CRC_IY:
-				MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Use SBC with A,B,C,D,E,H,L,XH,XL,YH,YL,(HL),(IX),(IY)\n");
+				MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Use SBC with A,B,C,D,E,H,L,XH,XL,YH,YL,(HL),(IX+n),(IY+n)\n");
 				ae->idx++;
 				return;
 			default:
-				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
-					___output(ae,0xDD);___output(ae,0x9E);
-					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
-					ae->nop+=5;ae->tick+=19;
-				} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
-					___output(ae,0xFD);___output(ae,0x9E);
-					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
-					ae->nop+=5;ae->tick+=19;
+				/* 
+				 */
+				if (ae->wl[ae->idx+1].w[0]=='(') {
+					if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
+						___output(ae,0xDD);___output(ae,0x9E);
+						PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
+						ae->nop+=5;ae->tick+=19;
+					} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
+						___output(ae,0xFD);___output(ae,0x9E);
+						PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
+						ae->nop+=5;ae->tick+=19;
+					} else { // there is starting parenthesis but this is literal
+						___output(ae,0xDE);
+						EnforceNoAddressingMode(ae->idx+1);
+						PushExpression(ae,ae->idx+1,E_EXPRESSION_V8);
+						ae->nop+=2;ae->tick+=7;
+					}
 				} else {
 					___output(ae,0xDE);
 					PushExpression(ae,ae->idx+1,E_EXPRESSION_V8);
@@ -10097,18 +10727,25 @@ void _ADC(struct s_assenv *ae) {
 			case CRC_IYH:case CRC_HY:case CRC_YH:___output(ae,0xFD);___output(ae,0x8C);ae->nop+=2;ae->tick+=8;break;
 			case CRC_IYL:case CRC_LY:case CRC_YL:___output(ae,0xFD);___output(ae,0x8D);ae->nop+=2;ae->tick+=8;break;
 			case CRC_IX:case CRC_IY:
-				MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Use ADC with A,B,C,D,E,H,L,XH,XL,YH,YL,(HL),(IX),(IY)\n");
+				MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Use ADC with A,B,C,D,E,H,L,XH,XL,YH,YL,(HL),(IX+n),(IY+n)\n");
 				ae->idx++;
 				return;
 			default:
-				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
-					___output(ae,0xDD);___output(ae,0x8E);
-					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
-					ae->nop+=5;ae->tick+=19;
-				} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
-					___output(ae,0xFD);___output(ae,0x8E);
-					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
-					ae->nop+=5;ae->tick+=19;
+				if (ae->wl[ae->idx+1].w[0]=='(') {
+					if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
+						___output(ae,0xDD);___output(ae,0x8E);
+						PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
+						ae->nop+=5;ae->tick+=19;
+					} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
+						___output(ae,0xFD);___output(ae,0x8E);
+						PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
+						ae->nop+=5;ae->tick+=19;
+					} else {
+						___output(ae,0xCE);
+						EnforceNoAddressingMode(ae->idx+1);
+						PushExpression(ae,ae->idx+1,E_EXPRESSION_V8);
+						ae->nop+=2;ae->tick+=7;
+					}
 				} else {
 					___output(ae,0xCE);
 					PushExpression(ae,ae->idx+1,E_EXPRESSION_V8);
@@ -10155,18 +10792,25 @@ void _ADD(struct s_assenv *ae) {
 			case CRC_IYH:case CRC_HY:case CRC_YH:___output(ae,0xFD);___output(ae,0x84);ae->nop+=2;ae->tick+=8;break;
 			case CRC_IYL:case CRC_LY:case CRC_YL:___output(ae,0xFD);___output(ae,0x85);ae->nop+=2;ae->tick+=8;break;
 			case CRC_IX:case CRC_IY:
-				MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Use ADD with A,B,C,D,E,H,L,XH,XL,YH,YL,(HL),(IX),(IY)\n");
+				MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Use ADD with A,B,C,D,E,H,L,XH,XL,YH,YL,(HL),(IX+n),(IY+n)\n");
 				ae->idx++;
 				return;
 			default:
-				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
-					___output(ae,0xDD);___output(ae,0x86);
-					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
-					ae->nop+=5;ae->tick+=19;
-				} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
-					___output(ae,0xFD);___output(ae,0x86);
-					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
-					ae->nop+=5;ae->tick+=19;
+				if (ae->wl[ae->idx+1].w[0]=='(') {
+					if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
+						___output(ae,0xDD);___output(ae,0x86);
+						PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
+						ae->nop+=5;ae->tick+=19;
+					} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
+						___output(ae,0xFD);___output(ae,0x86);
+						PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
+						ae->nop+=5;ae->tick+=19;
+					} else {
+						___output(ae,0xC6);
+						EnforceNoAddressingMode(ae->idx+1);
+						PushExpression(ae,ae->idx+1,E_EXPRESSION_V8);
+						ae->nop+=2;ae->tick+=7;
+					}
 				} else {
 					___output(ae,0xC6);
 					PushExpression(ae,ae->idx+1,E_EXPRESSION_V8);
@@ -10233,14 +10877,21 @@ void _CP(struct s_assenv *ae) {
 			case CRC_IYH:case CRC_HY:case CRC_YH:___output(ae,0xFD);___output(ae,0xBC);ae->nop+=2;ae->tick+=8;break;
 			case CRC_IYL:case CRC_LY:case CRC_YL:___output(ae,0xFD);___output(ae,0xBD);ae->nop+=2;ae->tick+=8;break;
 			default:
-				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
-					___output(ae,0xDD);___output(ae,0xBE);
-					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
-					ae->nop+=5;ae->tick+=19;
-				} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
-					___output(ae,0xFD);___output(ae,0xBE);
-					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
-					ae->nop+=5;ae->tick+=19;
+				if (ae->wl[ae->idx+1].w[0]=='(') {
+					if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
+						___output(ae,0xDD);___output(ae,0xBE);
+						PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
+						ae->nop+=5;ae->tick+=19;
+					} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
+						___output(ae,0xFD);___output(ae,0xBE);
+						PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
+						ae->nop+=5;ae->tick+=19;
+					} else {
+						___output(ae,0xFE);
+						EnforceNoAddressingMode(ae->idx+1);
+						PushExpression(ae,ae->idx+1,E_EXPRESSION_V8);
+						ae->nop+=2;ae->tick+=7;
+					}
 				} else {
 					___output(ae,0xFE);
 					PushExpression(ae,ae->idx+1,E_EXPRESSION_V8);
@@ -10353,14 +11004,11 @@ void _JP(struct s_assenv *ae) {
 			case CRC_IX:case CRC_MIX:___output(ae,0xDD);___output(ae,0xE9);ae->nop+=2;ae->tick+=8;break;
 			case CRC_IY:case CRC_MIY:___output(ae,0xFD);___output(ae,0xE9);ae->nop+=2;ae->tick+=8;break;
 			default:
-				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 || strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
-					MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"JP (IX) or JP (IY) only\n");
-				} else {
-					___output(ae,0xC3);
-					PushExpression(ae,ae->idx+1,E_EXPRESSION_J16);
-					ae->tick+=10;
-					ae->nop+=3;
-				}
+				EnforceNoAddressingMode(ae->idx+1);
+				___output(ae,0xC3);
+				PushExpression(ae,ae->idx+1,E_EXPRESSION_J16);
+				ae->tick+=10;
+				ae->nop+=3;
 		}
 		ae->idx++;
 		ae->deadend=1;
@@ -10393,22 +11041,28 @@ void _DEC(struct s_assenv *ae) {
 				case CRC_SP:___output(ae,0x3B);ae->nop+=2;ae->tick+=6;break;
 				case CRC_MHL:___output(ae,0x35);ae->nop+=3;ae->tick+=11;break;
 				default:
-					if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
-						___output(ae,0xDD);___output(ae,0x35);
-						PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
-						ae->nop+=6;ae->tick+=23;
-					} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
-						___output(ae,0xFD);___output(ae,0x35);
-						PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
-						ae->nop+=6;ae->tick+=23;
+					if (ae->wl[ae->idx+1].w[0]=='(') {
+						if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
+							___output(ae,0xDD);___output(ae,0x35);
+							PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
+							ae->nop+=6;ae->tick+=23;
+						} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
+							___output(ae,0xFD);___output(ae,0x35);
+							PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
+							ae->nop+=6;ae->tick+=23;
+						} else {
+							MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"invalid DEC addressing mode, use only A,B,C,D,E,H,L,XH,XL,YH,YL,(HL),(IX+n),(IY+n)\n");
+							ae->idx++;
+							return;
+						}
 					} else {
-						MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Use DEC with A,B,C,D,E,H,L,XH,XL,YH,YL,BC,DE,HL,SP,(HL),(IX),(IY)\n");
+						MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Use DEC with A,B,C,D,E,H,L,XH,XL,YH,YL,BC,DE,HL,SP,(HL),(IX+n),(IY+n)\n");
 					}
 			}
 			ae->idx++;
 		} while (ae->wl[ae->idx].t==0);
 	} else {
-		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Use DEC with A,B,C,D,E,H,L,XH,XL,YH,YL,BC,DE,HL,SP,(HL),(IX),(IY)\n");
+		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Use DEC with A,B,C,D,E,H,L,XH,XL,YH,YL,BC,DE,HL,SP,(HL),(IX+n),(IY+n)\n");
 	}
 }
 void _INC(struct s_assenv *ae) {
@@ -10434,22 +11088,28 @@ void _INC(struct s_assenv *ae) {
 				case CRC_SP:___output(ae,0x33);ae->nop+=2;ae->tick+=6;break;
 				case CRC_MHL:___output(ae,0x34);ae->nop+=3;ae->tick+=11;break;
 				default:
-					if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
-						___output(ae,0xDD);___output(ae,0x34);
-						PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
-						ae->nop+=6;ae->tick+=23;
-					} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
-						___output(ae,0xFD);___output(ae,0x34);
-						PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
-						ae->nop+=6;ae->tick+=23;
+					if (ae->wl[ae->idx+1].w[0]=='(') {
+						if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
+							___output(ae,0xDD);___output(ae,0x34);
+							PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
+							ae->nop+=6;ae->tick+=23;
+						} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
+							___output(ae,0xFD);___output(ae,0x34);
+							PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
+							ae->nop+=6;ae->tick+=23;
+						} else {
+							MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"invalid INC addressing mode, use only A,B,C,D,E,H,L,XH,XL,YH,YL,(HL),(IX+n),(IY+n)\n");
+							ae->idx++;
+							return;
+						}
 					} else {
-						MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Use INC with A,B,C,D,E,H,L,XH,XL,YH,YL,BC,DE,HL,SP,(HL),(IX),(IY)\n");
+						MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Use INC with A,B,C,D,E,H,L,XH,XL,YH,YL,BC,DE,HL,SP,(HL),(IX+n),(IY+n)\n");
 					}
 			}
 			ae->idx++;
 		} while (ae->wl[ae->idx].t==0);
 	} else {
-		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Use INC with A,B,C,D,E,H,L,XH,XL,YH,YL,BC,DE,HL,SP,(HL),(IX),(IY)\n");
+		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Use INC with A,B,C,D,E,H,L,XH,XL,YH,YL,BC,DE,HL,SP,(HL),(IX+n),(IY+n)\n");
 	}
 }
 
@@ -10475,18 +11135,25 @@ void _SUB(struct s_assenv *ae) {
 			case CRC_IYH:case CRC_HY:case CRC_YH:___output(ae,0xFD);___output(ae,OPCODE+4);ae->nop+=2;ae->tick+=8;break;
 			case CRC_IYL:case CRC_LY:case CRC_YL:___output(ae,0xFD);___output(ae,OPCODE+5);ae->nop+=2;ae->tick+=8;break;
 			case CRC_IX:case CRC_IY:
-				MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Use SUB with A,B,C,D,E,H,L,XH,XL,YH,YL,(HL),(IX),(IY)\n");
+				MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Use SUB with A,B,C,D,E,H,L,XH,XL,YH,YL,(HL),(IX+n),(IY+n)\n");
 				ae->idx++;
 				return;
 			default:
-				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
-					___output(ae,0xDD);___output(ae,OPCODE+6);
-					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
-					ae->nop+=5;ae->tick+=19;
-				} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
-					___output(ae,0xFD);___output(ae,OPCODE+6);
-					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
-					ae->nop+=5;ae->tick+=19;
+				if (ae->wl[ae->idx+1].w[0]=='(') {
+					if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
+						___output(ae,0xDD);___output(ae,OPCODE+6);
+						PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
+						ae->nop+=5;ae->tick+=19;
+					} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
+						___output(ae,0xFD);___output(ae,OPCODE+6);
+						PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
+						ae->nop+=5;ae->tick+=19;
+					} else {
+						___output(ae,0xD6);
+						EnforceNoAddressingMode(ae->idx+1);
+						PushExpression(ae,ae->idx+1,E_EXPRESSION_V8);
+						ae->nop+=2;ae->tick+=7;
+					}
 				} else {
 					___output(ae,0xD6);
 					PushExpression(ae,ae->idx+1,E_EXPRESSION_V8);
@@ -10495,7 +11162,7 @@ void _SUB(struct s_assenv *ae) {
 		}
 		ae->idx++;
 	} else {
-		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Use SUB with A,B,C,D,E,H,L,XH,XL,YH,YL,(HL),(IX),(IY)\n");
+		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Use SUB with A,B,C,D,E,H,L,XH,XL,YH,YL,(HL),(IX+n),(IY+n)\n");
 	}
 }
 void _AND(struct s_assenv *ae) {
@@ -10519,14 +11186,21 @@ void _AND(struct s_assenv *ae) {
 			case CRC_IYH:case CRC_HY:case CRC_YH:___output(ae,0xFD);___output(ae,OPCODE+4);ae->nop+=2;ae->tick+=8;break;
 			case CRC_IYL:case CRC_LY:case CRC_YL:___output(ae,0xFD);___output(ae,OPCODE+5);ae->nop+=2;ae->tick+=8;break;
 			default:
-				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
-					___output(ae,0xDD);___output(ae,OPCODE+6);
-					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
-					ae->nop+=5;ae->tick+=19;
-				} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
-					___output(ae,0xFD);___output(ae,OPCODE+6);
-					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
-					ae->nop+=5;ae->tick+=19;
+				if (ae->wl[ae->idx+1].w[0]=='(') {
+					if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
+						___output(ae,0xDD);___output(ae,OPCODE+6);
+						PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
+						ae->nop+=5;ae->tick+=19;
+					} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
+						___output(ae,0xFD);___output(ae,OPCODE+6);
+						PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
+						ae->nop+=5;ae->tick+=19;
+					} else {
+						___output(ae,0xE6);
+						EnforceNoAddressingMode(ae->idx+1);
+						PushExpression(ae,ae->idx+1,E_EXPRESSION_V8);
+						ae->nop+=2;ae->tick+=7;
+					}
 				} else {
 					___output(ae,0xE6);
 					PushExpression(ae,ae->idx+1,E_EXPRESSION_V8);
@@ -10535,7 +11209,7 @@ void _AND(struct s_assenv *ae) {
 		}
 		ae->idx++;
 	} else {
-		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Use AND with A,B,C,D,E,H,L,XH,XL,YH,YL,(HL),(IX),(IY)\n");
+		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Use AND with A,B,C,D,E,H,L,XH,XL,YH,YL,(HL),(IX+n),(IY+n)\n");
 	}
 }
 void _OR(struct s_assenv *ae) {
@@ -10559,14 +11233,21 @@ void _OR(struct s_assenv *ae) {
 			case CRC_IYH:case CRC_HY:case CRC_YH:___output(ae,0xFD);___output(ae,OPCODE+4);ae->nop+=2;ae->tick+=8;break;
 			case CRC_IYL:case CRC_LY:case CRC_YL:___output(ae,0xFD);___output(ae,OPCODE+5);ae->nop+=2;ae->tick+=8;break;
 			default:
-				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
-					___output(ae,0xDD);___output(ae,OPCODE+6);
-					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
-					ae->nop+=5;ae->tick+=19;
-				} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
-					___output(ae,0xFD);___output(ae,OPCODE+6);
-					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
-					ae->nop+=5;ae->tick+=19;
+				if (ae->wl[ae->idx+1].w[0]=='(') {
+					if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
+						___output(ae,0xDD);___output(ae,OPCODE+6);
+						PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
+						ae->nop+=5;ae->tick+=19;
+					} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
+						___output(ae,0xFD);___output(ae,OPCODE+6);
+						PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
+						ae->nop+=5;ae->tick+=19;
+					} else {
+						___output(ae,0xF6);
+						EnforceNoAddressingMode(ae->idx+1);
+						PushExpression(ae,ae->idx+1,E_EXPRESSION_V8);
+						ae->nop+=2;ae->tick+=7;
+					}
 				} else {
 					___output(ae,0xF6);
 					PushExpression(ae,ae->idx+1,E_EXPRESSION_V8);
@@ -10575,7 +11256,7 @@ void _OR(struct s_assenv *ae) {
 		}
 		ae->idx++;
 	} else {
-		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Use OR with A,B,C,D,E,H,L,XH,XL,YH,YL,(HL),(IX),(IY)\n");
+		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Use OR with A,B,C,D,E,H,L,XH,XL,YH,YL,(HL),(IX+n),(IY+n)\n");
 	}
 }
 void _XOR(struct s_assenv *ae) {
@@ -10599,14 +11280,21 @@ void _XOR(struct s_assenv *ae) {
 			case CRC_IYH:case CRC_HY:case CRC_YH:___output(ae,0xFD);___output(ae,OPCODE+4);ae->nop+=2;ae->tick+=8;break;
 			case CRC_IYL:case CRC_LY:case CRC_YL:___output(ae,0xFD);___output(ae,OPCODE+5);ae->nop+=2;ae->tick+=8;break;
 			default:
-				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
-					___output(ae,0xDD);___output(ae,OPCODE+6);
-					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
-					ae->nop+=5;ae->tick+=19;
-				} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
-					___output(ae,0xFD);___output(ae,OPCODE+6);
-					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
-					ae->nop+=5;ae->tick+=19;
+				if (ae->wl[ae->idx+1].w[0]=='(') {
+					if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
+						___output(ae,0xDD);___output(ae,OPCODE+6);
+						PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
+						ae->nop+=5;ae->tick+=19;
+					} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
+						___output(ae,0xFD);___output(ae,OPCODE+6);
+						PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
+						ae->nop+=5;ae->tick+=19;
+					} else {
+						___output(ae,0xEE);
+						EnforceNoAddressingMode(ae->idx+1);
+						PushExpression(ae,ae->idx+1,E_EXPRESSION_V8);
+						ae->nop+=2;ae->tick+=7;
+					}
 				} else {
 					___output(ae,0xEE);
 					PushExpression(ae,ae->idx+1,E_EXPRESSION_V8);
@@ -10615,7 +11303,7 @@ void _XOR(struct s_assenv *ae) {
 		}
 		ae->idx++;
 	} else {
-		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Use XOR with A,B,C,D,E,H,L,XH,XL,YH,YL,(HL),(IX),(IY)\n");
+		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Use XOR with A,B,C,D,E,H,L,XH,XL,YH,YL,(HL),(IX+n),(IY+n)\n");
 	}
 }
 
@@ -11136,6 +11824,7 @@ void _NOP(struct s_assenv *ae) {
 		} else {
 			MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"NOP <repetition> must use positive value\n");
 		}
+		ae->idx++;
 	} else {
 		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"NOP is supposed to be used without parameter or with one optional parameter\n");
 	}
@@ -11232,18 +11921,24 @@ void _LD(struct s_assenv *ae) {
 					case CRC_MDE:___output(ae,0x1A);ae->nop+=2;ae->tick+=7;break;
 					default:
 					/* (ix+expression) (iy+expression) (expression) expression */
-					if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0) {
-						___output(ae,0xDD);___output(ae,0x7E);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
-						ae->nop+=5;ae->tick+=19;
-					} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0) {
-						___output(ae,0xFD);___output(ae,0x7E);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
-						ae->nop+=5;ae->tick+=19;
-					} else if (StringIsMem(ae->wl[ae->idx+2].w)) {
-						___output(ae,0x3A);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_V16);
-						ae->nop+=4;ae->tick+=13;
+					if (ae->wl[ae->idx+2].w[0]=='(') {
+						if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
+							___output(ae,0xDD);___output(ae,0x7E);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
+							ae->nop+=5;ae->tick+=19;
+						} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
+							___output(ae,0xFD);___output(ae,0x7E);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
+							ae->nop+=5;ae->tick+=19;
+						} else if (StringIsMem(ae->wl[ae->idx+2].w)) {
+							___output(ae,0x3A);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_V16);
+							ae->nop+=4;ae->tick+=13;
+						} else {
+							___output(ae,0x3E);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_V8);
+							ae->nop+=2;ae->tick+=7;
+						}
 					} else {
 						___output(ae,0x3E);
 						PushExpression(ae,ae->idx+2,E_EXPRESSION_V8);
@@ -11283,17 +11978,23 @@ void _LD(struct s_assenv *ae) {
 					case CRC_A:___output(ae,0x47);ae->nop+=1;ae->tick+=4;break;
 					default:
 					/* (ix+expression) (iy+expression) expression */
-					if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0) {
-						___output(ae,0xDD);___output(ae,0x46);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
-						ae->nop+=5;ae->tick+=19;
-					} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0) {
-						___output(ae,0xFD);___output(ae,0x46);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
-						ae->nop+=5;ae->tick+=19;
+					if (ae->wl[ae->idx+2].w[0]=='(') {
+						if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
+							___output(ae,0xDD);___output(ae,0x46);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
+							ae->nop+=5;ae->tick+=19;
+						} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
+							___output(ae,0xFD);___output(ae,0x46);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
+							ae->nop+=5;ae->tick+=19;
+						} else {
+							___output(ae,0x06);
+							EnforceNoAddressingMode(ae->idx+2);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_V8);
+							ae->nop+=2;ae->tick+=7;
+						}
 					} else {
 						___output(ae,0x06);
-						EnforceNoAddressingMode(ae->idx+2);
 						PushExpression(ae,ae->idx+2,E_EXPRESSION_V8);
 						ae->nop+=2;ae->tick+=7;
 					}
@@ -11315,17 +12016,23 @@ void _LD(struct s_assenv *ae) {
 					case CRC_A:___output(ae,0x4F);ae->nop+=1;ae->tick+=4;break;
 					default:
 					/* (ix+expression) (iy+expression) expression */
-					if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0) {
-						___output(ae,0xDD);___output(ae,0x4E);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
-						ae->nop+=5;ae->tick+=19;
-					} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0) {
-						___output(ae,0xFD);___output(ae,0x4E);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
-						ae->nop+=5;ae->tick+=19;
+					if (ae->wl[ae->idx+2].w[0]=='(') {
+						if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
+							___output(ae,0xDD);___output(ae,0x4E);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
+							ae->nop+=5;ae->tick+=19;
+						} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
+							___output(ae,0xFD);___output(ae,0x4E);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
+							ae->nop+=5;ae->tick+=19;
+						} else {
+							___output(ae,0x0E);
+							EnforceNoAddressingMode(ae->idx+2);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_V8);
+							ae->nop+=2;ae->tick+=7;
+						}
 					} else {
 						___output(ae,0x0E);
-						EnforceNoAddressingMode(ae->idx+2);
 						PushExpression(ae,ae->idx+2,E_EXPRESSION_V8);
 						ae->nop+=2;ae->tick+=7;
 					}
@@ -11347,17 +12054,23 @@ void _LD(struct s_assenv *ae) {
 					case CRC_A:___output(ae,0x57);ae->nop+=1;ae->tick+=4;break;
 					default:
 					/* (ix+expression) (iy+expression) expression */
-					if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0) {
-						___output(ae,0xDD);___output(ae,0x56);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
-						ae->nop+=5;ae->tick+=19;
-					} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0) {
-						___output(ae,0xFD);___output(ae,0x56);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
-						ae->nop+=5;ae->tick+=19;
+					if (ae->wl[ae->idx+2].w[0]=='(') {
+						if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
+							___output(ae,0xDD);___output(ae,0x56);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
+							ae->nop+=5;ae->tick+=19;
+						} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
+							___output(ae,0xFD);___output(ae,0x56);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
+							ae->nop+=5;ae->tick+=19;
+						} else {
+							___output(ae,0x16);
+							EnforceNoAddressingMode(ae->idx+2);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_V8);
+							ae->nop+=2;ae->tick+=7;
+						}
 					} else {
 						___output(ae,0x16);
-						EnforceNoAddressingMode(ae->idx+2);
 						PushExpression(ae,ae->idx+2,E_EXPRESSION_V8);
 						ae->nop+=2;ae->tick+=7;
 					}
@@ -11379,17 +12092,23 @@ void _LD(struct s_assenv *ae) {
 					case CRC_A:___output(ae,0x5F);ae->nop+=1;ae->tick+=4;break;
 					default:
 					/* (ix+expression) (iy+expression) expression */
-					if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0) {
-						___output(ae,0xDD);___output(ae,0x5E);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
-						ae->nop+=5;ae->tick+=19;
-					} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0) {
-						___output(ae,0xFD);___output(ae,0x5E);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
-						ae->nop+=5;ae->tick+=19;
+					if (ae->wl[ae->idx+2].w[0]=='(') {
+						if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
+							___output(ae,0xDD);___output(ae,0x5E);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
+							ae->nop+=5;ae->tick+=19;
+						} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
+							___output(ae,0xFD);___output(ae,0x5E);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
+							ae->nop+=5;ae->tick+=19;
+						} else {
+							___output(ae,0x1E);
+							EnforceNoAddressingMode(ae->idx+2);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_V8);
+							ae->nop+=2;ae->tick+=7;
+						}
 					} else {
 						___output(ae,0x1E);
-						EnforceNoAddressingMode(ae->idx+2);
 						PushExpression(ae,ae->idx+2,E_EXPRESSION_V8);
 						ae->nop+=2;ae->tick+=7;
 					}
@@ -11405,14 +12124,10 @@ void _LD(struct s_assenv *ae) {
 					case CRC_IYL:case CRC_LY:case CRC_YL:___output(ae,0xFD);___output(ae,0x65);ae->nop+=2;ae->tick+=8;break;
 					case CRC_A:___output(ae,0xFD);___output(ae,0x67);ae->nop+=2;ae->tick+=8;break;
 					default:
-						if (strncmp(ae->wl[ae->idx+2].w,"(IX",3) && strncmp(ae->wl[ae->idx+2].w,"(IY",3)) {
-							___output(ae,0xFD);___output(ae,0x26);
-							EnforceNoAddressingMode(ae->idx+2);
-							PushExpression(ae,ae->idx+2,E_EXPRESSION_V8);
-							ae->nop+=3;ae->tick+=11;
-						} else {
-							MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"LD iyh,n/r only\n");
-						}
+						___output(ae,0xFD);___output(ae,0x26);
+						EnforceNoAddressingMode(ae->idx+2);
+						PushExpression(ae,ae->idx+2,E_EXPRESSION_V8);
+						ae->nop+=3;ae->tick+=11;
 				}
 				break;
 			case CRC_IYL:case CRC_LY:case CRC_YL:
@@ -11425,14 +12140,10 @@ void _LD(struct s_assenv *ae) {
 					case CRC_IYL:case CRC_LY:case CRC_YL:___output(ae,0xFD);___output(ae,0x6D);ae->nop+=2;ae->tick+=8;break;
 					case CRC_A:___output(ae,0xFD);___output(ae,0x6F);ae->nop+=2;ae->tick+=8;break;
 					default:
-						if (strncmp(ae->wl[ae->idx+2].w,"(IX",3) && strncmp(ae->wl[ae->idx+2].w,"(IY",3)) {
-							___output(ae,0xFD);___output(ae,0x2E);
-							EnforceNoAddressingMode(ae->idx+2);
-							PushExpression(ae,ae->idx+2,E_EXPRESSION_V8);
-							ae->nop+=3;ae->tick+=11;
-						} else {
-							MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"LD iyl,n/r only\n");
-						}
+						___output(ae,0xFD);___output(ae,0x2E);
+						EnforceNoAddressingMode(ae->idx+2);
+						PushExpression(ae,ae->idx+2,E_EXPRESSION_V8);
+						ae->nop+=3;ae->tick+=11;
 				}
 				break;
 			case CRC_IXH:case CRC_HX:case CRC_XH:
@@ -11445,14 +12156,10 @@ void _LD(struct s_assenv *ae) {
 					case CRC_IXL:case CRC_LX:case CRC_XL:___output(ae,0xDD);___output(ae,0x65);ae->nop+=2;ae->tick+=8;break;
 					case CRC_A:___output(ae,0xDD);___output(ae,0x67);ae->nop+=2;ae->tick+=8;break;
 					default:
-						if (strncmp(ae->wl[ae->idx+2].w,"(IX",3) && strncmp(ae->wl[ae->idx+2].w,"(IY",3)) {
-							___output(ae,0xDD);___output(ae,0x26);
-							EnforceNoAddressingMode(ae->idx+2);
-							PushExpression(ae,ae->idx+2,E_EXPRESSION_V8);
-							ae->nop+=3;ae->tick+=11;
-						} else {
-							MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"LD ixh,n/r only\n");
-						}
+						___output(ae,0xDD);___output(ae,0x26);
+						EnforceNoAddressingMode(ae->idx+2);
+						PushExpression(ae,ae->idx+2,E_EXPRESSION_V8);
+						ae->nop+=3;ae->tick+=11;
 				}
 				break;
 			case CRC_IXL:case CRC_LX:case CRC_XL:
@@ -11465,14 +12172,10 @@ void _LD(struct s_assenv *ae) {
 					case CRC_IXL:case CRC_LX:case CRC_XL:___output(ae,0xDD);___output(ae,0x6D);ae->nop+=2;ae->tick+=8;break;
 					case CRC_A:___output(ae,0xDD);___output(ae,0x6F);ae->nop+=2;ae->tick+=8;break;
 					default:
-						if (strncmp(ae->wl[ae->idx+2].w,"(IX",3) && strncmp(ae->wl[ae->idx+2].w,"(IY",3)) {
-							___output(ae,0xDD);___output(ae,0x2E);
-							EnforceNoAddressingMode(ae->idx+2);
-							PushExpression(ae,ae->idx+2,E_EXPRESSION_V8);
-							ae->nop+=3;ae->tick+=11;
-						} else {
-							MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"LD ixl,n/r only\n");
-						}
+						___output(ae,0xDD);___output(ae,0x2E);
+						EnforceNoAddressingMode(ae->idx+2);
+						PushExpression(ae,ae->idx+2,E_EXPRESSION_V8);
+						ae->nop+=3;ae->tick+=11;
 				}
 				break;
 			case CRC_H:
@@ -11487,17 +12190,23 @@ void _LD(struct s_assenv *ae) {
 					case CRC_A:___output(ae,0x67);ae->nop+=1;ae->tick+=4;break;
 					default:
 					/* (ix+expression) (iy+expression) expression */
-					if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0) {
-						___output(ae,0xDD);___output(ae,0x66);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
-						ae->nop+=5;ae->tick+=19;
-					} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0) {
-						___output(ae,0xFD);___output(ae,0x66);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
-						ae->nop+=5;ae->tick+=19;
+					if (ae->wl[ae->idx+2].w[0]=='(') {
+						if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
+							___output(ae,0xDD);___output(ae,0x66);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
+							ae->nop+=5;ae->tick+=19;
+						} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
+							___output(ae,0xFD);___output(ae,0x66);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
+							ae->nop+=5;ae->tick+=19;
+						} else {
+							___output(ae,0x26);
+							EnforceNoAddressingMode(ae->idx+2);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_V8);
+							ae->nop+=2;ae->tick+=7;
+						}
 					} else {
 						___output(ae,0x26);
-						EnforceNoAddressingMode(ae->idx+2);
 						PushExpression(ae,ae->idx+2,E_EXPRESSION_V8);
 						ae->nop+=2;ae->tick+=7;
 					}
@@ -11515,17 +12224,23 @@ void _LD(struct s_assenv *ae) {
 					case CRC_A:___output(ae,0x6F);ae->nop+=1;ae->tick+=4;break;
 					default:
 					/* (ix+expression) (iy+expression) expression */
-					if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0) {
-						___output(ae,0xDD);___output(ae,0x6E);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
-						ae->nop+=5;ae->tick+=19;
-					} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0) {
-						___output(ae,0xFD);___output(ae,0x6E);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
-						ae->nop+=5;ae->tick+=19;
+					if (ae->wl[ae->idx+2].w[0]=='(') {
+						if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
+							___output(ae,0xDD);___output(ae,0x6E);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
+							ae->nop+=5;ae->tick+=19;
+						} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
+							___output(ae,0xFD);___output(ae,0x6E);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
+							ae->nop+=5;ae->tick+=19;
+						} else {
+							___output(ae,0x2E);
+							EnforceNoAddressingMode(ae->idx+2);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_V8);
+							ae->nop+=2;ae->tick+=7;
+						}
 					} else {
 						___output(ae,0x2E);
-						EnforceNoAddressingMode(ae->idx+2);
 						PushExpression(ae,ae->idx+2,E_EXPRESSION_V8);
 						ae->nop+=2;ae->tick+=7;
 					}
@@ -11576,24 +12291,31 @@ void _LD(struct s_assenv *ae) {
 						    ___output(ae,0x39);                                       // ADD HL,SP
 						    ae->nop+=6;ae->tick+=21;break;
 					default:
-					if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-')) {
-						/* enhanced LD HL,(IX+nn) */
-						___output(ae,0xDD);___output(ae,0x66);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV81);
-						___output(ae,0xDD);___output(ae,0x6E);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
-						ae->nop+=10;ae->tick+=19;ae->tick+=19;
-					} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-')) {
-						/* enhanced LD HL,(IY+nn) */
-						___output(ae,0xFD);___output(ae,0x66);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV81);
-						___output(ae,0xFD);___output(ae,0x6E);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
-						ae->nop+=10;ae->tick+=19;ae->tick+=19;
-					} else if (StringIsMem(ae->wl[ae->idx+2].w)) {
-						___output(ae,0x2A);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_V16);
-						ae->nop+=5;ae->tick+=16;
+					if (ae->wl[ae->idx+2].w[0]=='(') {
+						if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
+							/* enhanced LD HL,(IX+nn) */
+							___output(ae,0xDD);___output(ae,0x66);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV81);
+							___output(ae,0xDD);___output(ae,0x6E);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
+							ae->nop+=10;ae->tick+=19;ae->tick+=19;
+						} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
+							/* enhanced LD HL,(IY+nn) */
+							___output(ae,0xFD);___output(ae,0x66);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV81);
+							___output(ae,0xFD);___output(ae,0x6E);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
+							ae->nop+=10;ae->tick+=19;ae->tick+=19;
+						} else if (StringIsMem(ae->wl[ae->idx+2].w)) {
+							___output(ae,0x2A);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_V16);
+							ae->nop+=5;ae->tick+=16;
+						} else {
+							// leggit too
+							___output(ae,0x21);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_V16);
+							ae->nop+=3;ae->tick+=10;
+						}
 					} else {
 						___output(ae,0x21);
 						PushExpression(ae,ae->idx+2,E_EXPRESSION_V16);
@@ -11612,24 +12334,30 @@ void _LD(struct s_assenv *ae) {
 					case CRC_IY:___output(ae,0xFD);___output(ae,0x44);ae->nop+=4;
 						    ___output(ae,0xFD);___output(ae,0x4D);ae->tick+=16;break;
 					default:
-					if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-')) {
-						/* enhanced LD BC,(IX+nn) */
-						___output(ae,0xDD);___output(ae,0x46);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV81);
-						___output(ae,0xDD);___output(ae,0x4E);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
-						ae->nop+=10;ae->tick+=19;ae->tick+=19;
-					} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-')) {
-						/* enhanced LD BC,(IY+nn) */
-						___output(ae,0xFD);___output(ae,0x46);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV81);
-						___output(ae,0xFD);___output(ae,0x4E);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
-						ae->nop+=10;ae->tick+=19;ae->tick+=19;
-					} else if (StringIsMem(ae->wl[ae->idx+2].w)) {
-						___output(ae,0xED);___output(ae,0x4B);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV16);
-						ae->nop+=6;ae->tick+=20;
+					if (ae->wl[ae->idx+2].w[0]=='(') {
+						if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
+							/* enhanced LD BC,(IX+nn) */
+							___output(ae,0xDD);___output(ae,0x46);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV81);
+							___output(ae,0xDD);___output(ae,0x4E);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
+							ae->nop+=10;ae->tick+=19;ae->tick+=19;
+						} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
+							/* enhanced LD BC,(IY+nn) */
+							___output(ae,0xFD);___output(ae,0x46);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV81);
+							___output(ae,0xFD);___output(ae,0x4E);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
+							ae->nop+=10;ae->tick+=19;ae->tick+=19;
+						} else if (StringIsMem(ae->wl[ae->idx+2].w)) {
+							___output(ae,0xED);___output(ae,0x4B);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV16);
+							ae->nop+=6;ae->tick+=20;
+						} else {
+							___output(ae,0x01);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_V16);
+							ae->nop+=3;ae->tick+=10;
+						}
 					} else {
 						___output(ae,0x01);
 						PushExpression(ae,ae->idx+2,E_EXPRESSION_V16);
@@ -11648,24 +12376,30 @@ void _LD(struct s_assenv *ae) {
 					case CRC_IY:___output(ae,0xFD);___output(ae,0x54);ae->nop+=4;
 						    ___output(ae,0xFD);___output(ae,0x5D);ae->tick+=16;break;
 					default:
-					if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-')) {
-						/* enhanced LD DE,(IX+nn) */
-						___output(ae,0xDD);___output(ae,0x56);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV81);
-						___output(ae,0xDD);___output(ae,0x5E);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
-						ae->nop+=10;ae->tick+=19;ae->tick+=19;
-					} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-')) {
-						/* enhanced LD DE,(IY+nn) */
-						___output(ae,0xFD);___output(ae,0x56);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV81);
-						___output(ae,0xFD);___output(ae,0x5E);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
-						ae->nop+=10;ae->tick+=19;ae->tick+=19;
-					} else if (StringIsMem(ae->wl[ae->idx+2].w)) {
-						___output(ae,0xED);___output(ae,0x5B);
-						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV16);
-						ae->nop+=6;ae->tick+=20;
+					if (ae->wl[ae->idx+2].w[0]=='(') {
+						if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
+							/* enhanced LD DE,(IX+nn) */
+							___output(ae,0xDD);___output(ae,0x56);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV81);
+							___output(ae,0xDD);___output(ae,0x5E);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
+							ae->nop+=10;ae->tick+=19;ae->tick+=19;
+						} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
+							/* enhanced LD DE,(IY+nn) */
+							___output(ae,0xFD);___output(ae,0x56);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV81);
+							___output(ae,0xFD);___output(ae,0x5E);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
+							ae->nop+=10;ae->tick+=19;ae->tick+=19;
+						} else if (StringIsMem(ae->wl[ae->idx+2].w)) {
+							___output(ae,0xED);___output(ae,0x5B);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV16);
+							ae->nop+=6;ae->tick+=20;
+						} else {
+							___output(ae,0x11);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_V16);
+							ae->nop+=3;ae->tick+=10;
+						}
 					} else {
 						___output(ae,0x11);
 						PushExpression(ae,ae->idx+2,E_EXPRESSION_V16);
@@ -11681,18 +12415,14 @@ void _LD(struct s_assenv *ae) {
 					case CRC_DE:___output(ae,0xDD);___output(ae,0x62);
 						    ___output(ae,0xDD);___output(ae,0x6B);ae->nop+=4;ae->tick+=16;break;
 					default:
-						if (strncmp(ae->wl[ae->idx+2].w,"(IX",3) && strncmp(ae->wl[ae->idx+2].w,"(IY",3)) {
-							if (StringIsMem(ae->wl[ae->idx+2].w)) {
-								___output(ae,0xDD);___output(ae,0x2A);
-								PushExpression(ae,ae->idx+2,E_EXPRESSION_IV16);
-								ae->nop+=6;ae->tick+=20;
-							} else {
-								___output(ae,0xDD);___output(ae,0x21);
-								PushExpression(ae,ae->idx+2,E_EXPRESSION_IV16);
-								ae->nop+=4;ae->tick+=14;
-							}
+						if (StringIsMem(ae->wl[ae->idx+2].w)) {
+							___output(ae,0xDD);___output(ae,0x2A);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV16);
+							ae->nop+=6;ae->tick+=20;
 						} else {
-							MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"LD IX,(nn)/BC/DE/nn only\n");
+							___output(ae,0xDD);___output(ae,0x21);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV16);
+							ae->nop+=4;ae->tick+=14;
 						}
 				}
 				break;
@@ -11704,18 +12434,14 @@ void _LD(struct s_assenv *ae) {
 					case CRC_DE:___output(ae,0xFD);___output(ae,0x62);
 						    ___output(ae,0xFD);___output(ae,0x6B);ae->nop+=4;ae->tick+=16;break;
 					default:
-						if (strncmp(ae->wl[ae->idx+2].w,"(IX",3) && strncmp(ae->wl[ae->idx+2].w,"(IY",3)) {
-							if (StringIsMem(ae->wl[ae->idx+2].w)) {
-								___output(ae,0xFD);___output(ae,0x2A);
-								PushExpression(ae,ae->idx+2,E_EXPRESSION_IV16);
-								ae->nop+=6;ae->tick+=20;
-							} else {
-								___output(ae,0xFD);___output(ae,0x21);
-								PushExpression(ae,ae->idx+2,E_EXPRESSION_IV16);
-								ae->nop+=4;ae->tick+=14;
-							}
+						if (StringIsMem(ae->wl[ae->idx+2].w)) {
+							___output(ae,0xFD);___output(ae,0x2A);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV16);
+							ae->nop+=6;ae->tick+=20;
 						} else {
-							MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"LD IY,(nn)/BC/DE/nn only\n");
+							___output(ae,0xFD);___output(ae,0x21);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV16);
+							ae->nop+=4;ae->tick+=14;
 						}
 				}
 				break;
@@ -11725,24 +12451,20 @@ void _LD(struct s_assenv *ae) {
 					case CRC_IX:___output(ae,0xDD);___output(ae,0xF9);ae->nop+=3;ae->tick+=10;break;
 					case CRC_IY:___output(ae,0xFD);___output(ae,0xF9);ae->nop+=3;ae->tick+=10;break;
 					default:
-						if (strncmp(ae->wl[ae->idx+2].w,"(IX",3) && strncmp(ae->wl[ae->idx+2].w,"(IY",3)) {
-							if (StringIsMem(ae->wl[ae->idx+2].w)) {
-								___output(ae,0xED);___output(ae,0x7B);
-								PushExpression(ae,ae->idx+2,E_EXPRESSION_IV16);
-								ae->nop+=6;ae->tick+=20;
-							} else {
-								___output(ae,0x31);
-								PushExpression(ae,ae->idx+2,E_EXPRESSION_V16);
-								ae->nop+=3;ae->tick+=10;
-							}
+						if (StringIsMem(ae->wl[ae->idx+2].w)) {
+							___output(ae,0xED);___output(ae,0x7B);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_IV16);
+							ae->nop+=6;ae->tick+=20;
 						} else {
-							MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"LD SP,(nn)/HL/IX/IY only\n");
+							___output(ae,0x31);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_V16);
+							ae->nop+=3;ae->tick+=10;
 						}
 				}
 				break;
 			default:
 				/* (ix+expression) (iy+expression) (expression) expression */
-				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
+				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 					switch (GetCRC(ae->wl[ae->idx+2].w)) {
 						case CRC_B:___output(ae,0xDD);___output(ae,0x70);PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);ae->nop+=5;ae->tick+=19;break;
 						case CRC_C:___output(ae,0xDD);___output(ae,0x71);PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);ae->nop+=5;ae->tick+=19;break;
@@ -11755,16 +12477,13 @@ void _LD(struct s_assenv *ae) {
 						case CRC_DE:___output(ae,0xDD);___output(ae,0x72);PushExpression(ae,ae->idx+1,E_EXPRESSION_IV81);___output(ae,0xDD);___output(ae,0x73);PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);ae->nop+=10;ae->tick+=38;break;
 						case CRC_BC:___output(ae,0xDD);___output(ae,0x70);PushExpression(ae,ae->idx+1,E_EXPRESSION_IV81);___output(ae,0xDD);___output(ae,0x71);PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);ae->nop+=10;ae->tick+=38;break;
 						default:
-							if (!StringIsMem(ae->wl[ae->idx+2].w)) {
-								___output(ae,0xDD);___output(ae,0x36);
-								PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
-								PushExpression(ae,ae->idx+2,E_EXPRESSION_3V8);
-								ae->nop+=6;ae->tick+=23;
-							} else {
-								MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"LD (IX+n),n/r only\n");
-							}
+							___output(ae,0xDD);___output(ae,0x36);
+							EnforceNoAddressingMode(ae->idx+2);
+							PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_3V8);
+							ae->nop+=6;ae->tick+=23;
 					}
-				} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
+				} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 					switch (GetCRC(ae->wl[ae->idx+2].w)) {
 						case CRC_B:___output(ae,0xFD);___output(ae,0x70);PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);ae->nop+=5;ae->tick+=19;break;
 						case CRC_C:___output(ae,0xFD);___output(ae,0x71);PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);ae->nop+=5;ae->tick+=19;break;
@@ -11777,14 +12496,11 @@ void _LD(struct s_assenv *ae) {
 						case CRC_DE:___output(ae,0xFD);___output(ae,0x72);PushExpression(ae,ae->idx+1,E_EXPRESSION_IV81);___output(ae,0xFD);___output(ae,0x73);PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);ae->nop+=10;ae->tick+=38;break;
 						case CRC_BC:___output(ae,0xFD);___output(ae,0x70);PushExpression(ae,ae->idx+1,E_EXPRESSION_IV81);___output(ae,0xFD);___output(ae,0x71);PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);ae->nop+=10;ae->tick+=38;break;
 						default:
-							if (!StringIsMem(ae->wl[ae->idx+2].w)) {
-							    ___output(ae,0xFD);___output(ae,0x36);
-								PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
-								PushExpression(ae,ae->idx+2,E_EXPRESSION_3V8);
-								ae->nop+=6;ae->tick+=23;
-							} else {
-								MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"LD (IX+n),n/r only\n");
-							}
+							___output(ae,0xFD);___output(ae,0x36);
+							EnforceNoAddressingMode(ae->idx+2);
+							PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
+							PushExpression(ae,ae->idx+2,E_EXPRESSION_3V8);
+							ae->nop+=6;ae->tick+=23;
 					}
 				} else if (StringIsMem(ae->wl[ae->idx+1].w)) {
 					switch (GetCRC(ae->wl[ae->idx+2].w)) {
@@ -11841,12 +12557,12 @@ void _RLC(struct s_assenv *ae) {
 			case CRC_MHL:___output(ae,0xCB);___output(ae,0x6);ae->nop+=4;ae->tick+=15;break;
 			case CRC_A:___output(ae,0xCB);___output(ae,0x7);ae->nop+=2;ae->tick+=8;break;
 			default:
-				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
+				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 					___output(ae,0xDD);___output(ae,0xCB);
 					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
 					___output(ae,0x6);
 					ae->nop+=7;ae->tick+=23;
-				} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
+				} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 					___output(ae,0xFD);___output(ae,0xCB);
 					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
 					___output(ae,0x6);
@@ -11857,9 +12573,9 @@ void _RLC(struct s_assenv *ae) {
 		}
 		ae->idx++;
 	} else if (!ae->wl[ae->idx+1].t && ae->wl[ae->idx+2].t!=2) {
-		if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
+		if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 			___output(ae,0xDD);
-		} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
+		} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 			___output(ae,0xFD);
 		} else {
 			MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"syntax is RLC (IX+n),reg8\n");
@@ -11912,12 +12628,12 @@ void _RRC(struct s_assenv *ae) {
 			case CRC_MHL:___output(ae,0xCB);___output(ae,0xE);ae->nop+=4;ae->tick+=15;break;
 			case CRC_A:___output(ae,0xCB);___output(ae,0xF);ae->nop+=2;ae->tick+=8;break;
 			default:
-				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
+				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 					___output(ae,0xDD);___output(ae,0xCB);
 					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
 					___output(ae,0xE);
 					ae->nop+=7;ae->tick+=23;
-				} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
+				} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 					___output(ae,0xFD);___output(ae,0xCB);
 					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
 					___output(ae,0xE);ae->tick+=23;
@@ -11928,9 +12644,9 @@ void _RRC(struct s_assenv *ae) {
 		}
 		ae->idx++;
 	} else if (!ae->wl[ae->idx+1].t && ae->wl[ae->idx+2].t!=2) {
-		if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
+		if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 			___output(ae,0xDD);
-		} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
+		} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 			___output(ae,0xFD);
 		} else {
 			MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"syntax is RRC (IX+n),reg8\n");
@@ -11969,12 +12685,12 @@ void _RL(struct s_assenv *ae) {
 			case CRC_MHL:___output(ae,0xCB);___output(ae,0x16);ae->nop+=4;ae->tick+=15;break;
 			case CRC_A:___output(ae,0xCB);___output(ae,0x17);ae->nop+=2;ae->tick+=8;break;
 			default:
-				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
+				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 					___output(ae,0xDD);___output(ae,0xCB);
 					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
 					___output(ae,0x16);
 					ae->nop+=7;ae->tick+=23;
-				} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
+				} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 					___output(ae,0xFD);___output(ae,0xCB);
 					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
 					___output(ae,0x16);
@@ -11985,9 +12701,9 @@ void _RL(struct s_assenv *ae) {
 		}
 		ae->idx++;
 	} else if (!ae->wl[ae->idx+1].t && ae->wl[ae->idx+2].t!=2) {
-		if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
+		if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 			___output(ae,0xDD);
-		} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
+		} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 			___output(ae,0xFD);
 		} else {
 			MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"syntax is RL (IX+n),reg8\n");
@@ -12027,12 +12743,12 @@ void _RR(struct s_assenv *ae) {
 			case CRC_MHL:___output(ae,0xCB);___output(ae,0x1E);ae->nop+=4;ae->tick+=15;break;
 			case CRC_A:___output(ae,0xCB);___output(ae,0x1F);ae->nop+=2;ae->tick+=8;break;
 			default:
-				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
+				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 					___output(ae,0xDD);___output(ae,0xCB);
 					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
 					___output(ae,0x1E);
 					ae->nop+=7;ae->tick+=23;
-				} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
+				} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 					___output(ae,0xFD);___output(ae,0xCB);
 					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
 					___output(ae,0x1E);
@@ -12043,9 +12759,9 @@ void _RR(struct s_assenv *ae) {
 		}
 		ae->idx++;
 	} else if (!ae->wl[ae->idx+1].t && ae->wl[ae->idx+2].t!=2) {
-		if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
+		if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 			___output(ae,0xDD);
-		} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
+		} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 			___output(ae,0xFD);
 		} else {
 			MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"syntax is RR (IX+n),reg8\n");
@@ -12085,12 +12801,12 @@ void _SLA(struct s_assenv *ae) {
 			case CRC_MHL:___output(ae,0xCB);___output(ae,0x26);ae->nop+=4;ae->tick+=15;break;
 			case CRC_A:___output(ae,0xCB);___output(ae,0x27);ae->nop+=2;ae->tick+=8;break;
 			default:
-				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
+				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 					___output(ae,0xDD);___output(ae,0xCB);
 					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
 					___output(ae,0x26);
 					ae->nop+=7;ae->tick+=23;
-				} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
+				} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 					___output(ae,0xFD);___output(ae,0xCB);
 					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
 					___output(ae,0x26);
@@ -12101,9 +12817,9 @@ void _SLA(struct s_assenv *ae) {
 		}
 		ae->idx++;
 	} else if (!ae->wl[ae->idx+1].t && ae->wl[ae->idx+2].t!=2) {
-		if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
+		if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 			___output(ae,0xDD);
-		} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
+		} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 			___output(ae,0xFD);
 		} else {
 			MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"syntax is SLA (IX+n),reg8\n");
@@ -12143,12 +12859,12 @@ void _SRA(struct s_assenv *ae) {
 			case CRC_MHL:___output(ae,0xCB);___output(ae,0x2E);ae->nop+=4;ae->tick+=15;break;
 			case CRC_A:___output(ae,0xCB);___output(ae,0x2F);ae->nop+=2;ae->tick+=8;break;
 			default:
-				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
+				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 					___output(ae,0xDD);___output(ae,0xCB);
 					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
 					___output(ae,0x2E);
 					ae->nop+=7;ae->tick+=23;
-				} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
+				} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 					___output(ae,0xFD);___output(ae,0xCB);
 					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
 					___output(ae,0x2E);
@@ -12159,9 +12875,9 @@ void _SRA(struct s_assenv *ae) {
 		}
 		ae->idx++;
 	} else if (!ae->wl[ae->idx+1].t && ae->wl[ae->idx+2].t!=2) {
-		if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
+		if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 			___output(ae,0xDD);
-		} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
+		} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 			___output(ae,0xFD);
 		} else {
 			MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"syntax is SRA (IX+n),reg8\n");
@@ -12202,12 +12918,12 @@ void _SLL(struct s_assenv *ae) {
 			case CRC_MHL:___output(ae,0xCB);___output(ae,0x36);ae->nop+=4;ae->tick+=15;break;
 			case CRC_A:___output(ae,0xCB);___output(ae,0x37);ae->nop+=2;ae->tick+=8;break;
 			default:
-				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
+				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 					___output(ae,0xDD);___output(ae,0xCB);
 					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
 					___output(ae,0x36);
 					ae->nop+=7;ae->tick+=23;
-				} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
+				} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 					___output(ae,0xFD);___output(ae,0xCB);
 					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
 					___output(ae,0x36);
@@ -12218,9 +12934,9 @@ void _SLL(struct s_assenv *ae) {
 		}
 		ae->idx++;
 	} else if (!ae->wl[ae->idx+1].t && ae->wl[ae->idx+2].t!=2) {
-		if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
+		if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 			___output(ae,0xDD);
-		} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
+		} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 			___output(ae,0xFD);
 		} else {
 			MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"syntax is SLL (IX+n),reg8\n");
@@ -12254,6 +12970,7 @@ void _SRL8(struct s_assenv *ae) {
 			case CRC_IY:___output(ae,0xFD);___output(ae,0x6C);___output(ae,0xFD);___output(ae,0x26);___output(ae,0x00);ae->nop+=5;ae->tick+=19;break; /* LD YL,YH : LD YH,0 */
 			default:MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"syntax is SRL8 BC/DE/HL/IX/IY\n");
 		}
+		ae->idx++;
 	}
 }
 void _SRL(struct s_assenv *ae) {
@@ -12272,12 +12989,12 @@ void _SRL(struct s_assenv *ae) {
 			case CRC_MHL:___output(ae,0xCB);___output(ae,0x3E);ae->nop+=4;ae->tick+=15;break;
 			case CRC_A:___output(ae,0xCB);___output(ae,0x3F);ae->nop+=2;ae->tick+=8;break;
 			default:
-				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
+				if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 					___output(ae,0xDD);___output(ae,0xCB);
 					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
 					___output(ae,0x3E);
 					ae->nop+=7;ae->tick+=23;
-				} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
+				} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 					___output(ae,0xFD);___output(ae,0xCB);
 					PushExpression(ae,ae->idx+1,E_EXPRESSION_IV8);
 					___output(ae,0x3E);
@@ -12288,9 +13005,9 @@ void _SRL(struct s_assenv *ae) {
 		}
 		ae->idx++;
 	} else if (!ae->wl[ae->idx+1].t && ae->wl[ae->idx+2].t!=2) {
-		if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0) {
+		if (strncmp(ae->wl[ae->idx+1].w,"(IX",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 			___output(ae,0xDD);
-		} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0) {
+		} else if (strncmp(ae->wl[ae->idx+1].w,"(IY",3)==0 && (ae->wl[ae->idx+1].w[3]=='+' || ae->wl[ae->idx+1].w[3]=='-'  || ae->wl[ae->idx+1].w[3]==')')) {
 			___output(ae,0xFD);
 		} else {
 			MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"syntax is SRL (IX+n),reg8\n");
@@ -12337,12 +13054,12 @@ void _BIT(struct s_assenv *ae) {
 				case CRC_MHL:___output(ae,0xCB);PushExpression(ae,ae->idx+1,E_EXPRESSION_BRS);___output(ae,0x6+o);ae->nop+=3;ae->tick+=12;break;
 				case CRC_A:___output(ae,0xCB);PushExpression(ae,ae->idx+1,E_EXPRESSION_BRS);___output(ae,0x7+o);ae->nop+=2;ae->tick+=8;break;
 				default:
-					if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0) {
+					if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
 						___output(ae,0xDD);___output(ae,0xCB);
 						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
 						PushExpression(ae,ae->idx+1,E_EXPRESSION_BRS);___output(ae,0x6+o);
 						ae->nop+=6;ae->tick+=20;
-					} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0) {
+					} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
 						___output(ae,0xFD);___output(ae,0xCB);
 						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
 						PushExpression(ae,ae->idx+1,E_EXPRESSION_BRS);___output(ae,0x6+o);
@@ -12382,12 +13099,12 @@ void _RES(struct s_assenv *ae) {
 				case CRC_MHL:___output(ae,0xCB);PushExpression(ae,ae->idx+1,E_EXPRESSION_BRS);___output(ae,0x6+o);ae->nop+=4;ae->tick+=15;break;
 				case CRC_A:___output(ae,0xCB);PushExpression(ae,ae->idx+1,E_EXPRESSION_BRS);___output(ae,0x7+o);ae->nop+=2;ae->tick+=8;break;
 				default:
-					if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0) {
+					if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
 						___output(ae,0xDD);___output(ae,0xCB);
 						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
 						PushExpression(ae,ae->idx+1,E_EXPRESSION_BRS);___output(ae,0x6+o);
 						ae->nop+=7;ae->tick+=23;
-					} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0) {
+					} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
 						___output(ae,0xFD);___output(ae,0xCB);
 						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
 						PushExpression(ae,ae->idx+1,E_EXPRESSION_BRS);___output(ae,0x6+o);
@@ -12398,9 +13115,9 @@ void _RES(struct s_assenv *ae) {
 			}
 			ae->idx+=2;
 		} else if (!ae->wl[ae->idx+1].t && !ae->wl[ae->idx+2].t && ae->wl[ae->idx+3].t==1) {
-			if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0) {
+			if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
 				___output(ae,0xDD);
-			} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0) {
+			} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
 				___output(ae,0xFD);
 			} else {
 				MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"syntax is RES n,(IX+n),reg8\n");
@@ -12445,12 +13162,12 @@ void _SET(struct s_assenv *ae) {
 				case CRC_MHL:___output(ae,0xCB);PushExpression(ae,ae->idx+1,E_EXPRESSION_BRS);___output(ae,0x6+o);ae->nop+=4;ae->tick+=15;break;
 				case CRC_A:___output(ae,0xCB);PushExpression(ae,ae->idx+1,E_EXPRESSION_BRS);___output(ae,0x7+o);ae->nop+=2;ae->tick+=8;break;
 				default:
-					if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0) {
+					if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
 						___output(ae,0xDD);___output(ae,0xCB);
 						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
 						PushExpression(ae,ae->idx+1,E_EXPRESSION_BRS);___output(ae,0x6+o);
 						ae->nop+=7;ae->tick+=23;
-					} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0) {
+					} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
 						___output(ae,0xFD);___output(ae,0xCB);
 						PushExpression(ae,ae->idx+2,E_EXPRESSION_IV8);
 						PushExpression(ae,ae->idx+1,E_EXPRESSION_BRS);___output(ae,0x6+o);
@@ -12461,9 +13178,9 @@ void _SET(struct s_assenv *ae) {
 			}
 			ae->idx+=2;
 		} else if (!ae->wl[ae->idx+1].t && !ae->wl[ae->idx+2].t && ae->wl[ae->idx+3].t==1) {
-			if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0) {
+			if (strncmp(ae->wl[ae->idx+2].w,"(IX",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
 				___output(ae,0xDD);
-			} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0) {
+			} else if (strncmp(ae->wl[ae->idx+2].w,"(IY",3)==0 && (ae->wl[ae->idx+2].w[3]=='+' || ae->wl[ae->idx+2].w[3]=='-'  || ae->wl[ae->idx+2].w[3]==')')) {
 				___output(ae,0xFD);
 			} else {
 				MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"syntax is SET n,(IX+n),reg8\n");
@@ -12493,6 +13210,9 @@ void _DEFS(struct s_assenv *ae) {
 		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Syntax is DEFS repeat,value or DEFS repeat\n");
 	} else do {
 		ae->idx++;
+		if (StringIsQuote(ae->wl[ae->idx].w) && strlen(ae->wl[ae->idx].w)>3) {
+			MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"DEFS repeat value cannot be a string!\n");
+		}
 		if (!ae->wl[ae->idx].t) {
 			ExpressionFastTranslate(ae,&ae->wl[ae->idx].w,0);
 			ExpressionFastTranslate(ae,&ae->wl[ae->idx+1].w,0); /* doing FastTranslate but not a complete evaluation */
@@ -12556,6 +13276,7 @@ void _DEFS_struct(struct s_assenv *ae) {
 }
 
 void _STR(struct s_assenv *ae) {
+	unsigned char hexValue;
 	unsigned char c;
 	int i,tquote;
 
@@ -12577,26 +13298,53 @@ void _STR(struct s_assenv *ae) {
 							case 'r':c='\r';break;
 							case 'n':c='\n';break;
 							case 't':c='\t';break;
+							case 'x':// hexadecimal output
+								i++;
+								c=tolower(ae->wl[ae->idx].w[i]);
+								if ((c>='0' && c<='9') || (c>='a' && c<='f')) {
+									if (c<='9') hexValue=c-'0'; else hexValue=c-'a'+10;
+									i++;
+									c=tolower(ae->wl[ae->idx].w[i]);
+									if ((c>='0' && c<='9') || (c>='a' && c<='f')) {
+										hexValue<<=4;
+										if (c<='9') hexValue|=c-'0'; else hexValue|=c-'a'+10;
+										//___output(ae,hexValue);
+										c=hexValue;
+									} else {
+										MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"DEFB invalid escaped hexadecimal value!\n");
+										i--; // in case of zero or quote!
+									}
+								} else {
+									MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"DEFB invalid escaped hexadecimal value!\n");
+									i--; // in case of zero of quote!
+								}
+								break;
 							default:break;
 						}						
-						if (ae->wl[ae->idx].w[i+1]!=tquote) {
-							___output(ae,c);
-						} else {
-							___output(ae,c|0x80);
-						}
 					} else {
 						/* charset conversion on the fly */
-						if (ae->wl[ae->idx].w[i+1]!=tquote) {
-							___output(ae,ae->charset[((unsigned int)ae->wl[ae->idx].w[i])&0xFF]);
-						} else {
-							___output(ae,ae->charset[((unsigned int)ae->wl[ae->idx].w[i])&0xFF]|0x80);
-						}
+						c=ae->charset[((unsigned int)ae->wl[ae->idx].w[i])&0xFF];
 					}
 
+					if (ae->wl[ae->idx].w[i+1]==tquote) {
+						// this is the end of the quote, is there something left?
+						if (ae->wl[ae->idx].t==0) {
+							// another quote, then we need to mark the end of this one
+							if (StringIsQuote(ae->wl[ae->idx+1].w)!=0) {
+								c|=0x80;
+							}
+						} else {
+							// last arg, mark the end
+							c|=0x80;
+						}
+					}
+					___output(ae,c);
+					ae->nop+=1;
 					i++;
 				}
 			} else {
-				MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"STR handle only quoted strings!\n");
+				PushExpression(ae,ae->idx,E_EXPRESSION_0V8);
+				ae->nop+=1;
 			}
 		} while (ae->wl[ae->idx].t==0);
 	} else {
@@ -12627,9 +13375,9 @@ void _DEFF_struct(struct s_assenv *ae) {
 			ae->idx++;
 			/* conversion des symboles connus */
 			ExpressionFastTranslate(ae,&ae->wl[ae->idx].w,0);
-			/* calcul de la valeur dÈfinitive de l'expression */
+			/* calcul de la valeur d√©finitive de l'expression */
 			v=ComputeExpressionCore(ae,ae->wl[ae->idx].w,ae->outputadr,0);
-			/* conversion en rÈel Amsdos */
+			/* conversion en r√©el Amsdos */
 			rc=__internal_MakeRosoftREAL(ae,v,0);
 			___output(ae,rc[0]);___output(ae,rc[1]);___output(ae,rc[2]);___output(ae,rc[3]);___output(ae,rc[4]);			
 		} while (ae->wl[ae->idx].t==0);
@@ -12665,9 +13413,9 @@ void _DEFR_struct(struct s_assenv *ae) {
 			ae->idx++;
 			/* conversion des symboles connus */
 			ExpressionFastTranslate(ae,&ae->wl[ae->idx].w,0);
-			/* calcul de la valeur dÈfinitive de l'expression */
+			/* calcul de la valeur d√©finitive de l'expression */
 			v=ComputeExpressionCore(ae,ae->wl[ae->idx].w,ae->outputadr,0);
-			/* conversion en rÈel Amsdos */
+			/* conversion en r√©el Amsdos */
 			rc=__internal_MakeAmsdosREAL(ae,v,0);
 			___output(ae,rc[0]);___output(ae,rc[1]);___output(ae,rc[2]);___output(ae,rc[3]);___output(ae,rc[4]);			
 		} while (ae->wl[ae->idx].t==0);
@@ -12682,7 +13430,7 @@ void _DEFR_struct(struct s_assenv *ae) {
 
 void _DEFB(struct s_assenv *ae) {
 	int i,tquote;
-	unsigned char c;
+	unsigned char c,hexValue;
 	if (!ae->wl[ae->idx].t) {
 		do {
 			ae->idx++;
@@ -12704,6 +13452,26 @@ void _DEFB(struct s_assenv *ae) {
 								case 'r':___output(ae,'\r');break; // return
 								case 'n':___output(ae,'\n');break; // carriage-return
 								case 't':___output(ae,'\t');break; // tab
+								case 'x':// hexadecimal output
+									i++;
+									c=tolower(ae->wl[ae->idx].w[i]);
+									if ((c>='0' && c<='9') || (c>='a' && c<='f')) {
+										if (c<='9') hexValue=c-'0'; else hexValue=c-'a'+10;
+										i++;
+										c=tolower(ae->wl[ae->idx].w[i]);
+										if ((c>='0' && c<='9') || (c>='a' && c<='f')) {
+											hexValue<<=4;
+											if (c<='9') hexValue|=c-'0'; else hexValue|=c-'a'+10;
+									 		___output(ae,hexValue);
+										} else {
+											MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"DEFB invalid escaped hexadecimal value!\n");
+											i--; // in case of zero or quote!
+										}
+									} else {
+										MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"DEFB invalid escaped hexadecimal value!\n");
+										i--; // in case of zero of quote!
+									}
+									break;
 								default:
 								___output(ae,c);
 							}
@@ -12712,9 +13480,29 @@ void _DEFB(struct s_assenv *ae) {
 						}
 						ae->nop+=1;
 					} else {
-						/* charset conversion on the fly */
-						___output(ae,ae->charset[(unsigned int)(ae->wl[ae->idx].w[i]&0xFF)]);
-						ae->nop+=1;
+						if (ae->iUtf8Remap && ((unsigned char)ae->wl[ae->idx].w[i])>126) {
+							int k,l,found=0;
+							/* UTF8 conversion */
+							for (k=0;k<ae->iUtf8Remap;k++) {
+								for (l=0;l<ae->utf8Remap[k].utf8Len;l++) if (ae->utf8Remap[k].utf8Code[l]!=(unsigned char)ae->wl[ae->idx].w[i+l]) break;
+								if (l==ae->utf8Remap[k].utf8Len) {
+									found=1;
+									break;
+								}
+							}
+							if (found) {
+								___output(ae,ae->utf8Remap[k].ccode);
+								i+=ae->utf8Remap[k].utf8Len-1;
+								ae->nop+=1;
+							} else {
+								rasm_printf(ae,KWARNING"[%s:%d] Warning: UTF8 mapping was defined but no code were found for this one! [#%02X]\n",GetCurrentFile(ae),ae->wl[ae->idx].l,(unsigned char)ae->wl[ae->idx].w[i]);
+								if (ae->erronwarn) MaxError(ae);
+							}
+						} else {
+							/* charset conversion on the fly */
+							___output(ae,ae->charset[(unsigned int)(ae->wl[ae->idx].w[i]&0xFF)]);
+							ae->nop+=1;
+						}
 					}
 					i++;
 				}
@@ -12761,9 +13549,29 @@ void _DEFB_struct(struct s_assenv *ae) {
 						}
 						ae->nop+=1;
 					} else {
-						/* charset conversion on the fly */
-						___output(ae,ae->charset[(unsigned int)ae->wl[ae->idx].w[i]&0xFF]);
-						ae->nop+=1;
+						if (ae->iUtf8Remap && ((unsigned char)ae->wl[ae->idx].w[i])>126) {
+							int k,l,found=0;
+							/* UTF8 conversion */
+							for (k=0;k<ae->iUtf8Remap;k++) {
+								for (l=0;l<ae->utf8Remap[k].utf8Len;l++) if (ae->utf8Remap[k].utf8Code[l]!=(unsigned char)ae->wl[ae->idx].w[i+l]) break;
+								if (l==ae->utf8Remap[k].utf8Len) {
+									found=1;
+									break;
+								}
+							}
+							if (found) {
+								___output(ae,ae->utf8Remap[k].ccode);
+								i+=ae->utf8Remap[k].utf8Len-1;
+								ae->nop+=1;
+							} else {
+								rasm_printf(ae,KWARNING"[%s:%d] Warning: UTF8 mapping was defined but no code were found for this one! [#%02X]\n",GetCurrentFile(ae),ae->wl[ae->idx].l,(unsigned char)ae->wl[ae->idx].w[i]);
+								if (ae->erronwarn) MaxError(ae);
+							}
+						} else {
+							/* charset conversion on the fly */
+							___output(ae,ae->charset[(unsigned int)(ae->wl[ae->idx].w[i]&0xFF)]);
+							ae->nop+=1;
+						}
 					}
 					i++;
 				}
@@ -13000,7 +13808,7 @@ unsigned char *__internal_make_HFE_header(int ntrack,int nside) {
 	hfe[17]=1; // step...
 	hfe[18]=1;
 	hfe[19]=0; // tracklist offset => 0x200
-	hfe[20]=1; // write protected
+	hfe[20]=0; // write protected
 	hfe[21]=0xFF; // single step
 	hfe[22]=0xFF;
 	//
@@ -13014,11 +13822,12 @@ unsigned char *__internal_make_HFE_header(int ntrack,int nside) {
 unsigned char *__internal_track_to_HFE(unsigned int *track, int lng) {
         unsigned char *data;
         int previous=0,idx,v;
-        int i;
+        int i,j;
 
         if (!lng) return NULL;
 
         data=MemMalloc(2*lng);
+	memset(data,0,2*lng);
 
         for (i=idx=0;i<lng;i++) {
                 if (track[i]&SYNCHRO) {
@@ -13026,7 +13835,15 @@ unsigned char *__internal_track_to_HFE(unsigned int *track, int lng) {
                                 // push synchro byte
                                 case 0xC2:data[idx++]=0x4A; data[idx++]=0x24;break; // C2
                                 case 0xA1:data[idx++]=0x22; data[idx++]=0x91;break; // A1
-                                default:printf("unknown synchro byte %02X\n",track[i]);break;
+				default:printf("unknown synchro byte %02X position %d : ",track[i],i);
+					j=i-10;if (j<0) j=0;
+					for (;j<i;j++) printf("%02X ",track[j]);
+					printf("[%02X] ",track[i]);
+					for (j=i+1;j<i+11 && j<lng;j++) printf("%02X ",track[j]);
+
+					printf("\n");
+					idx+=2;
+					break;
                         }
                 } else {
                         v=track[i];
@@ -13052,7 +13869,7 @@ unsigned char *__internal_track_to_HFE(unsigned int *track, int lng) {
 
 void __internal_hfe_resize_track(struct s_assenv *ae) {
 #if TRACE_HFE
-	printf("resize track up to %d\n",ae->hfetrack);
+	printf("HFE resize track list up to %d\n",ae->hfetrack);
 #endif
 	if (ae->hfetrack*2>=ae->hfedisk[ae->nbhfedisk-1].itrack) {
 		struct s_hfe_track hfetrack={0};
@@ -13068,7 +13885,7 @@ void __hfe_init(struct s_assenv *ae, struct s_hfe_action *hfe_action) {
 	struct s_hfe_floppy hfeflop={0};
 	ae->hfeside=0;
 	ae->hfetrack=0;
-	// remplir une struct HFE par dÈfaut
+	// remplir une struct HFE par d√©faut
 	ObjectArrayAddDynamicValueConcat((void **)&ae->hfedisk,&ae->nbhfedisk,&ae->maxhfedisk,&hfeflop,sizeof(hfeflop));
 	ae->hfedisk[ae->nbhfedisk-1].filename=hfe_action->filename;
 	// current pointer
@@ -13092,11 +13909,14 @@ void __hfe_track(struct s_assenv *ae, struct s_hfe_action *hfe_action) {
 		ae->hfetrack=0;
 	}
 	__internal_hfe_resize_track(ae);
+#if TRACE_HFE
+	printf("HFE set current track to %d\n",ae->hfetrack);
+#endif
 	ae->hfe=&ae->hfedisk[ae->nbhfedisk-1].track[ae->hfetrack*2+ae->hfeside]; // update fast ptr
 }
 
 void __hfe_close(struct s_assenv *ae, struct s_hfe_action *hfe_action) {
-	unsigned short int tracklist[256]={0};
+	unsigned short int tracklist[256]={0}; // specs max
 	unsigned int zebyte=0x4E;
 	unsigned char *hfe_header;
 	unsigned char filler[0x100]={0};
@@ -13122,7 +13942,7 @@ void __hfe_close(struct s_assenv *ae, struct s_hfe_action *hfe_action) {
 			MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"HFE tracklen is above FDC tolerance for a 300RPM drive! (tracklen=%d)\n",tracklen);
 			return;
 		} else {
-			rasm_printf(ae,KWARNING"[%s:%d] Warning: HFE tracklen is very highi (%d)\n",GetCurrentFile(ae),ae->wl[ae->idx].l,tracklen);
+			rasm_printf(ae,KWARNING"[%s:%d] Warning: HFE tracklen is very high (%d)\n",GetCurrentFile(ae),ae->wl[ae->idx].l,tracklen);
 			if (ae->erronwarn) MaxError(ae);
 		}
 	}
@@ -13138,11 +13958,11 @@ void __hfe_close(struct s_assenv *ae, struct s_hfe_action *hfe_action) {
 
 		// upgrade shortest track to the longest
 		ae->hfe=&ae->hfedisk[ae->nbhfedisk-1].track[i*2]; // update fast ptr for convenience
-		while (ae->hfedisk[ae->nbhfedisk-1].track[i*2].idata<maxlen) {
+		while (ae->hfe->idata<maxlen || ae->hfe->idata<6125) {
 			ObjectArrayAddDynamicValueConcat((void **)&ae->hfe->data,&ae->hfe->idata,&ae->hfe->mdata,&zebyte,sizeof(zebyte));
 		}
 		ae->hfe=&ae->hfedisk[ae->nbhfedisk-1].track[i*2+1]; // update fast ptr for convenience
-		while (ae->hfedisk[ae->nbhfedisk-1].track[i*2+1].idata<maxlen) {
+		while (ae->hfe->idata<maxlen || ae->hfe->idata<6125) {
 			ObjectArrayAddDynamicValueConcat((void **)&ae->hfe->data,&ae->hfe->idata,&ae->hfe->mdata,&zebyte,sizeof(zebyte));
 		}
 		// blocktrack list
@@ -13155,7 +13975,7 @@ void __hfe_close(struct s_assenv *ae, struct s_hfe_action *hfe_action) {
 	FileWriteBinary(oname,(char*)hfe_header,0x200);
 
 #if TRACE_HFE
-	printf("HFE blocks per track=%d\n",blocktrack);
+	printf("HFE blocks per track=%d   ",blocktrack);
 #endif
 
 	FileWriteBinary(oname,(char*)tracklist,0x200);
@@ -13170,6 +13990,9 @@ void __hfe_close(struct s_assenv *ae, struct s_hfe_action *hfe_action) {
 		ae->hfe=&ae->hfedisk[ae->nbhfedisk-1].track[j]; // update fast ptr for convenience
 		tracklen=ae->hfe->idata;
 
+#if TRACE_HFE
+	printf("HFE processing track %d (nbdata=%d)\n",j>>1,tracklen);
+#endif
 		data0=__internal_track_to_HFE(ae->hfedisk[ae->nbhfedisk-1].track[j+0].data,tracklen);
 		data1=__internal_track_to_HFE(ae->hfedisk[ae->nbhfedisk-1].track[j+1].data,tracklen);
 
@@ -13194,7 +14017,10 @@ void __hfe_close(struct s_assenv *ae, struct s_hfe_action *hfe_action) {
 }
 void __hfe_output_crc(struct s_assenv *ae, struct s_hfe_action *hfe_action) {
 	unsigned int zebyte;
-	zebyte=ae->hfecrc>>8;
+#if TRACE_HFE
+	printf("HFE output current CRC [%04X]\n",ae->hfecrc);
+#endif
+	zebyte=(ae->hfecrc>>8)&0xFF;
 	ObjectArrayAddDynamicValueConcat((void **)&ae->hfe->data,&ae->hfe->idata,&ae->hfe->mdata,&zebyte,sizeof(zebyte));
 	zebyte=ae->hfecrc&0xFF;
 	ObjectArrayAddDynamicValueConcat((void **)&ae->hfe->data,&ae->hfe->idata,&ae->hfe->mdata,&zebyte,sizeof(zebyte));
@@ -13202,14 +14028,39 @@ void __hfe_output_crc(struct s_assenv *ae, struct s_hfe_action *hfe_action) {
 void __hfe_start_crc(struct s_assenv *ae, struct s_hfe_action *hfe_action) {
 	ae->hfecrc=0xFFFF;
 }
+void __hfe_complete_track(struct s_assenv *ae, struct s_hfe_action *hfe_action) {
+	unsigned int zebyte=0x4E;
+	int i,target;
+
+	if (hfe_action->nbparam==1) target=6250; else
+	if (hfe_action->nbparam==2) target=RoundComputeExpression(ae,hfe_action->param[0],hfe_action->ioffset,0,0); else target=6250;
+#if TRACE_HFE
+	printf("HFE complete track to %d bytes\n",target);
+#endif
+
+	for (i=ae->hfe->idata;i<target;i++) {
+		ae->hfecrc=__internal_CRC16CCITT(ae->hfecrc,zebyte&0xFF);
+		ObjectArrayAddDynamicValueConcat((void **)&ae->hfe->data,&ae->hfe->idata,&ae->hfe->mdata,&zebyte,sizeof(zebyte));
+	}
+}
 void __hfe_add_byte(struct s_assenv *ae, struct s_hfe_action *hfe_action) {
 	unsigned int zebyte;
 	int i;
-	for (i=1;i<hfe_action->nbparam;i++) {
+#if TRACE_HFE
+	printf("add HFE byte(s) ");
+#endif
+	for (i=0;i<hfe_action->nbparam-1;i++) {
 		zebyte=RoundComputeExpression(ae,hfe_action->param[0+i],hfe_action->ioffset,0,0);
-		__internal_CRC16CCITT(ae->hfecrc,zebyte&0xFF);
+#if TRACE_HFE
+	printf("%02X",zebyte&0xFF);
+	if (zebyte>255) printf("|SYNCHRO "); else printf(" ");
+#endif
+		ae->hfecrc=__internal_CRC16CCITT(ae->hfecrc,zebyte&0xFF);
 		ObjectArrayAddDynamicValueConcat((void **)&ae->hfe->data,&ae->hfe->idata,&ae->hfe->mdata,&zebyte,sizeof(zebyte));
 	}
+#if TRACE_HFE
+	printf("\n");
+#endif
 }
 void __hfe_add_track_header(struct s_assenv *ae, struct s_hfe_action *hfe_action) {
 	unsigned int zebyte;
@@ -13236,7 +14087,7 @@ void __hfe_add_sector(struct s_assenv *ae, struct s_hfe_action *hfe_action) {
 	int i,curlen,offset;
 
 #if TRACE_HFE
-	printf("add HFE sector (tracksize=%d)\n",ae->hfe->idata);
+	printf("add HFE sector (tracksize=%d) ",ae->hfe->idata);
 #endif
 
 	zebyte=0x00; // VCO SYNC
@@ -13251,24 +14102,46 @@ void __hfe_add_sector(struct s_assenv *ae, struct s_hfe_action *hfe_action) {
 	crc=__internal_CRC16CCITT(crc,0xA1);
 	crc=__internal_CRC16CCITT(crc,0xFE);
 
-	zebyte=RoundComputeExpression(ae,hfe_action->param[0],hfe_action->ioffset,0,0); // track
+	zebyte=RoundComputeExpression(ae,hfe_action->param[0],hfe_action->ioffset,0,0)&0xFF; // track
 	crc=__internal_CRC16CCITT(crc,zebyte);
 	ObjectArrayAddDynamicValueConcat((void **)&ae->hfe->data,&ae->hfe->idata,&ae->hfe->mdata,&zebyte,sizeof(zebyte));
-	zebyte=RoundComputeExpression(ae,hfe_action->param[1],hfe_action->ioffset,0,0); // side
+#if TRACE_HFE
+	printf("#%02X ",zebyte);
+#endif
+	
+	zebyte=RoundComputeExpression(ae,hfe_action->param[1],hfe_action->ioffset,0,0)&0xFF; // side
 	crc=__internal_CRC16CCITT(crc,zebyte);
 	ObjectArrayAddDynamicValueConcat((void **)&ae->hfe->data,&ae->hfe->idata,&ae->hfe->mdata,&zebyte,sizeof(zebyte));
-	zebyte=RoundComputeExpression(ae,hfe_action->param[2],hfe_action->ioffset,0,0); // ID
+#if TRACE_HFE
+	printf("#%02X ",zebyte);
+#endif
+	
+	zebyte=RoundComputeExpression(ae,hfe_action->param[2],hfe_action->ioffset,0,0)&0xFF; // ID
 	crc=__internal_CRC16CCITT(crc,zebyte);
 	ObjectArrayAddDynamicValueConcat((void **)&ae->hfe->data,&ae->hfe->idata,&ae->hfe->mdata,&zebyte,sizeof(zebyte));
-	sectorsize=zebyte=RoundComputeExpression(ae,hfe_action->param[3],hfe_action->ioffset,0,0); // sector size
+#if TRACE_HFE
+	printf("#%02X ",zebyte);
+#endif
+
+	sectorsize=zebyte=RoundComputeExpression(ae,hfe_action->param[3],hfe_action->ioffset,0,0)&0xFF; // sector size
 	crc=__internal_CRC16CCITT(crc,zebyte);
 	ObjectArrayAddDynamicValueConcat((void **)&ae->hfe->data,&ae->hfe->idata,&ae->hfe->mdata,&zebyte,sizeof(zebyte));
+#if TRACE_HFE
+	printf("#%02X ",zebyte);
+#endif
+
 	zebyte=(crc>>8)&0xFF; // CRC high weight
 	ObjectArrayAddDynamicValueConcat((void **)&ae->hfe->data,&ae->hfe->idata,&ae->hfe->mdata,&zebyte,sizeof(zebyte));
+#if TRACE_HFE
+	printf("#%02X",zebyte);
+#endif
 	zebyte=crc&0xFF; // CRC low weight
 	ObjectArrayAddDynamicValueConcat((void **)&ae->hfe->data,&ae->hfe->idata,&ae->hfe->mdata,&zebyte,sizeof(zebyte));
+#if TRACE_HFE
+	printf("%02X\n",zebyte);
+#endif
 
-	// gestion des longueurs ‡ la con
+	// gestion des longueurs √† la con
 	switch (sectorsize) {
 		case 0:curlen=128;break;
 		case 1:curlen=256;break;
@@ -13300,7 +14173,7 @@ void __hfe_add_sector(struct s_assenv *ae, struct s_hfe_action *hfe_action) {
 	crc=__internal_CRC16CCITT(crc,0xFB);
 
 	for (i=0;i<curlen;i++) {
-		zebyte=ae->mem[hfe_action->ibank][offset+i];
+		zebyte=ae->mem[hfe_action->ibank][offset+i]&0xFF;
 		crc=__internal_CRC16CCITT(crc,zebyte);
 		ObjectArrayAddDynamicValueConcat((void **)&ae->hfe->data,&ae->hfe->idata,&ae->hfe->mdata,&zebyte,sizeof(zebyte));
 	}
@@ -13311,10 +14184,14 @@ void __hfe_add_sector(struct s_assenv *ae, struct s_hfe_action *hfe_action) {
 	ObjectArrayAddDynamicValueConcat((void **)&ae->hfe->data,&ae->hfe->idata,&ae->hfe->mdata,&zebyte,sizeof(zebyte));
 }
 void __hfe_add_gap(struct s_assenv *ae, struct s_hfe_action *hfe_action) {
-	unsigned short int zebyte;
+	unsigned int zebyte;
 	int i,bytenumber;
 
 	bytenumber=RoundComputeExpression(ae,hfe_action->param[0],hfe_action->ioffset,0,0);
+#if TRACE_HFE
+	printf("add HFE GAP (tracksize=%d) nbGAPbyte(s)=%d\n",ae->hfe->idata,bytenumber);
+#endif
+
 	if (bytenumber<1) {
 		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"GAP size must be greater than zero\n");
 		return;
@@ -13331,7 +14208,7 @@ void __hfe_add_gap(struct s_assenv *ae, struct s_hfe_action *hfe_action) {
 			return;
 	}
 	for (i=0;i<bytenumber;i++) {
-		__internal_CRC16CCITT(ae->hfecrc,zebyte&0xFF);
+		ae->hfecrc=__internal_CRC16CCITT(ae->hfecrc,zebyte&0xFF);
 		ObjectArrayAddDynamicValueConcat((void **)&ae->hfe->data,&ae->hfe->idata,&ae->hfe->mdata,&zebyte,sizeof(zebyte));
 	}
 }
@@ -13351,7 +14228,8 @@ void __HFE(struct s_assenv *ae) {
 				if (strcmp(ae->wl[ae->idx+1].w,"ADD_GAP")==0)		curaction.action=E_HFE_ACTION_ADD_GAP; else
 				if (strcmp(ae->wl[ae->idx+1].w,"ADD_TRACK_HEADER")==0)	curaction.action=E_HFE_ACTION_ADD_TRACK_HEADER; else cmderr=1;
 				break;
-			case 'C':if (strcmp(ae->wl[ae->idx+1].w,"CLOSE")==0)	curaction.action=E_HFE_ACTION_CLOSE; else cmderr=1;break;
+			case 'C':if (strcmp(ae->wl[ae->idx+1].w,"CLOSE")==0)	curaction.action=E_HFE_ACTION_CLOSE; else
+				if (strcmp(ae->wl[ae->idx+1].w,"COMPLETE_TRACK")==0)	curaction.action=E_HFE_ACTION_COMPLETE_TRACK; else cmderr=1;break;
 			case 'I':if (strcmp(ae->wl[ae->idx+1].w,"INIT")==0)		curaction.action=E_HFE_ACTION_INIT; else cmderr=1;break;
 			case 'O':if (strcmp(ae->wl[ae->idx+1].w,"OUTPUT_CRC")==0)	curaction.action=E_HFE_ACTION_OUTPUT_CRC; else cmderr=1;break;
 			case 'S':
@@ -13364,6 +14242,7 @@ void __HFE(struct s_assenv *ae) {
 		// some action need more than one filename
 		switch (curaction.action) {
 			case E_HFE_ACTION_ADD_TRACK_HEADER: case E_HFE_ACTION_OUTPUT_CRC:case E_HFE_ACTION_START_CRC:case E_HFE_ACTION_CLOSE:
+			case E_HFE_ACTION_COMPLETE_TRACK:
 				nbparam=1;break;
 			case E_HFE_ACTION_INIT:case E_HFE_ACTION_SIDE:case E_HFE_ACTION_TRACK:case E_HFE_ACTION_ADD_BYTE:
 				nbparam=2;break;
@@ -13423,20 +14302,453 @@ void PopAllHFE(struct s_assenv *ae) {
 		ae->idx=ae->hfe_action[i].iw; // MakeError hack
 		switch (ae->hfe_action[i].action) {
 			case E_HFE_ACTION_ADD_TRACK_HEADER:	__hfe_add_track_header(ae,&ae->hfe_action[i]);break;
-			case E_HFE_ACTION_OUTPUT_CRC:	__hfe_output_crc(ae,&ae->hfe_action[i]);break;
-			case E_HFE_ACTION_START_CRC:	__hfe_start_crc(ae,&ae->hfe_action[i]);break;
+			case E_HFE_ACTION_OUTPUT_CRC:		__hfe_output_crc(ae,&ae->hfe_action[i]);break;
+			case E_HFE_ACTION_START_CRC:		__hfe_start_crc(ae,&ae->hfe_action[i]);break;
 			case E_HFE_ACTION_CLOSE: 		__hfe_close(ae,&ae->hfe_action[i]);break;
 			case E_HFE_ACTION_INIT:			__hfe_init(ae,&ae->hfe_action[i]);break;
 			case E_HFE_ACTION_SIDE:			__hfe_side(ae,&ae->hfe_action[i]);break;
 			case E_HFE_ACTION_TRACK:		__hfe_track(ae,&ae->hfe_action[i]);break;
 			case E_HFE_ACTION_ADD_GAP:		__hfe_add_gap(ae,&ae->hfe_action[i]);break;
 			case E_HFE_ACTION_ADD_BYTE:		__hfe_add_byte(ae,&ae->hfe_action[i]);break;
-			case E_HFE_ACTION_ADD_SECTOR:	__hfe_add_sector(ae,&ae->hfe_action[i]);break;
+			case E_HFE_ACTION_ADD_SECTOR:		__hfe_add_sector(ae,&ae->hfe_action[i]);break;
+			case E_HFE_ACTION_COMPLETE_TRACK:	__hfe_complete_track(ae,&ae->hfe_action[i]);break;
 			default:MakeError(ae,0,"(PopAllHFE)",0,"internal error during HFE deferred execution, please report\n");
 				break;
 		}
 	}
 }
+
+//************************************************************************************************************************************
+//************************************************************************************************************************************
+							#undef FUNC
+						#define FUNC "Amsdos CORE"
+//************************************************************************************************************************************
+//************************************************************************************************************************************
+
+
+void amsdos_init(struct s_edsk_global_struct *edsk) {
+	amsdos_init_block(edsk);
+	amsdos_init_directory(edsk);
+}
+
+void amsdos_init_entries(struct s_edsk_global_struct *edsk) {
+	int i;
+	memset(edsk->floppy_entries,0,sizeof(edsk->floppy_entries));
+	// init des entr√©es, reinit de l'alloc...
+	for (i=0;i<180;i++) {
+		edsk->floppy_block[i].isallocated=0;
+	}
+}
+void amsdos_init_block(struct s_edsk_global_struct *edsk) {
+        int track=0,sector=1,block=0;
+        int j;
+
+        while (block<180) {
+                edsk->floppy_block[block].track1=track; edsk->floppy_block[block].sectorID1=sector; sector++;if (sector>9) {sector=1;track++;}
+                edsk->floppy_block[block].track2=track; edsk->floppy_block[block].sectorID2=sector; sector++;if (sector>9) {sector=1;track++;}
+                for (j=0;j<1024;j++) edsk->floppy_block[block].data[j]=0xE5;
+                edsk->floppy_block[block].isdata=0;
+                edsk->floppy_block[block].isvalid=0;
+                edsk->floppy_block[block].isallocated=0;
+                block++;
+        }
+}
+
+void amsdos_init_directory(struct s_edsk_global_struct *edsk) {
+	int i,t,s,ob,isdata=0,isvendor=0,idSect=0;
+
+	edsk->bstart=-1;
+	// fill blocks with sectors when they are here
+	//mfm_amsdos_extract(floppy,zeside); @@TOREPLACE
+
+	for (t=0;t<2 && t<edsk->tracknumber;t++) {
+		for (s=0;s<edsk->track[0].sectornumber;s++) {
+			if ((edsk->track[0].sector[s].id&0xF0)==0xC0) isdata++; else
+			if ((edsk->track[0].sector[s].id&0xF0)==0x40) isvendor++;
+		}
+	}
+
+	if (isdata>isvendor) {
+		isdata=1;
+		idSect=0xC0;
+	} else {
+		isdata=0; // legacy
+		idSect=0x40;
+	}
+
+	for (ob=0;ob<180;ob++) {
+		t=edsk->floppy_block[ob].track1;
+		if (t<edsk->tracknumber) for (s=0;s<edsk->track[t].sectornumber;s++) {
+			if (edsk->track[t].sector[s].id==(edsk->floppy_block[ob].sectorID1+idSect)) {
+				if (edsk->track[t].sector[s].size==2 && edsk->track[t].sector[s].length==512) {
+					// copy data to block
+					memcpy(edsk->floppy_block[ob].data,edsk->track[t].sector[s].data,512);
+					edsk->floppy_block[ob].isvalid|=1;
+					edsk->floppy_block[ob].isdata=isdata;
+				}
+			}
+		}
+		t=edsk->floppy_block[ob].track2;
+		if (t<edsk->tracknumber) for (s=0;s<edsk->track[t].sectornumber;s++) {
+			if (edsk->track[t].sector[s].id==(edsk->floppy_block[ob].sectorID2+idSect)) {
+				if (edsk->track[t].sector[s].size==2 && edsk->track[t].sector[s].length==512) {
+					// copy data to block
+					memcpy(edsk->floppy_block[ob].data+512,edsk->track[t].sector[s].data,512);
+					edsk->floppy_block[ob].isvalid|=2;
+					edsk->floppy_block[ob].isdata=isdata;
+				}
+			}
+		}
+	}
+	// keep full blocks and partial blocks when the 1st sector is OK
+	for (i=0;i<180;i++) {
+		if (edsk->floppy_block[i].isvalid==2) edsk->floppy_block[i].isvalid=0;
+	}
+	// get DIR if any relevant (must have full block OK)
+        if (edsk->floppy_block[0].isvalid==3 && edsk->floppy_block[0].isdata && edsk->floppy_block[1].isvalid==3 && edsk->floppy_block[1].isdata) {
+                edsk->bstart=0; // DATA
+        } if (edsk->floppy_block[9].isvalid==3 && !edsk->floppy_block[9].isdata && edsk->floppy_block[10].isvalid==3 && !edsk->floppy_block[10].isdata) {
+                edsk->bstart=9; // VENDOR
+        }
+}
+
+int amsdos_get_free_block(struct s_edsk_global_struct *edsk) {
+	int i,available=0;
+	for (i=edsk->bstart+2;i<180;i++) {
+		if (edsk->floppy_block[i].isvalid && !edsk->floppy_block[i].isallocated) return i;
+	}
+	return 0; // cannot return block 0 for a file so...
+}
+int amsdos_available_space(struct s_edsk_global_struct *edsk) {
+	int i,available=0;
+	for (i=edsk->bstart+2;i<180;i++) {
+		if (edsk->floppy_block[i].isvalid && !edsk->floppy_block[i].isallocated) available++;
+	}
+	return available;
+}
+unsigned char *amsdos_get_free_entry(struct s_edsk_global_struct *edsk) {
+	int i,available=0;
+	if (edsk->floppy_block[edsk->bstart].isvalid && edsk->floppy_block[edsk->bstart+1].isvalid) {
+		// scan in logical order
+		for (i=0;i<32;i++) {
+			if (edsk->floppy_block[edsk->bstart].data[i*32]==0xE5) return &edsk->floppy_block[edsk->bstart].data[i*32];
+		}
+		for (i=0;i<32;i++) {
+			if (edsk->floppy_block[edsk->bstart+1].data[i*32]==0xE5) return &edsk->floppy_block[edsk->bstart+1].data[i*32];
+		}
+	}
+	return NULL;
+}
+int amsdos_available_entries(struct s_edsk_global_struct *edsk) {
+	int i,available=0;
+	if (edsk->floppy_block[edsk->bstart].isvalid && edsk->floppy_block[edsk->bstart+1].isvalid) {
+		for (i=0;i<32;i++) {
+			if (edsk->floppy_block[edsk->bstart].data[i*32]==0xE5) available++;
+			if (edsk->floppy_block[edsk->bstart+1].data[i*32]==0xE5) available++;
+		}
+	}
+	return available;
+}
+void amsdos_update_edsk(struct s_edsk_global_struct *edsk) {
+	int i;
+
+	// EDSK write
+	for (i=0;i<180;i++) {
+		if (edsk->floppy_block[i].istowrite) {
+			int idSect,s,t;
+			edsk->floppy_block[i].istowrite=0;
+			// ecriture physique du block
+			if (edsk->floppy_block[i].isdata) idSect=0xC0; else idSect=0x40;
+			t=edsk->floppy_block[i].track1;
+			for (s=0;s<edsk->track[t].sectornumber;s++) {
+				if (edsk->track[t].sector[s].id==edsk->floppy_block[i].sectorID1+idSect) break; 
+			}
+			if (s<edsk->track[t].sectornumber) {
+				memcpy(edsk->track[t].sector[s].data,edsk->floppy_block[i].data,512);
+			} else {
+				fprintf(stderr,"INTERNAL ERROR : sector to write not found track %d ID #%02X!\n",t,edsk->floppy_block[i].sectorID1); //@@TODO
+			}
+			t=edsk->floppy_block[i].track2;
+			for (s=0;s<edsk->track[t].sectornumber;s++) {
+				if (edsk->track[t].sector[s].id==edsk->floppy_block[i].sectorID2+idSect) break; 
+			}
+			if (s<edsk->track[t].sectornumber) {
+				memcpy(edsk->track[t].sector[s].data,edsk->floppy_block[i].data+512,512);
+			} else {
+				fprintf(stderr,"INTERNAL ERROR : sector to write not found track %d ID #%02X!\n",t,edsk->floppy_block[i].sectorID2); //@@TODO
+			}
+			//mfm_push_data(floppy,side,floppy_block[i].track1,floppy_block[i].sectorID1+idSect,floppy_block[i].data,512);
+			//mfm_push_data(floppy,side,floppy_block[i].track2,floppy_block[i].sectorID2+idSect,floppy_block[i].data+512,512);
+		}
+	}
+}
+int amsdos_can_write(struct s_edsk_global_struct *edsk,int filesize) {
+	int requested_entries;
+	if (amsdos_available_space(edsk)*1024<filesize) return 0; // no space left
+	requested_entries=filesize>>14;
+	if (filesize&0x3FFF) requested_entries++;
+	if (amsdos_available_entries(edsk)<requested_entries) return 0; // no space left
+	return 1;
+}
+void amsdos_write_file(struct s_edsk_global_struct *edsk, int side, int user, char *filename, int protection, int hidden, unsigned char *data, int datalen) {
+	struct s_amsdos_dir_wrapper_entry catentry={0};
+	int zecounter=0,idx=0,wblock,nbblock=0,rc,i;
+
+	if (strlen(filename)!=11) {
+		fprintf(stderr,"INTERNAL ERROR : amsdos filename MUST be 11 chars long => [%s]\n",filename);
+		return; // fuck
+	}
+
+	catentry.user=user;
+	if (protection) filename[9]|=0x80;
+	if (hidden) filename[10]|=0x80;
+	memcpy(catentry.filename,filename,11);
+
+//printf("AmsdosWriteFile bstart=%d datalen=%d protect=%d hidden=%d\n",edsk->bstart,datalen,protection,hidden);
+	while (datalen>0) {
+		// block allocation
+		wblock=amsdos_get_free_block(edsk);if (!wblock) return;
+		catentry.blocks[nbblock++]=wblock-edsk->bstart;
+
+		if (datalen>=1024) {
+			memcpy(edsk->floppy_block[wblock].data,data+idx,1024);
+		} else {
+			memset(edsk->floppy_block[wblock].data,0,1024);
+			memcpy(edsk->floppy_block[wblock].data,data+idx,datalen);
+		}
+		edsk->floppy_block[wblock].isallocated=1;
+		edsk->floppy_block[wblock].istowrite=1;
+		idx+=1024;
+
+		//rc=(datalen>>7); if (rc>0x80) rc=0x80; else if (datalen&127) rc++;
+		if (datalen>=1024) catentry.rc+=8; else {catentry.rc+=datalen>>7;if (datalen&127) catentry.rc++;if (catentry.rc>0x80) {catentry.rc=0x80;printf("0x80 bug\n");}}
+		datalen-=1024;
+
+		// next block, reinit struct
+		if (nbblock==16) {
+			// flush
+			unsigned char *catnt;
+			catnt=amsdos_get_free_entry(edsk); if (!catnt) return; // should never happen
+			memcpy(catnt,&catentry,32);
+			/*
+			printf("%02X %02X %02X %02X -",catentry.subcpt,catentry.S1,catentry.extendcounter,catentry.rc);
+			for (i=0;i<16;i++) printf(" %d",catentry.blocks[i]);
+			printf("\n");
+			*/
+			memset(catentry.blocks,0,16);
+			nbblock=0;
+			zecounter++;
+			catentry.rc=0;
+			catentry.subcpt=zecounter&31;
+			catentry.extendcounter=zecounter>>5;
+		}
+	}
+	if (nbblock) {
+		// flush
+		unsigned char *catnt;
+		catnt=amsdos_get_free_entry(edsk); if (!catnt) return; // should never happen
+		memcpy(catnt,&catentry,32);
+		/*
+		printf("%02X %02X %02X %02X -",catentry.subcpt,catentry.S1,catentry.extendcounter,catentry.rc);
+		for (i=0;i<16;i++) printf(" %d",catentry.blocks[i]);
+		printf("\n");
+		*/
+	}
+
+#if 0
+	for (i=0;i<32*8;i++) {
+		if (!(i&15)) printf("\n");
+		printf(" %02X",floppy_block[bstart].data[i]);
+	}
+	printf("\n");
+#endif
+
+	// ecriture du catalogue forcee + ecriture des blocks modifies
+	edsk->floppy_block[edsk->bstart].istowrite=1;
+	edsk->floppy_block[edsk->bstart+1].istowrite=1;
+	amsdos_update_edsk(edsk);
+}
+
+void amsdos_set_flags(struct s_edsk_global_struct *edsk, int side, unsigned char *entry, int protection, int hidden) {
+	int i;
+	for (i=0;i<32;i++) {
+		if (!memcmp(&edsk->floppy_block[edsk->bstart].data[i*32],entry,9)) { // user+filename without extension
+			if ((edsk->floppy_block[edsk->bstart].data[i*32+9]&0x7F)==entry[10] && (edsk->floppy_block[edsk->bstart].data[i*32+10]&0x7F)==entry[11]) {
+				if (protection) edsk->floppy_block[edsk->bstart].data[i*32+9]|=0x80; else edsk->floppy_block[edsk->bstart].data[i*32+9]&=0x7F;
+				if (hidden) edsk->floppy_block[edsk->bstart].data[i*32+10]|=0x80; else edsk->floppy_block[edsk->bstart].data[i*32+10]&=0x7F;
+			}
+		}
+		if (!memcmp(&edsk->floppy_block[edsk->bstart+1].data[i*32],entry,9)) {
+			if ((edsk->floppy_block[edsk->bstart+1].data[i*32+9]&0x7F)==entry[10] && (edsk->floppy_block[edsk->bstart+1].data[i*32+10]&0x7F)==entry[11]) {
+				if (protection) edsk->floppy_block[edsk->bstart+1].data[i*32+9]|=0x80; else edsk->floppy_block[edsk->bstart+1].data[i*32+9]&=0x7F;
+				if (hidden) edsk->floppy_block[edsk->bstart+1].data[i*32+10]|=0x80; else edsk->floppy_block[edsk->bstart+1].data[i*32+10]&=0x7F;
+			}
+		}
+	}
+	// √©criture du catalogue
+	edsk->floppy_block[edsk->bstart].istowrite=1;
+	edsk->floppy_block[edsk->bstart+1].istowrite=1;
+	amsdos_update_edsk(edsk);
+}
+void amsdos_remove_entry(struct s_edsk_global_struct *edsk, int side, unsigned char *entryName, int amsdos_user) {
+	unsigned char entry[16];
+	int i;
+
+	entry[0]=amsdos_user;
+	strcpy(entry+1,entryName);
+
+	for (i=0;i<32;i++) {
+		if (!memcmp(&edsk->floppy_block[edsk->bstart].data[i*32],entry,9)) { // user+filename without extension
+			if ((edsk->floppy_block[edsk->bstart].data[i*32+9]&0x7F)==entry[9] && (edsk->floppy_block[edsk->bstart].data[i*32+10]&0x7F)==entry[10] && edsk->floppy_block[edsk->bstart].data[i*32+11]==entry[11]) {
+				edsk->floppy_block[edsk->bstart].data[i*32]=0xE5;
+			}
+		}
+		if (!memcmp(&edsk->floppy_block[edsk->bstart+1].data[i*32],entry,9)) {
+			if ((edsk->floppy_block[edsk->bstart+1].data[i*32+9]&0x7F)==entry[9] && (edsk->floppy_block[edsk->bstart+1].data[i*32+10]&0x7F)==entry[10] && edsk->floppy_block[edsk->bstart].data[i*32+11]==entry[11]) {
+				edsk->floppy_block[edsk->bstart+1].data[i*32]=0xE5;
+			}
+		}
+	}
+	edsk->floppy_block[edsk->bstart].istowrite=1;
+	edsk->floppy_block[edsk->bstart+1].istowrite=1;
+	amsdos_update_edsk(edsk);
+	// rebuild because there is more free space now!
+	amsdos_build_entries(edsk);
+}
+int amsdos_entry_exists(struct s_edsk_global_struct *edsk, int side, unsigned char *entryName, int amsdos_user) {
+	unsigned char entry[16];
+	int i,j;
+
+	entry[0]=amsdos_user;
+	strcpy(entry+1,entryName);
+	//printf("#%02X ",amsdos_user); for (j=1;j<12;j++) printf("%c",entry[j]); printf("\n");
+
+	for (i=0;i<32;i++) {
+#if 0
+		printf("#%02X ",edsk->floppy_block[edsk->bstart].data[i*32]);
+		for (j=1;j<12;j++) printf("%c",edsk->floppy_block[edsk->bstart].data[i*32+j]);
+		printf("\n");
+#endif
+		if (!memcmp(&edsk->floppy_block[edsk->bstart].data[i*32],entry,9)) { // user+filename without extension
+			if ((edsk->floppy_block[edsk->bstart].data[i*32+9]&0x7F)==entry[9] && (edsk->floppy_block[edsk->bstart].data[i*32+10]&0x7F)==entry[10] && edsk->floppy_block[edsk->bstart].data[i*32+11]==entry[11]) {
+				return 1;
+			}
+		}
+		if (!memcmp(&edsk->floppy_block[edsk->bstart+1].data[i*32],entry,9)) {
+			if ((edsk->floppy_block[edsk->bstart+1].data[i*32+9]&0x7F)==entry[9] && (edsk->floppy_block[edsk->bstart+1].data[i*32+10]&0x7F)==entry[10] && edsk->floppy_block[edsk->bstart].data[i*32+11]==entry[11]) {
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+
+void amsdos_build_entries(struct s_edsk_global_struct *edsk) {
+	unsigned char fullname[16],curfullname[16];
+	int i,j,k,counter,isprotected,ishidden,curuser;
+	int filesize=0,filealloc=0,wrapentry=0;//warning remover
+	int iname=0,nextoffset,remaining;
+	int block2run;
+	//***********************************************************************************************
+	//                                     make directory
+	//***********************************************************************************************
+	if (edsk->bstart!=-1) {
+		// copy vendor/data directory
+		memcpy(&edsk->floppy_directory[0] ,edsk->floppy_block[edsk->bstart].data,1024);
+		memcpy(&edsk->floppy_directory[32],edsk->floppy_block[edsk->bstart+1].data,1024);
+		qsort(edsk->floppy_directory,64,sizeof(struct s_amsdos_dir_wrapper_entry),cmpAmsdosentry);
+
+		amsdos_init_entries(edsk);
+
+		strcpy(fullname,"");
+		curuser=-1;
+		for (i=0;i<64;i++) {
+			if (edsk->floppy_directory[i].user<16) { // valid user
+				memcpy(curfullname,edsk->floppy_directory[i].filename,8);
+				curfullname[8]='.';
+				memcpy(curfullname+9,edsk->floppy_directory[i].filename+8,3);
+				curfullname[12]=0;
+
+				if (strcmp(curfullname,fullname) || curuser!=edsk->floppy_directory[i].user) { // new entry, flush entry!
+					// flush
+#define PUSH_ENTRY	if (fullname[0]) { \
+						edsk->floppy_entries[iname].isprotected=fullname[9]&0x80;fullname[9]&=0x7F; \
+						edsk->floppy_entries[iname].ishidden=fullname[10]&0x80;fullname[10]&=0x7F; \
+						edsk->floppy_entries[iname].user=curuser; \
+						edsk->floppy_entries[iname].wrapentry=wrapentry; \
+						if (fullname[0]<0x80 && fullname[1]<0x80 && fullname[2]<0x80 && fullname[3]<0x80 && fullname[4]<0x80 && fullname[5]<0x80 && fullname[6]<0x80 && fullname[7]<0x80) { \
+							strcpy(edsk->floppy_entries[iname].filename,fullname); \
+							edsk->floppy_entries[iname].allocsize=filealloc; \
+							edsk->floppy_entries[iname].realsize=filesize; \
+							edsk->floppy_entries[iname].isdisplayable=1; \
+							edsk->floppy_entries[iname].data=calloc(1,filealloc*1024); \
+						} else { \
+							strcpy(edsk->floppy_entries[iname].filename,"Invalid Name"); \
+							edsk->floppy_entries[iname].allocsize=filealloc; \
+						} \
+						iname++; \
+					}
+					PUSH_ENTRY; // push previous entry
+						    //
+					curuser=edsk->floppy_directory[i].user;
+					strcpy(fullname,curfullname);
+					filesize=edsk->floppy_directory[i].rc*128;
+					filealloc=0;
+					wrapentry=i;
+					for (j=0;j<16;j++) {
+						if (edsk->floppy_directory[i].blocks[j]) filealloc++;
+					}
+				} else { // same entry, next chunk
+					filesize+=edsk->floppy_directory[i].rc*128;
+					for (j=0;j<16;j++) {
+						if (edsk->floppy_directory[i].blocks[j]) filealloc++;
+					}
+					free(edsk->floppy_entries[iname].data);
+					edsk->floppy_entries[iname].data=calloc(1,filealloc*1024); \
+				}
+			}
+		}
+		PUSH_ENTRY;
+	}
+	for (i=0;i<iname;i++) {
+		// only 'normal' file can be saved
+		if (edsk->floppy_entries[i].isdisplayable) {
+			edsk->floppy_entries[i].isondisk=1; // default, then we will see
+			j=edsk->floppy_entries[i].wrapentry;
+			nextoffset=0;
+			remaining=edsk->floppy_entries[i].realsize;
+			for (counter=0;edsk->floppy_directory[j].subcpt==counter;counter++,j++) { // pas ouf mais difficile a corrompre quand meme
+				block2run=edsk->floppy_directory[j].rc>>3;
+				if (edsk->floppy_directory[j].rc&7) block2run++;
+				for (k=0;k<block2run;k++) {
+					if (edsk->floppy_directory[j].blocks[k] && edsk->floppy_directory[j].blocks[k]<180-edsk->bstart) {
+						if (edsk->floppy_block[edsk->floppy_directory[j].blocks[k]+edsk->bstart].isvalid) { // @@TODO secure this!!!
+							edsk->floppy_block[edsk->floppy_directory[j].blocks[k]+edsk->bstart].isallocated=1;
+			//		printf("block #%02X used\n",edsk->floppy_directory[j].blocks[k]+edsk->bstart);
+
+							memcpy(edsk->floppy_entries[i].data+nextoffset,edsk->floppy_block[edsk->floppy_directory[j].blocks[k]+edsk->bstart].data,remaining>1024?1024:remaining);
+							nextoffset+=1024;
+							remaining-=1024;
+#if 0	
+							printf("copy block to entry[%d] (%d) remaining %d   SRC=#%02X (%d) #%02X (%d)\n",i,nextoffset,remaining>0?remaining:0,
+									floppy_block[floppy_directory[j].blocks[k]-bstart].sectorID1, floppy_block[floppy_directory[j].blocks[k]-bstart].track1,
+									floppy_block[floppy_directory[j].blocks[k]-bstart].sectorID2, floppy_block[floppy_directory[j].blocks[k]-bstart].track2);
+#endif
+							
+						} else {
+							printf("block [%d] for file [%s] does not exist on disk!\n",edsk->floppy_directory[j].blocks[k]+edsk->bstart,edsk->floppy_entries[i].filename);
+							edsk->floppy_entries[i].isondisk=0; // block does not exists!
+						}
+					} else {
+						edsk->floppy_entries[i].isondisk=0; // invalid entry!
+					}
+				}
+			}
+		}
+	}
+}
+
 
 //************************************************************************************************************************************
 //************************************************************************************************************************************
@@ -13518,45 +14830,67 @@ void edsktool_MAPEDSK(struct s_edsk_global_struct *edsk) {
 		}
 	}
 }
-struct s_edsk_global_struct *edsktool_NewEDSK(char *format) {
+struct s_edsk_global_struct *edsktool_NewEDSK(char *format, int nbside) {
         struct s_edsk_global_struct *edsk;
         int i,t,s;
 
         edsk=MemMalloc(sizeof(struct s_edsk_global_struct));
         memset(edsk,0,sizeof(struct s_edsk_global_struct));
         if (!format) {
-                // empty EDSK
+                // empty EDSK, no mather what for the side number
                 return edsk;
         }
 
         if (strcmp(format,"DATA")==0 || strcmp(format,"VENDOR")==0) {
                 edsk->tracknumber=42;
-                edsk->sidenumber=1;
+                edsk->sidenumber=nbside;
                 edsk->track=MemMalloc(sizeof(struct s_edsk_track_global_struct)*edsk->tracknumber*edsk->sidenumber);
                 memset(edsk->track,0,sizeof(struct s_edsk_track_global_struct)*edsk->tracknumber*edsk->sidenumber);
                 for (t=0;t<=39;t++) {
-                        edsk->track[t].track=t;
-                        edsk->track[t].side=0;
-                        edsk->track[t].sectornumber=9;
-                        edsk->track[t].sectorsize=2;
-                        edsk->track[t].gap3length=0x50;
-                        edsk->track[t].fillerbyte=0xE5;
-                        edsk->track[t].sector=MemMalloc(edsk->track[t].sectornumber*sizeof(struct s_edsk_sector_global_struct));
+                        edsk->track[t*edsk->sidenumber].track=t;
+                        edsk->track[t*edsk->sidenumber].side=0;
+                        edsk->track[t*edsk->sidenumber].sectornumber=9;
+                        edsk->track[t*edsk->sidenumber].sectorsize=2;
+                        edsk->track[t*edsk->sidenumber].gap3length=0x50;
+                        edsk->track[t*edsk->sidenumber].fillerbyte=0xE5;
+                        edsk->track[t*edsk->sidenumber].sector=MemMalloc(edsk->track[t*edsk->sidenumber].sectornumber*sizeof(struct s_edsk_sector_global_struct));
                         for (s=0;s<9;s++) {
-                                edsk->track[t].sector[s].track=t;
-                                edsk->track[t].sector[s].side=0;
-                                if (strcmp(format,"DATA")==0) edsk->track[t].sector[s].id=0xC1+s; else
-                                if (strcmp(format,"VENDOR")==0) edsk->track[t].sector[s].id=0x41+s;
-                                edsk->track[t].sector[s].size=2;
-                                edsk->track[t].sector[s].st1=0;
-                                edsk->track[t].sector[s].st2=0;
-                                edsk->track[t].sector[s].length=512;
-                                edsk->track[t].sector[s].data=MemMalloc(edsk->track[t].sector[s].length);
-                                for (i=0;i<edsk->track[t].sector[s].length;i++) edsk->track[t].sector[s].data[i]=edsk->track[t].fillerbyte;
+                                edsk->track[t*edsk->sidenumber].sector[s].track=t;
+                                edsk->track[t*edsk->sidenumber].sector[s].side=0;
+                                if (strcmp(format,"DATA")==0) edsk->track[t*edsk->sidenumber].sector[s].id=0xC1+s; else
+                                if (strcmp(format,"VENDOR")==0) edsk->track[t*edsk->sidenumber].sector[s].id=0x41+s;
+                                edsk->track[t*edsk->sidenumber].sector[s].size=2;
+                                edsk->track[t*edsk->sidenumber].sector[s].st1=0;
+                                edsk->track[t*edsk->sidenumber].sector[s].st2=0;
+                                edsk->track[t*edsk->sidenumber].sector[s].length=512;
+                                edsk->track[t*edsk->sidenumber].sector[s].data=MemMalloc(edsk->track[t*edsk->sidenumber].sector[s].length);
+                                for (i=0;i<edsk->track[t*edsk->sidenumber].sector[s].length;i++) edsk->track[t*edsk->sidenumber].sector[s].data[i]=edsk->track[t*edsk->sidenumber].fillerbyte;
                         }
+                        if (edsk->sidenumber==2) {
+				edsk->track[1+t*edsk->sidenumber].track=t;
+				edsk->track[1+t*edsk->sidenumber].side=1;
+				edsk->track[1+t*edsk->sidenumber].sectornumber=9;
+				edsk->track[1+t*edsk->sidenumber].sectorsize=2;
+				edsk->track[1+t*edsk->sidenumber].gap3length=0x50;
+				edsk->track[1+t*edsk->sidenumber].fillerbyte=0xE5;
+				edsk->track[1+t*edsk->sidenumber].sector=MemMalloc(edsk->track[1+t*edsk->sidenumber].sectornumber*sizeof(struct s_edsk_sector_global_struct));
+				for (s=0;s<9;s++) {
+					edsk->track[1+t*edsk->sidenumber].sector[s].track=t;
+					edsk->track[1+t*edsk->sidenumber].sector[s].side=1;
+					if (strcmp(format,"DATA")==0) edsk->track[1+t*edsk->sidenumber].sector[s].id=0xC1+s; else
+					if (strcmp(format,"VENDOR")==0) edsk->track[1+t*edsk->sidenumber].sector[s].id=0x41+s;
+					edsk->track[1+t*edsk->sidenumber].sector[s].size=2;
+					edsk->track[1+t*edsk->sidenumber].sector[s].st1=0;
+					edsk->track[1+t*edsk->sidenumber].sector[s].st2=0;
+					edsk->track[1+t*edsk->sidenumber].sector[s].length=512;
+					edsk->track[1+t*edsk->sidenumber].sector[s].data=MemMalloc(edsk->track[1+t*edsk->sidenumber].sector[s].length);
+					for (i=0;i<edsk->track[1+t*edsk->sidenumber].sector[s].length;i++) edsk->track[1+t*edsk->sidenumber].sector[s].data[i]=edsk->track[1+t*edsk->sidenumber].fillerbyte;
+				}
+			}
                 }
                 for (t=40;t<=41;t++) {
-                        edsk->track[t].unformated=1;
+                        edsk->track[t*edsk->sidenumber].unformated=1;
+                        if (edsk->sidenumber==2) edsk->track[1+t*edsk->sidenumber].unformated=1;
                 }
         } else if (strcmp(format,"DIX")==0) {
                 edsk->tracknumber=42;
@@ -13588,10 +14922,11 @@ struct s_edsk_global_struct *edsktool_NewEDSK(char *format) {
                 }
         }
 
+	amsdos_init(edsk);
         return edsk;
 }
 
-struct s_edsk_global_struct *edsktool_EDSK_load(char *edskfilename) //@@TODO faire un mÈcanisme de cache
+struct s_edsk_global_struct *edsktool_EDSK_load(char *edskfilename) //@@TODO faire un m√©canisme de cache
 {
         #undef FUNC
         #define FUNC "EDSK_load"
@@ -13606,7 +14941,7 @@ struct s_edsk_global_struct *edsktool_EDSK_load(char *edskfilename) //@@TODO fai
         FILE *f;
         struct s_edsk_global_struct *edsk;
 
-        edsk=edsktool_NewEDSK(NULL);
+        edsk=edsktool_NewEDSK(NULL,1);
 
         f=fopen(edskfilename,"rb");
         if (!f) {
@@ -13807,6 +15142,7 @@ struct s_edsk_global_struct *edsktool_EDSK_load(char *edskfilename) //@@TODO fai
                 exit(ABORT_ERROR);
         }
         fclose(f);
+	amsdos_init(edsk);
         return edsk;
 }
 
@@ -13822,8 +15158,8 @@ void edsktool_EDSK_write_file(struct s_edsk_global_struct *edsk, char *output_fi
         if (!edsk) return;
 
 	FileRemoveIfExists(output_filename);
-
-        /* Ècriture header */
+//printf("write edsk %s (first sector ID #%02X\n",output_filename,edsk->track[0].sector[0].id);
+        /* √©criture header */
         strcpy((char *)header,"EXTENDED CPC DSK File\r\nDisk-Info\r\n");
         sprintf(headertag,"%-9.9s","edskt");
         strcpy((char *)header+0x22,headertag);
@@ -13847,7 +15183,7 @@ void edsktool_EDSK_write_file(struct s_edsk_global_struct *edsk, char *output_fi
 
 	FileWriteBinary(output_filename,(char*)header,256);
 
-        /* Ècriture des pistes */
+        /* √©criture des pistes */
         for (t=0;t<edsk->tracknumber;t++)
         for (face=0;face<edsk->sidenumber;face++) {
                 curtrack=t*edsk->sidenumber+face;
@@ -13928,9 +15264,14 @@ void __internal_edsk_free_side(struct s_assenv *ae,struct s_edsk_global_struct *
 	}
 }
 void __edsk_free(struct s_assenv *ae,struct s_edsk_global_struct *edsk) {
+	int i;
 	if (edsk->sidenumber>1) __internal_edsk_free_side(ae,edsk,1);
 	__internal_edsk_free_side(ae,edsk,0);
 	MemFree(edsk->track);
+	// amsdos things
+	for (i=0;i<64;i++) {
+		if (edsk->floppy_entries[i].data && edsk->floppy_entries[i].isondisk) free(edsk->floppy_entries[i].data);
+	}
 	MemFree(edsk);
 }
 
@@ -14047,6 +15388,178 @@ struct s_edsk_location *__edsk_get_location(struct s_assenv *ae,char *location, 
 /********************************************************************************************************
  *                immediate EDSK actions
 ********************************************************************************************************/
+
+void __edsk_delfile(struct s_assenv *ae, struct s_edsk_action *action) {
+	struct s_edsk_global_struct *edsk;
+	struct s_edsk_location *location;
+	int side,sizetoread=0x1234567,nblocation;
+	int i,curtrack,s,j,k;
+	char amsdos_name[14]={0};
+	int amsdos_user=0,offset=0;
+	char *filename;
+	int hasHeader=-1;
+	int checkSum,realsize;
+
+	side=__edsk_get_side_from_name(action->filename);
+
+	if (action->nbparam!=3) {
+		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Usage is : EDSK DELFILE,'edskfilename:side','filename'\n");
+		return;
+	}
+	// param 3 is filename
+	filename=action->filename2;
+
+	// now we can read the EDSK
+	edsk=edsktool_EDSK_load(action->filename);
+	if (!edsk) {
+		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"EDSK DELFILE error, invalid floppy image!\n");
+		return;
+	}
+
+	if (side+1>edsk->sidenumber) {
+		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"EDSK DELFILE error, cannot read side B as the floppy image does not contain two sides!\n");
+		__edsk_free(ae,edsk);
+		return;
+	}
+
+	amsdos_build_entries(edsk);
+	strcpy(amsdos_name,MakeAMSDOS_name(ae,filename,&amsdos_user));
+	if (amsdos_entry_exists(edsk,side,amsdos_name,amsdos_user)) {
+		amsdos_remove_entry(edsk,side,amsdos_name,amsdos_user);
+
+	} else {
+		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"EDSK DELFILE error, file [%s] not found on DSK!\n",amsdos_name);
+		__edsk_free(ae,edsk);
+		return;
+	}
+
+	edsktool_EDSK_write_file(edsk,action->filename);
+	// release edsk
+	__edsk_free(ae,edsk);
+}
+
+void __edsk_readfile(struct s_assenv *ae, struct s_edsk_action *action) {
+	struct s_edsk_global_struct *edsk;
+	struct s_edsk_location *location;
+	int side,sizetoread=0x1234567,nblocation;
+	int i,curtrack,s,j,k;
+	char amsdos_name[14]={0};
+	int amsdos_user=0,offset=0;
+	char *filename;
+	int hasHeader=-1;
+	int checkSum,realsize;
+
+	side=__edsk_get_side_from_name(action->filename);
+
+	if (action->nbparam<3 || action->nbparam>5) {
+		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Usage is : EDSK READFILE,'edskfilename:side','filename'[,<offset>[,<sizetoread>]]\n");
+		return;
+	}
+	// param 3 is filename
+	filename=action->filename2;
+	// param 4 is optional offset
+	if (action->nbparam>=4)	offset=RoundComputeExpression(ae,ae->wl[ae->idx+4].w,ae->outputadr,0,0);
+	// param 5 is optional size to read
+	if (action->nbparam==5) sizetoread=RoundComputeExpression(ae,ae->wl[ae->idx+5].w,ae->outputadr,0,0);
+
+	// now we can read the EDSK
+	edsk=edsktool_EDSK_load(action->filename);
+	if (!edsk) {
+		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"EDSK READFILE error, invalid floppy image!\n");
+		return;
+	}
+
+	if (side+1>edsk->sidenumber) {
+		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"EDSK READFILE error, cannot read side B as the floppy image does not contain two sides!\n");
+		__edsk_free(ae,edsk);
+		return;
+	}
+
+	amsdos_build_entries(edsk);
+	strcpy(amsdos_name,MakeAMSDOS_name(ae,filename,&amsdos_user));
+//printf("AMSDOS_NAME=[%s] / user=%d\n",amsdos_name, amsdos_user);
+
+	if (amsdos_entry_exists(edsk,side,amsdos_name,amsdos_user)) {
+		int wasfound=0;
+		// check sur les options et le fichier recherch√©
+		for (i=0;i<64;i++) {
+			if (!edsk->floppy_entries[i].filename[0]) continue;
+
+//printf("flopEntries[%d].filename = [%s] / user=%d ",i,edsk->floppy_entries[i].filename,edsk->floppy_entries[i].user);
+			//if (memcmp(edsk->floppy_entries[i].filename,amsdos_name,8)==0) printf("OK "); else printf("KO ");
+//			if (memcmp(edsk->floppy_entries[i].filename+9,amsdos_name+8,3)==0) printf("OK "); else printf("KO ");
+//			if (amsdos_user==edsk->floppy_entries[i].user) printf("OK "); else printf("KO ");
+//			printf("\n");
+			if (memcmp(edsk->floppy_entries[i].filename,amsdos_name,8)==0
+				&& memcmp(edsk->floppy_entries[i].filename+9,amsdos_name+8,3)==0 // skip dot and check extension
+				&& amsdos_user==edsk->floppy_entries[i].user) {
+				// first entry matching the file
+				if (hasHeader==-1) {
+					if (edsk->floppy_entries[i].realsize<=128) {
+						hasHeader=0;
+					} else {
+						// is there any header?
+						for (k=0;k<9;k++) {
+							if (!k && edsk->floppy_entries[i].data[0]>15) break;
+							if (edsk->floppy_entries[i].data[k]>126) break; // invalid char or user
+						}
+						if (k==9) {
+							// user+name is ok, check the checksum
+							for (k=checkSum=0;k<=66;k++) {
+								checkSum+=edsk->floppy_entries[i].data[k];
+							}
+							if (edsk->floppy_entries[i].data[67]==(checkSum&0xFF) && edsk->floppy_entries[i].data[68]==(checkSum>>8)) {
+								offset+=128;
+							}
+						}
+						// check parameter consistency
+						if (offset>=edsk->floppy_entries[i].realsize) {
+							MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"EDSK READFILE error, offset is bigger than the file!\n");
+							__edsk_free(ae,edsk);
+							return;
+						}
+						if (offset<0) {
+							offset=edsk->floppy_entries[i].realsize+offset;
+							if (offset<0 || offset>=edsk->floppy_entries[i].realsize) {
+								MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"EDSK READFILE error, absolute value of offset is bigger than the file!\n");
+								__edsk_free(ae,edsk);
+								return;
+							}
+						}
+						if (sizetoread==0x1234567) {
+							sizetoread=edsk->floppy_entries[i].realsize-offset;
+							if (sizetoread>=0 && sizetoread+offset>edsk->floppy_entries[i].realsize) {
+								MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"EDSK READFILE error, parameter size to read is bigger than the file!\n");
+								__edsk_free(ae,edsk);
+								return;
+							}
+						}
+					}
+					//printf("offset=%d sizetoread=%d\n",offset,sizetoread);
+				}
+				//printf("match entry! realsize=%d\n",edsk->floppy_entries[i].realsize);
+
+				for (j=0;j<sizetoread;j++) {
+					___output(ae,edsk->floppy_entries[i].data[j+offset]);
+				}
+				wasfound=1;
+			}
+		}
+		if (!wasfound) {
+			MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"EDSK READFILE internal error, file [%s] not found after entry check!\n",filename);
+			__edsk_free(ae,edsk);
+			return;
+		}
+	} else {
+		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"EDSK READFILE error, file [%s] not found on DSK!\n",filename);
+		__edsk_free(ae,edsk);
+		return;
+	}
+
+
+	// release edsk
+	__edsk_free(ae,edsk);
+}
 
 void __edsk_readsect(struct s_assenv *ae, struct s_edsk_action *action) {
 	struct s_edsk_global_struct *edsk;
@@ -14360,6 +15873,94 @@ void __edsk_gapfix(struct s_assenv *ae, struct s_edsk_action *action) {
 }
 
 
+void __edsk_check(struct s_assenv *ae, struct s_edsk_action *action) {
+	struct s_edsk_global_struct *edsk;
+	struct s_edsk_location *location;
+	int nblocation,side;
+	int iloc,i,j,k;
+	int zebank,offset,size;
+
+ 	if (action->nbparam!=5) {
+		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Usage is : EDSK CHECK,'edskfilename:side','location',<size>,<addr>\n");
+		return;
+	}
+	side=__edsk_get_side_from_name(action->filename);
+	edsk=edsktool_EDSK_load(action->filename);
+	if (!edsk) {
+		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Error loading [%s]\n",action->filename);
+		return;
+	}
+	if (side+1>edsk->sidenumber) {
+		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Cannot CHECK sector/trackbecause floppy image [%s] does not have 2 sides!\n",action->filename);
+		return;
+	}
+	// get location
+	location=__edsk_get_location(ae,ae->wl[ae->idx+3].w,&nblocation);
+	if (!location) {
+		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"EDSK CHECK error, invalid location!\n");
+		return;
+	}
+
+	// check action
+	if (action->ioffset<0 || action->ioffset+action->isize>65536) {
+		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"EDSK CHECK error, invalid offset/size!\n");
+		return;
+	}
+	offset=action->ioffset;
+	size=action->isize;
+	zebank=action->ibank;
+
+	for (iloc=0;iloc<nblocation;iloc++) {
+		i=location[iloc].track;
+		if (i>=edsk->tracknumber) {
+			MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"EDSK CHECK error, track %d cannot be processed as the floppy image has %d track(s)\n",i,edsk->tracknumber);
+			return;
+		}
+		// unformated special case
+		if (edsk->track[i*edsk->sidenumber+side].unformated) {
+			rasm_printf(ae,KWARNING"[%s:%d] Warning: Track %d wasn't formated, nothing to check!\n",GetCurrentFile(ae),ae->wl[ae->idx].l,i);
+			if (ae->erronwarn) MaxError(ae);
+		} else {
+			if (location[iloc].istrack) {
+				// check track
+				for (j=0;j<edsk->track[i*edsk->sidenumber+side].sectornumber && size;j++) {
+					for (k=0;k<edsk->track[i*edsk->sidenumber+side].sector[j].length && size;k++) {
+						if (edsk->track[i*edsk->sidenumber+side].sector[j].data[k]!=ae->mem[zebank][offset]) {
+							MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"EDSK CHECK error track %d offset #%04X\n",i,k);
+							return;
+						}
+						offset++;
+						size--;
+					}
+				}
+			} else {
+				// check sector
+				int wasfound=0;
+				for (j=0;j<edsk->track[i*edsk->sidenumber+side].sectornumber;j++) {
+					if (edsk->track[i*edsk->sidenumber+side].sector[j].id==location[iloc].sectorID) {
+						for (k=0;k<edsk->track[i*edsk->sidenumber+side].sector[j].length && size;k++) {
+							if (edsk->track[i*edsk->sidenumber+side].sector[j].data[k]!=ae->mem[zebank][offset]) {
+								MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"EDSK CHECK error track %d sector #%02X offset #%04X\n",i,location[iloc].sectorID,k);
+								return;
+							}
+							offset++;
+							size--;
+						}
+						wasfound=1;
+					}
+				}
+				if (!wasfound) {
+					MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"EDSK CHECK error, sector #%02X track %d not found!\n",location[iloc].sectorID,i);
+				}
+			}
+		}
+	}
+
+
+	MemFree(location);
+	edsktool_EDSK_write_file(edsk,action->filename);
+	__edsk_free(ae,edsk);
+}
 void __edsk_drop(struct s_assenv *ae, struct s_edsk_action *action) {
 	struct s_edsk_global_struct *edsk;
 	struct s_edsk_location *location;
@@ -14800,6 +16401,8 @@ void __edsk_writesect(struct s_assenv *ae, struct s_edsk_action *action) {
  * == immediate execution ==
  * EDSK   CREATE,'filename.dsk',DATA|VENDOR|UNFORMATED,nbtracks[,INTERLACED]
  * EDSK READSECT,'filename.dsk','location',<exactsize>
+ * EDSK READFILE,'filename.dsk','filename'[,<offset>[,<size>]]
+ * EDSK  DELFILE,'filename.dsk','filename'
  * EDSK  UPGRADE,'filename.dsk','outputfilename.dsk'
  *
  * == deferred execution ==
@@ -14811,6 +16414,7 @@ void __edsk_writesect(struct s_assenv *ae, struct s_edsk_action *action) {
  * EDSK    RESIZE,'filename.dsk','location',<size>,...
  * EDSK   REORDER,'filename.dsk','location',position,...
  * EDSK     MERGE,'filename.dsk:side','filename.dsk:side','outputfilename.dsk'
+ * EDSK     CHECK,'filename.dsk','location',<size>,<start_addr> @@TODO => la doc!
 ***************************************************************************************************************************/
 void __EDSK(struct s_assenv *ae) {
 	if (!ae->wl[ae->idx].t && !ae->wl[ae->idx+1].t) {
@@ -14822,13 +16426,16 @@ void __EDSK(struct s_assenv *ae) {
 		// which action?
 		switch (ae->wl[ae->idx+1].w[0]) {
 			case 'A':if (strcmp(ae->wl[ae->idx+1].w,"ADD")==0)	curaction.action=E_EDSK_ACTION_ADD; else cmderr=1;break; // add sector
-			case 'C':if (strcmp(ae->wl[ae->idx+1].w,"CREATE")==0)	curaction.action=E_EDSK_ACTION_CREATE; else cmderr=1;break; // nombre de pistes + format Èventuel
-			case 'D':if (strcmp(ae->wl[ae->idx+1].w,"DROP")==0)	curaction.action=E_EDSK_ACTION_DROP; else cmderr=1;break; // drop track or sector
+			case 'C':if (strcmp(ae->wl[ae->idx+1].w,"CREATE")==0)	curaction.action=E_EDSK_ACTION_CREATE; else // nombre de pistes + format √©ventuel
+			         if (strcmp(ae->wl[ae->idx+1].w,"CHECK")==0)	curaction.action=E_EDSK_ACTION_CHECK; else cmderr=1;break; // location, size, memory address
+			case 'D':if (strcmp(ae->wl[ae->idx+1].w,"DROP")==0)	curaction.action=E_EDSK_ACTION_DROP; else // drop track or sector
+				if (strcmp(ae->wl[ae->idx+1].w,"DELFILE")==0)	curaction.action=E_EDSK_ACTION_DELFILE; else cmderr=1;break; // delete a file on DSK
 			case 'G':if (strcmp(ae->wl[ae->idx+1].w,"GAPFIX")==0)	curaction.action=E_EDSK_ACTION_GAPFIX; else cmderr=1;break; // fix GAP to fit an ideal track
 			case 'M':if (strcmp(ae->wl[ae->idx+1].w,"MERGE")==0)	curaction.action=E_EDSK_ACTION_MERGE; else // merge edsk
 				 if (strcmp(ae->wl[ae->idx+1].w,"MAP")==0)	curaction.action=E_EDSK_ACTION_MAP; else cmderr=1;break; // map edsk
 			case 'R':if (strcmp(ae->wl[ae->idx+1].w,"RESIZE")==0)	curaction.action=E_EDSK_ACTION_RESIZE; else // resize sector
 				 if (strcmp(ae->wl[ae->idx+1].w,"REORDER")==0)	curaction.action=E_EDSK_ACTION_REORDER; else // change sector position
+				 if (strcmp(ae->wl[ae->idx+1].w,"READFILE")==0)	curaction.action=E_EDSK_ACTION_READFILE; else // read Amsdos file
 				 if (strcmp(ae->wl[ae->idx+1].w,"READSECT")==0)	curaction.action=E_EDSK_ACTION_READSECT; else cmderr=1;break; // read sectors into memory
 			case 'U':if (strcmp(ae->wl[ae->idx+1].w,"UPGRADE")==0)	curaction.action=E_EDSK_ACTION_UPGRADE; else cmderr=1;break; // use trackload to save files
 			case 'W':if (strcmp(ae->wl[ae->idx+1].w,"WRITESECT")==0)	curaction.action=E_EDSK_ACTION_WRITESECT; else cmderr=1;break; // use trackload to save files
@@ -14841,9 +16448,9 @@ void __EDSK(struct s_assenv *ae) {
 		// some action need more than one filename
 		switch (curaction.action) {
 			case E_EDSK_ACTION_ADD: case E_EDSK_ACTION_CREATE: case E_EDSK_ACTION_DROP: case E_EDSK_ACTION_MAP: case E_EDSK_ACTION_REORDER:
-			case E_EDSK_ACTION_RESIZE: case E_EDSK_ACTION_READSECT: case E_EDSK_ACTION_WRITESECT: case E_EDSK_ACTION_GAPFIX:
+			case E_EDSK_ACTION_RESIZE: case E_EDSK_ACTION_READSECT: case E_EDSK_ACTION_WRITESECT: case E_EDSK_ACTION_GAPFIX: case E_EDSK_ACTION_CHECK:
 				nbfilename=1;break;
-			case E_EDSK_ACTION_UPGRADE:
+			case E_EDSK_ACTION_UPGRADE:case E_EDSK_ACTION_READFILE:case E_EDSK_ACTION_DELFILE:
 				nbfilename=2;break;
 			case E_EDSK_ACTION_MERGE:
 				nbfilename=3;break;
@@ -14876,7 +16483,7 @@ void __EDSK(struct s_assenv *ae) {
 		/*
 		cursave.ioffset=ae->idx+2;
 		cursave.isize=ae->idx+3;
-		ExpressionFastTranslate(ae,&ae->wl[ae->idx+2].w,1); // si on utilise des variables Áa Èvite la grouille post traitement...
+		ExpressionFastTranslate(ae,&ae->wl[ae->idx+2].w,1); // si on utilise des variables √ßa √©vite la grouille post traitement...
 		ExpressionFastTranslate(ae,&ae->wl[ae->idx+3].w,1); // idem
 		*/
 
@@ -14889,6 +16496,8 @@ void __EDSK(struct s_assenv *ae) {
 			// immediate execution
 			case E_EDSK_ACTION_CREATE: __edsk_create(ae,&curaction);break;
 			case E_EDSK_ACTION_READSECT: __edsk_readsect(ae,&curaction);break;
+			case E_EDSK_ACTION_READFILE: __edsk_readfile(ae,&curaction);break;
+			case E_EDSK_ACTION_DELFILE: __edsk_delfile(ae,&curaction);break;
 			case E_EDSK_ACTION_UPGRADE: __edsk_upgrade(ae,&curaction);break;
 			// deferred execution
 			case E_EDSK_ACTION_MAP:
@@ -14899,6 +16508,11 @@ void __EDSK(struct s_assenv *ae) {
 			case E_EDSK_ACTION_WRITESECT:
 			case E_EDSK_ACTION_ADD:
 			case E_EDSK_ACTION_GAPFIX:
+			case E_EDSK_ACTION_CHECK:
+				if (curaction.action==E_EDSK_ACTION_CHECK && curaction.nbparam==5) {
+					curaction.isize  =RoundComputeExpression(ae,ae->wl[ae->idx+4].w,ae->outputadr,0,0);
+					curaction.ioffset=RoundComputeExpression(ae,ae->wl[ae->idx+5].w,ae->outputadr,0,0);
+				}
 				if (curaction.action==E_EDSK_ACTION_GAPFIX && curaction.nbparam==4) {
 					ExpressionFastTranslate(ae,&ae->wl[ae->idx+4].w,1); // track conversion
 				}
@@ -14929,6 +16543,7 @@ void PopAllEDSK(struct s_assenv *ae) {
 			case E_EDSK_ACTION_DROP:	__edsk_drop(ae,&ae->edsk_action[i]);break;
 			case E_EDSK_ACTION_WRITESECT:	__edsk_writesect(ae,&ae->edsk_action[i]);break;
 			case E_EDSK_ACTION_ADD:		__edsk_add(ae,&ae->edsk_action[i]);break;
+			case E_EDSK_ACTION_CHECK:	__edsk_check(ae,&ae->edsk_action[i]);break;
 			default:MakeError(ae,0,"(PopAllEDSK)",0,"internal error during EDSK deferred execution, please report\n");
 				break;
 		}
@@ -15141,7 +16756,7 @@ void __AMSDOS(struct s_assenv *ae) {
 void __internal_LOCAL(struct s_assenv *ae, int localval) {
 	struct s_label *curlabel;
 	struct s_expr_dico *curdic;
-	int ialias,crc,freeflag;
+	int crc,freeflag;
 	char *localname;
 
 	if (ae->wl[ae->idx].t) {
@@ -15171,9 +16786,10 @@ void __internal_LOCAL(struct s_assenv *ae, int localval) {
 	}
 }
 void __internal_EXPORT(struct s_assenv *ae, int exportval) {
+	struct s_alias *curalias;
 	struct s_label *curlabel;
 	struct s_expr_dico *curdic;
-	int ialias,crc,freeflag;
+	int crc,freeflag;
 	char *localname;
 
 	if (ae->wl[ae->idx].t) {
@@ -15200,8 +16816,8 @@ void __internal_EXPORT(struct s_assenv *ae, int exportval) {
 			if ((curdic=SearchDico(ae,ae->wl[ae->idx].w,crc))!=NULL) {
 				curdic->autorise_export=exportval;
 			} else {
-				if ((ialias=SearchAlias(ae,crc,ae->wl[ae->idx].w))!=-1) {
-					ae->alias[ialias].autorise_export=exportval;
+				if ((curalias=SearchAlias(ae,crc,ae->wl[ae->idx].w))) {
+					curalias->autorise_export=exportval;
 				} else {
 					MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"(E)NOEXPORT did not found [%s] in variables, labels or aliases\n",ae->wl[ae->idx].w);
 				}
@@ -15264,10 +16880,32 @@ void __BUILDZX(struct s_assenv *ae) {
 	}
 }
 void __BUILDCPR(struct s_assenv *ae) {
-	if (!ae->wl[ae->idx].t && ae->wl[ae->idx+1].t==1 && strcmp(ae->wl[ae->idx+1].w,"EXTENDED")==0) {
-		ae->extendedCPR=1;
-	} else if (!ae->wl[ae->idx].t) {
-		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"BUILDCPR unknown parameter\n");
+	while (!ae->wl[ae->idx].t) {
+		ae->idx++;
+		if (strcmp(ae->wl[ae->idx].w,"EXTENDED")==0) {
+			ae->extendedCPR=1;
+		} else if (StringIsQuote(ae->wl[ae->idx].w)) {
+			int validExt=0;
+			int idx;
+			ae->cartridge_name=ae->wl[ae->idx].w+1;
+			ae->cartridge_name[strlen(ae->cartridge_name)-1]=0;
+
+			if (strlen(ae->cartridge_name)>4) {
+				idx=strlen(ae->cartridge_name)-4;
+				if (ae->cartridge_name[idx]=='.' && (toupper(ae->cartridge_name[idx+1])=='C' || toupper(ae->cartridge_name[idx+1])=='X')
+						&& toupper(ae->cartridge_name[idx+2])=='P' && toupper(ae->cartridge_name[idx+3])=='R') {
+					validExt=1;
+				}
+			}
+			if (!validExt) {
+				if (!ae->nowarning) {
+					rasm_printf(ae,KWARNING"[%s:%d] Warning: cartridge filename does not end with .cpr or .xpr extension\n",GetCurrentFile(ae),ae->wl[ae->idx].l);
+					if (ae->erronwarn) MaxError(ae);
+				}
+			}
+		} else {
+			MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"BUILDCPR unknown parameter, may be EXTENDED or 'filename'\n");
+		}
 	}
 	if (!ae->forcesnapshot && !ae->forcetape && !ae->forcezx && !ae->forceROM) {
 		ae->forcecpr=1;
@@ -15573,10 +17211,15 @@ void __SNAPINIT(struct s_assenv *ae) {
 			while (idx<65536 && src<srcmax) {
 				if (snapdata[src]==0xE5) {
 					src++;
-					for (i=0;i<snapdata[src] && idx<65536;i++) {
-						dataout[idx++]=snapdata[src+1];
+					if (!snapdata[src]) {
+						dataout[idx++]=0xE5;
+						src++;
+					} else {
+						for (i=0;i<snapdata[src] && idx<65536;i++) {
+							dataout[idx++]=snapdata[src+1];
+						}
+						src+=2;
 					}
-					src+=2;
 				} else {
 					dataout[idx++]=snapdata[src++];
 				}
@@ -15601,13 +17244,33 @@ void __SNAPINIT(struct s_assenv *ae) {
 	MemFree(snapdata);
 }
 
-
 void __BUILDSNA(struct s_assenv *ae) {
 	while (!ae->wl[ae->idx].t) {
 		if (strcmp(ae->wl[ae->idx+1].w,"V2")==0) {
 			ae->snapshot.version=2;
+		} else if (strcmp(ae->wl[ae->idx+1].w,"CPR")==0) {
+			ae->snacpr=1;
 		} else if (strcmp(ae->wl[ae->idx+1].w,"DSK")==0) {
 			ae->dsksnapshot=1;
+		} else if (StringIsQuote(ae->wl[ae->idx+1].w)) {
+			int validExt=0;
+			int idx;
+			ae->snapshot_name=ae->wl[ae->idx+1].w+1;
+			ae->snapshot_name[strlen(ae->snapshot_name)-1]=0;
+
+			if (strlen(ae->snapshot_name)>4) {
+				idx=strlen(ae->snapshot_name)-4;
+				if (ae->snapshot_name[idx]=='.' && toupper(ae->snapshot_name[idx+1])=='S'
+						&& toupper(ae->snapshot_name[idx+2])=='N' && toupper(ae->snapshot_name[idx+3])=='A') {
+					validExt=1;
+				}
+			}
+			if (!validExt) {
+				if (!ae->nowarning) {
+					rasm_printf(ae,KWARNING"[%s:%d] Warning: snapshot filename does not end with .sna extension\n",GetCurrentFile(ae),ae->wl[ae->idx].l);
+					if (ae->erronwarn) MaxError(ae);
+				}
+			}
 		} else {
 			MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"BUILDSNA unrecognized option [%s]\n",ae->wl[ae->idx+1].w);
 		}
@@ -16127,6 +17790,11 @@ void __BANK(struct s_assenv *ae) {
 			ae->lastbank=ae->activebank; // track last bank used
 			ae->activebank=RoundComputeExpression(ae,ae->wl[ae->idx+1].w,ae->codeadr,0,0); ae->maxptr=ae->memsize[ae->activebank]; // inseparable
 		}
+		// go dynamic :)
+		if (!ae->mem[ae->activebank]) {
+			ae->mem[ae->activebank]=MemMalloc(65536);
+			memset(ae->mem[ae->activebank],0,65536);
+		}
 		if (ae->forcecpr && (ae->activebank<0 || ae->activebank>31) && !ae->extendedCPR) {
 			MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"FATAL - Bank selection must be from 0 to 31 in cartridge mode\n");
 			FreeAssenv(ae);
@@ -16173,7 +17841,7 @@ void __BANK(struct s_assenv *ae) {
 }
 
 void __ROMBANK(struct s_assenv *ae) {
-	int rom_select;
+	int i,rom_select;
 
 	if (ae->getstruct==1) {
 		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"You cannot change BANK inside a structure declaration\n");
@@ -16185,8 +17853,31 @@ void __ROMBANK(struct s_assenv *ae) {
 	}
 	ae->remu=1; // force REMU output :)
 
+	// enforce correct memory usage
+	__internal_UpdateLZBlockIfAny(ae);
+	if (ae->io) {
+		ae->orgzone[ae->io-1].memend=ae->outputadr;
+	}
+	if (ae->lz>=0) {
+		if (!ae->nowarning) {
+			rasm_printf(ae,KWARNING"[%s:%d] Warning: LZ section wasn't closed before a new ROMBANK directive\n",GetCurrentFile(ae),ae->wl[ae->idx].l);
+			if (ae->erronwarn) MaxError(ae);
+		}
+		__LZCLOSE(ae);
+	}
+
 	if (!ae->wl[ae->idx].t) {
-		if (strcmp(ae->wl[ae->idx+1].w,"LOWER")==0) {
+		if (strcmp(ae->wl[ae->idx+1].w,"NEXT")==0) {
+			// search for an immediate ROM used
+			rom_select=0;
+			if (ae->activebank<260-1) {
+				// no previous ROM => use default
+			} else {
+				for (i=0;i<257;i++) if (ae->rombank[i]==ae->activebank) break;
+				if (i<257) rom_select=i+1;
+				if (rom_select>=256) rom_select=0;
+			}
+		} else if (strcmp(ae->wl[ae->idx+1].w,"LOWER")==0) {
 			rom_select=256;
 			ae->idx++;
 		} else {
@@ -16205,6 +17896,9 @@ void __ROMBANK(struct s_assenv *ae) {
 	} else {
 		// already allocated, just translate ROM number
 		ae->activebank=ae->rombank[rom_select]; ae->maxptr=ae->memsize[ae->activebank]; // inseparable
+		// but we need to get ORG info back!
+		// try to get an old memory settings :)
+		___getbackto_memory_space(ae);
 	}
 }
 
@@ -16236,6 +17930,11 @@ void __BANKSET(struct s_assenv *ae) {
 		ae->lastbank=ae->activebank; // track last bank used
 		ae->activebank=RoundComputeExpression(ae,ae->wl[ae->idx+1].w,ae->codeadr,0,0); // inseparable particulier (see next line)
 		ae->activebank*=4; ae->maxptr=ae->memsize[ae->activebank]; // inseparable
+		// go dynamic :)
+		if (!ae->mem[ae->activebank]) {
+			ae->mem[ae->activebank]=MemMalloc(65536);
+			memset(ae->mem[ae->activebank],0,65536);
+		}
 		if (ae->forcesnapshot && (ae->activebank<0 || ae->activebank>=260)) {
 			MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"FATAL - Bank set selection must be from 0 to 64 in snapshot mode\n");
 			FreeAssenv(ae);
@@ -16249,6 +17948,10 @@ void __BANKSET(struct s_assenv *ae) {
 				ae->idx++;
 				return;
 			} else {
+				// go dynamic :)
+				if (!ae->mem[ibank+1]) { ae->mem[ibank+1]=MemMalloc(65536); memset(ae->mem[ibank+1],0,65536); }
+				if (!ae->mem[ibank+2]) { ae->mem[ibank+2]=MemMalloc(65536); memset(ae->mem[ibank+2],0,65536); }
+				if (!ae->mem[ibank+3]) { ae->mem[ibank+3]=MemMalloc(65536); memset(ae->mem[ibank+3],0,65536); }
 				/* in case of EMURAM, rebuild bankset with existing data (this is done only once) */
 				ae->bankset[ibank>>2]=1;
 				for (i=16384;i<32768;i++) {
@@ -16282,6 +17985,54 @@ void __BANKSET(struct s_assenv *ae) {
 }
 
 
+void __NameROM(struct s_assenv *ae) {
+	int ibank;
+
+	if (!ae->forcesnapshot) {
+		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"NAMEROM can be used only with snapshot output\n");
+		return;
+	}
+
+	ae->bankmode=1;
+	if (!ae->wl[ae->idx].t && !ae->wl[ae->idx+1].t && ae->wl[ae->idx+2].t==1) {
+		if (!StringIsQuote(ae->wl[ae->idx+2].w)) {
+			MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Syntax is NAMEROM <rom number|Lower>,'<string>'\n");
+		} else {
+			if (strcmp(ae->wl[ae->idx+1].w,"LOWER")==0) {
+				ibank=256;
+			} else {
+				ExpressionFastTranslate(ae,&ae->wl[ae->idx+1].w,0);
+				ibank=RoundComputeExpression(ae,ae->wl[ae->idx+1].w,ae->codeadr,0,0);
+			}
+			if (ibank<0 || ibank>256) {
+				MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"NAMEROM selection must be from 0 to 255 (or use LOWER for lower ROM)\n");
+			} else {
+				ae->iwnameromsna[ibank]=ae->idx+2;
+			}
+		}
+		ae->idx+=2;
+	} else if (!ae->wl[ae->idx].t && ae->wl[ae->idx+1].t==1)  {
+		if (!StringIsQuote(ae->wl[ae->idx+1].w)) {
+			MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Syntax is NAMEROM '<string>'\n");
+		} else {
+			int sl;
+			// find rom in translation table
+			for (sl=0;sl<257;sl++) {
+				if (ae->rombank[sl]==ae->activebank) {
+					ibank=sl;
+					break;
+				}
+			}
+			if (sl==257) {
+				MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"NAMEROM cannot be used in that memory space\n");
+			} else {
+				ae->iwnameromsna[ibank]=ae->idx+1;
+			}
+		}
+	} else {
+		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"NAMEROM directive need one integer (or LOWER) and a string\n");
+	}
+}
 void __NameBANK(struct s_assenv *ae) {
 	int ibank;
 
@@ -16305,7 +18056,7 @@ void __NameBANK(struct s_assenv *ae) {
 		} else {
 			ibank=ae->activebank;
 			if (ibank<0 || ibank>=BANK_MAX_NUMBER) {
-				MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"NAMEBANK selection must be from 0 to %d\n",BANK_MAX_NUMBER);
+				MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"NAMEBANK cannot be used in that memory space\n");
 			} else {
 				ae->iwnamebank[ibank]=ae->idx+1;
 			}
@@ -16381,6 +18132,28 @@ void __WRITE(struct s_assenv *ae) {
 	while (!ae->wl[ae->idx].t) ae->idx++;
 	if (!ok) {
 		___new_memory_space(ae);
+	}
+}
+void __UTF8REMAP(struct s_assenv *ae) {
+	struct s_utf8Remap utr={0};
+	int v;
+
+	if (ae->wl[ae->idx].t==1) {
+		// reinit REMAP
+		ae->iUtf8Remap=0;
+	} else if (!ae->wl[ae->idx].t && !ae->wl[ae->idx+1].t && ae->wl[ae->idx+2].t==1) {
+		if (StringIsQuote(ae->wl[ae->idx+1].w)) {
+			strncpy(utr.utf8Code,ae->wl[ae->idx+1].w+1,sizeof(utr.utf8Code)-1);
+			utr.utf8Len=strlen(utr.utf8Code);
+			utr.utf8Code[utr.utf8Len]=0;
+			utr.utf8Len--;
+			ExpressionFastTranslate(ae,&ae->wl[ae->idx+2].w,0);
+			v=RoundComputeExpression(ae,ae->wl[ae->idx+2].w,ae->codeadr,0,0);
+			utr.ccode=v;
+			ObjectArrayAddDynamicValueConcat((void **)&ae->utf8Remap,&ae->iUtf8Remap,&ae->mUtf8Remap,&utr,sizeof(utr));
+		}
+	} else {
+		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"UTF8REMAP must be used without parameter OR two params : utf8remap <utf8char>,<conversion value>\n");
 	}
 }
 void __CHARSET(struct s_assenv *ae) {
@@ -16492,7 +18265,7 @@ printf("<== PopGlobal on Stack [%s] igs=%d\n",ae->globalstack[ae->igs],ae->igs+1
 void __MACRO(struct s_assenv *ae) {
 	struct s_macro curmacro={0};
 	char *referentfilename,*zeparam;
-	int refidx,idx,getparam=1;
+	int refidx,idx,getparam=1,i;
 	struct s_wordlist curwl;
 
 	if (ae->getstruct==1) {
@@ -16518,7 +18291,7 @@ void __MACRO(struct s_assenv *ae) {
 				if ((SearchLabel(ae,ae->wl[ae->idx+1].w,curmacro.crc))!=NULL) {
 					MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Macro definition: There is already a label with this name\n");
 				} else {
-					if ((SearchAlias(ae,curmacro.crc,ae->wl[ae->idx+1].w))!=-1) {
+					if (SearchAlias(ae,curmacro.crc,ae->wl[ae->idx+1].w)) {
 						MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Macro definition: There is already an alias with this name\n");
 					} else {
 						if (IsRegister(curmacro.mnemo)) {
@@ -16564,8 +18337,29 @@ void __MACRO(struct s_assenv *ae) {
 		if (ae->wl[idx].t==2) {
 			MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Macro was not closed\n");
 		}
+
+		for (i=0;i<curmacro.nbword;i++) {
+			/* tags in upper case for replacement in quotes */
+			if (StringIsQuote(curmacro.wc[i].w)) {
+				int lm,touched;
+				for (lm=touched=0;curmacro.wc[i].w[lm];lm++) {
+					if (curmacro.wc[i].w[lm]=='{') {
+						touched++;
+					} else if (curmacro.wc[i].w[lm]=='}') {
+						touched--;
+					} else if (touched) {
+						curmacro.wc[i].w[lm]=toupper(curmacro.wc[i].w[lm]);
+					}
+				}
+			}
+			// d√©clencheur inclusif (pas trop laxiste non plus)
+			if (strchr(curmacro.wc[i].w,'{')) {
+				IntArrayAddDynamicValueConcat(&curmacro.replaceidx,&curmacro.nbreplace,&curmacro.maxreplace,i);
+			}
+		}
+
 		ObjectArrayAddDynamicValueConcat((void**)&ae->macro,&ae->imacro,&ae->mmacro,&curmacro,sizeof(curmacro));
-		/* le quicksort n'est pas optimal mais on n'est pas supposÈ en crÈer des milliers */
+		/* le quicksort n'est pas optimal mais on n'est pas suppos√© en cr√©er des milliers */
 		qsort(ae->macro,ae->imacro,sizeof(struct s_macro),cmpmacros);
 
 		/* ajustement des mots lus */
@@ -16578,7 +18372,7 @@ void __MACRO(struct s_assenv *ae) {
 
 struct s_wordlist *__MACRO_EXECUTE(struct s_assenv *ae, int imacro) {
 	struct s_wordlist *cpybackup;
-	int nbparam=0,idx,i,j,idad;
+	int nbparam=0,idx,i,j,k,idad;
 	int ifile,iline,iu,lenparam;
 	double v;
 	struct s_macro_position curmacropos={0};
@@ -16729,7 +18523,7 @@ struct s_wordlist *__MACRO_EXECUTE(struct s_assenv *ae, int imacro) {
 				ae->nbword+=ae->macro[imacro].nbword-1-nbparam-reload;
 				ae->wl=MemRealloc(ae->wl,ae->nbword*sizeof(struct s_wordlist));
 			} else {
-				/* si on rÈduit pas de realloc pour ne pas perdre de donnees */
+				/* si on r√©duit pas de realloc pour ne pas perdre de donnees */
 				ae->nbword+=ae->macro[imacro].nbword-1-nbparam-reload;
 			}
 			iline=ae->wl[ae->idx].l;
@@ -16738,6 +18532,7 @@ struct s_wordlist *__MACRO_EXECUTE(struct s_assenv *ae, int imacro) {
 
 			for (i=0;i<ae->macro[imacro].nbword;i++) {
 				ae->wl[i+ae->idx].w=TxtStrDup(ae->macro[imacro].wc[i].w);
+				ae->wl[i+ae->idx].len=ae->macro[imacro].wc[i].len; // m√™me si pas toujours parfait
 				ae->wl[i+ae->idx].l=iline;
 				ae->wl[i+ae->idx].ifile=ifile;
 				ae->wl[i+ae->idx].ml=ae->macro[imacro].wc[i].l;
@@ -16746,22 +18541,16 @@ struct s_wordlist *__MACRO_EXECUTE(struct s_assenv *ae, int imacro) {
 				ae->wl[i+ae->idx].t=ae->macro[imacro].wc[i].t;
 				ae->wl[i+ae->idx].e=ae->macro[imacro].wc[i].e;
 			}
-			/* replace */
+			/* replace only where it was supposed to be */
 			idx=ae->idx;
-			for (i=0;i<nbparam;i++) {
-				for (j=idx;j<idx+ae->macro[imacro].nbword;j++) {
-					/* tags in upper case for replacement in quotes */
-					if (StringIsQuote(ae->wl[j].w)) {
-						int lm,touched;
-						for (lm=touched=0;ae->wl[j].w[lm];lm++) {
-							if (ae->wl[j].w[lm]=='{') touched++; else if (ae->wl[j].w[lm]=='}') touched--; else if (touched) ae->wl[j].w[lm]=toupper(ae->wl[j].w[lm]);
-						}
-					}
-//printf("MACRO_EXECUTE word[%d]=[%s] param[%d]=[%s] cpybackup[%d]=[%s]\n",j,ae->wl[j].w,i,ae->macro[imacro].param[i],i,cpybackup[i].w);
+			for (k=0;k<ae->macro[imacro].nbreplace;k++) {
+				j=idx+ae->macro[imacro].replaceidx[k];
+				for (i=0;i<nbparam;i++) {
 					ae->wl[j].w=TxtReplace(ae->wl[j].w,ae->macro[imacro].param[i],cpybackup[i].w,0);
 				}
-				MemFree(cpybackup[i].w);
+				ae->wl[j].len=strlen(ae->wl[j].w); // car la longueur est susceptible d'avoir chang√©
 			}
+			for (i=0;i<nbparam;i++) MemFree(cpybackup[i].w);
 			MemFree(cpybackup);
 
 			/* look for specific tags */
@@ -16831,6 +18620,7 @@ void __TICKER(struct s_assenv *ae) {
 					/* compute nop count */
 					if (ae->wl[ae->idx+1].w[4]=='Z') tvar->v=ae->tick-ae->ticker[i].tickerstart;
 					else tvar->v=ae->nop-ae->ticker[i].nopstart;
+					tvar->used=1;
 				} else {
 					/* create var with nop count */
 					if (ae->wl[ae->idx+1].w[4]=='Z') ExpressionSetDicoVar(ae,ae->wl[ae->idx+2].w,ae->tick-ae->ticker[i].tickerstart,0);
@@ -16912,11 +18702,62 @@ void __BREAKPOINT(struct s_assenv *ae) {
 	if (ae->wl[ae->idx].t) {
 		breakpoint.address=ae->codeadr;
 		ObjectArrayAddDynamicValueConcat((void **)&ae->breakpoint,&ae->ibreakpoint,&ae->maxbreakpoint,&breakpoint,sizeof(struct s_breakpoint));
-	} else 	if (!ae->wl[ae->idx].t && ae->wl[ae->idx+1].t==1) {
-		breakpoint.address=RoundComputeExpression(ae,ae->wl[ae->idx+1].w,ae->codeadr,0,0);
-		ObjectArrayAddDynamicValueConcat((void **)&ae->breakpoint,&ae->ibreakpoint,&ae->maxbreakpoint,&breakpoint,sizeof(struct s_breakpoint));
-	} else {
-		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"syntax is BREAKPOINT [address]\n");
+	} else 	{
+		struct s_ace_breakpoint acePoint={0};
+		int first=1,legacy=0;
+
+		// default values
+		strcpy(acePoint.brkType,"MEM");
+		strcpy(acePoint.aMode,"RW");
+		strcpy(acePoint.runMode,"STOP"); // S/STOP/STOPPER W/WATCH/WATCHER
+		acePoint.addr=ae->codeadr;
+		acePoint.mask=0xFFFF;
+		acePoint.size=1;
+		acePoint.value=0;
+		acePoint.valmask=0;
+		sprintf(acePoint.name,"imported");
+		// parse breakpoint for export
+		
+		ae->idx++;
+		while (1) {
+			if (legacy) {
+				MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Too much parameter with BREAKPOINT for legacy mode (see online documentation)\n");
+				break;
+			}
+			if (strcmp(ae->wl[ae->idx].w,"EXEC")==0 || strcmp(ae->wl[ae->idx].w,"TYPE=EXEC")==0) strcpy(acePoint.brkType,"EXEC"); else
+			if (strcmp(ae->wl[ae->idx].w,"MEM")==0 || strcmp(ae->wl[ae->idx].w,"TYPE=MEM")==0) strcpy(acePoint.brkType,"MEM"); else
+			if (strcmp(ae->wl[ae->idx].w,"IO")==0 || strcmp(ae->wl[ae->idx].w,"TYPE=IO")==0) strcpy(acePoint.brkType,"IO"); else
+			if (strcmp(ae->wl[ae->idx].w,"READ")==0 || strcmp(ae->wl[ae->idx].w,"ACCESS=READ")==0) strcpy(acePoint.aMode,"READ"); else
+			if (strcmp(ae->wl[ae->idx].w,"WRITE")==0 || strcmp(ae->wl[ae->idx].w,"ACCESS=WRITE")==0) strcpy(acePoint.aMode,"WRITE"); else
+			if (strcmp(ae->wl[ae->idx].w,"RW")==0 || strcmp(ae->wl[ae->idx].w,"ACCESS=RW")==0) strcpy(acePoint.aMode,"RW"); else
+			if (strcmp(ae->wl[ae->idx].w,"READWRITE")==0 || strcmp(ae->wl[ae->idx].w,"ACCESS=READWRITE")==0) strcpy(acePoint.aMode,"RW"); else
+			if (strcmp(ae->wl[ae->idx].w,"STOP")==0 || strcmp(ae->wl[ae->idx].w,"RUNMODE=STOP")==0) strcpy(acePoint.runMode,"STOP"); else
+			if (strcmp(ae->wl[ae->idx].w,"STOPPER")==0 || strcmp(ae->wl[ae->idx].w,"RUNMODE=STOPPER")==0) strcpy(acePoint.runMode,"STOP"); else
+			if (strcmp(ae->wl[ae->idx].w,"WATCH")==0 || strcmp(ae->wl[ae->idx].w,"RUNMODE=WATCH")==0) strcpy(acePoint.runMode,"WATCH"); else
+			if (strcmp(ae->wl[ae->idx].w,"WATCHER")==0 || strcmp(ae->wl[ae->idx].w,"RUNMODE=WATCHER")==0) strcpy(acePoint.runMode,"WATCH"); else
+			if (strncmp(ae->wl[ae->idx].w,"STEP=",5)==0) acePoint.istep=ae->idx; else
+			if (strncmp(ae->wl[ae->idx].w,"ADDR=",5)==0) acePoint.iaddr=ae->idx; else
+			if (strncmp(ae->wl[ae->idx].w,"MASK=",5)==0) acePoint.imask=ae->idx; else
+			if (strncmp(ae->wl[ae->idx].w,"SIZE=",5)==0) acePoint.isize=ae->idx; else
+			if (strncmp(ae->wl[ae->idx].w,"VALUE=",6)==0) acePoint.ivalue=ae->idx; else
+			if (strncmp(ae->wl[ae->idx].w,"VALMASK=",8)==0) acePoint.ivalmask=ae->idx; else
+			if (strncmp(ae->wl[ae->idx].w,"CONDITION=",10)==0) strncpy(acePoint.condition,ae->wl[ae->idx].w+10,sizeof(acePoint.condition)-1); else
+			if (strncmp(ae->wl[ae->idx].w,"NAME=",5)==0) strncpy(acePoint.name,ae->wl[ae->idx].w+5,sizeof(acePoint.name)-1); else
+			if (first) {
+				breakpoint.address=RoundComputeExpression(ae,ae->wl[ae->idx].w,ae->codeadr,0,0);
+				ObjectArrayAddDynamicValueConcat((void **)&ae->breakpoint,&ae->ibreakpoint,&ae->maxbreakpoint,&breakpoint,sizeof(struct s_breakpoint));
+				legacy=1;
+			} else {
+				MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Invalid option for BREAKPOINT (see online documentation)\n");
+			}
+
+			first=0;
+			if (!ae->wl[ae->idx].t)	ae->idx++; else break;
+		}
+
+		//printf("add aceBrk %X %X [%s]\n",acePoint.addr,acePoint.mask,acePoint.name);
+
+		if (!legacy) ObjectArrayAddDynamicValueConcat((void **)&ae->acebrk,&ae->iacebrk,&ae->macebrk,&acePoint,sizeof(struct s_ace_breakpoint));
 	}
 }
 
@@ -17203,12 +19044,42 @@ void __NOLIST(struct s_assenv *ae) {
 	}
 }
 
+void __REDEFINE_BRK(struct s_assenv *ae) {
+	int o;
+	if (!ae->wl[ae->idx].t) {
+		ae->winapeBRKidx=0; // reset
+		do {
+			if (!StringIsQuote(ae->wl[ae->idx+1].w) || strlen(ae->wl[ae->idx+1].w)==3) {
+				o=RoundComputeExpressionCore(ae,ae->wl[ae->idx+1].w,ae->codeadr,0);
+			} else {
+				MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"REDEFINE_BRK needs one or more parameters but NOT strings\n");
+			}
+			IntArrayAddDynamicValueConcat(&ae->winapeBRK,&ae->winapeBRKidx,&ae->winapeBRKmax,o);
+			ae->idx++;
+		} while (ae->wl[ae->idx].t==0);
+	} else {
+		if (ae->getstruct) {
+			___output(ae,0);
+		} else {
+			MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"REDEFINE_BRK needs one or more parameters\n");
+		}
+	}
+}
 void __BRK(struct s_assenv *ae) {
 	if (!ae->wl[ae->idx].t) {
 		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"BRK Winape directive does not need parameter\n");
 	} else {
-		___output(ae,0xED);
-		___output(ae,0xFF);
+		if (!ae->winapeBRKidx) {
+			___output(ae,0xED);
+			___output(ae,0xFF);
+			ae->nop+=2;
+		} else {
+			int i;
+			for (i=0;i<ae->winapeBRKidx;i++) {
+				___output(ae,ae->winapeBRK[i]);
+				ae->nop++;
+			}
+		}
 	}
 }
 
@@ -17238,6 +19109,8 @@ void __COMZ(struct s_assenv *ae, int icomz) {
 
 	ae->codeadr=ae->comz[icomz].address;
 
+	newcomz=malloc(1);
+	newcomz[0]=0;
 	while (ae->wl[ae->idx].t!=1) {
 		if (!StringIsQuote(ae->wl[ae->idx+1].w)) {
 			char *string2print=NULL;
@@ -17666,7 +19539,7 @@ void __WHILE(struct s_assenv *ae) {
 			whilewend.maxim=ae->imacropos;
 			whilewend.while_counter=1;
 			ae->whilecounter++;
-			/* pour gÈrer les macros situÈs dans le while prÈcedent aprËs un repeat/while courant */
+			/* pour g√©rer les macros situ√©s dans le while pr√©cedent apr√®s un repeat/while courant */
 			if (ae->iw) whilewend.maxim=ae->whilewend[ae->iw-1].maxim;
 			if (ae->ir && ae->repeat[ae->ir-1].maxim>whilewend.maxim) whilewend.maxim=ae->repeat[ae->ir-1].maxim;
 			ObjectArrayAddDynamicValueConcat((void**)&ae->whilewend,&ae->iw,&ae->mw,&whilewend,sizeof(whilewend));
@@ -17774,10 +19647,12 @@ void __REPEAT(struct s_assenv *ae) {
 				crc=GetCRC(ae->wl[ae->idx].w);
 				if ((rvar=SearchDico(ae,ae->wl[ae->idx].w,crc))!=NULL) {
 					rvar->v=vstart;
+					rvar->used=1;
 				} else {
-					/* mais ne peut Ítre un label ou un alias */
+					/* mais ne peut √™tre un label ou un alias */
 					ExpressionSetDicoVar(ae,ae->wl[ae->idx].w,vstart,0);
 					rvar=SearchDico(ae,ae->wl[ae->idx].w,crc);
+					rvar->used=1;
 				}
 				currepeat.repeatvarstruct=rvar;
 				currepeat.repeatvar=ae->wl[ae->idx].w;
@@ -17799,7 +19674,7 @@ void __REPEAT(struct s_assenv *ae) {
 		currepeat.value=ae->repeatcounter;
 		currepeat.repeat_counter=1;
 		ae->repeatcounter++;
-		/* pour gÈrer les macros situÈs dans le repeat prÈcedent aprËs le repeat courant */
+		/* pour g√©rer les macros situ√©s dans le repeat pr√©cedent apr√®s le repeat courant */
 		if (ae->ir) currepeat.maxim=ae->repeat[ae->ir-1].maxim;
 		if (ae->iw && ae->whilewend[ae->iw-1].maxim>currepeat.maxim) currepeat.maxim=ae->whilewend[ae->iw-1].maxim;
 		if (ae->imacropos>currepeat.maxim) currepeat.maxim=ae->imacropos;
@@ -17811,13 +19686,15 @@ void __REPEAT(struct s_assenv *ae) {
 
 void __REND(struct s_assenv *ae) {
 	struct s_expr_dico *rvar;
+	if (!ae->wl[ae->idx].t) {
+		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"REND does not need any parameter!\n");
+	}
 	if (ae->ir>0) {
 		if (ae->repeat[ae->ir-1].cpt==-1) {
 			MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"REND encounter whereas referent REPEAT was waiting for UNTIL\n");
 		} else {
 			ae->repeat[ae->ir-1].cpt--;
 			ae->repeat[ae->ir-1].repeat_counter++;
-			//if ((rvar=SearchDico(ae,ae->repeat[ae->ir-1].repeatvar,ae->repeat[ae->ir-1].repeatcrc))!=NULL) {
 			if (ae->repeat[ae->ir-1].repeatvarstruct) {
 				rvar=ae->repeat[ae->ir-1].repeatvarstruct;
 				rvar->v+=ae->repeat[ae->ir-1].varincrement; // LEGACY rvar->v=ae->repeat[ae->ir-1].repeat_counter;
@@ -17953,15 +19830,18 @@ void __IF_light(struct s_assenv *ae) {
 void __IFUSED(struct s_assenv *ae) {
 	struct s_ifthen ifthen={0};
 	int rexpr,crc;
+	struct s_label *curlabel;
+	struct s_alias *curalias;
+	struct s_expr_dico *curdico;
 	
 	if (!ae->wl[ae->idx].t && ae->wl[ae->idx+1].t==1) {
 		if (!ae->AutomateValidLabelFirst[((int)ae->wl[ae->idx+1].w[0])&0xFF]) {
-			MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"IFUSED argument must be a variable or a label\n");
+			MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"IFUSED argument must be a variable, alias or a label\n");
 			return;
 		}
 		crc=GetCRC(ae->wl[ae->idx+1].w);
-		if ((SearchDico(ae,ae->wl[ae->idx+1].w,crc))!=NULL) {
-			rexpr=1;
+		if ((curdico=SearchDico(ae,ae->wl[ae->idx+1].w,crc))!=NULL) {
+			rexpr=curdico->used;
 		} else {
 			char *labelmodule=NULL;
 			// first look for module label!
@@ -17970,17 +19850,19 @@ void __IFUSED(struct s_assenv *ae) {
 				strcpy(labelmodule,ae->module);
 				strcat(labelmodule,ae->module_separator);
 				strcat(labelmodule,ae->wl[ae->idx+1].w);
+				curlabel=SearchLabel(ae,labelmodule,GetCRC(labelmodule));
+				MemFree(labelmodule);
+			} else {
+				curlabel=SearchLabel(ae,ae->wl[ae->idx+1].w,crc);
 			}
-			if (ae->module && (SearchLabel(ae,labelmodule,GetCRC(labelmodule)))!=NULL) {
-				rexpr=1;
-			} else if ((SearchLabel(ae,ae->wl[ae->idx+1].w,crc))!=NULL) {
-				rexpr=1;
-			} else if ((SearchAlias(ae,crc,ae->wl[ae->idx+1].w))!=-1) {
-				rexpr=1;
+
+			if (curlabel) {
+				rexpr=curlabel->used;;
+			} else if ((curalias=SearchAlias(ae,crc,ae->wl[ae->idx+1].w))!=NULL) {
+				rexpr=curalias->used;
 			} else {
 				rexpr=SearchUsed(ae,ae->wl[ae->idx+1].w,crc);
 			}
-			if (labelmodule) MemFree(labelmodule);
 		}
 		ifthen.v=rexpr;
 		ifthen.filename=GetCurrentFile(ae);
@@ -18038,7 +19920,7 @@ void __IFDEF(struct s_assenv *ae) {
 				rexpr=1;
 			} else if ((SearchLabel(ae,ae->wl[ae->idx+1].w,crc))!=NULL) {
 				rexpr=1;
-			} else if ((SearchAlias(ae,crc,ae->wl[ae->idx+1].w))!=-1) {
+			} else if (SearchAlias(ae,crc,ae->wl[ae->idx+1].w)) {
 					rexpr=1;
 			} else if (SearchMacro(ae,crc,ae->wl[ae->idx+1].w)>=0) {
 					rexpr=1;
@@ -18092,7 +19974,7 @@ void __IFNDEF(struct s_assenv *ae) {
 				rexpr=0;
 			} else if ((SearchLabel(ae,ae->wl[ae->idx+1].w,crc))!=NULL) {
 				rexpr=0;
-			} else if ((SearchAlias(ae,crc,ae->wl[ae->idx+1].w))!=-1) {
+			} else if (SearchAlias(ae,crc,ae->wl[ae->idx+1].w)) {
 					rexpr=0;
 			} else if (SearchMacro(ae,crc,ae->wl[ae->idx+1].w)>=0) {
 				rexpr=0;
@@ -18427,7 +20309,7 @@ void ___org_new(struct s_assenv *ae, int nocode) {
 	
 	/* check current ORG request */
 	for (i=0;i<ae->io;i++) {
-		/* aucun contrÙle sur les ORG non Ècrits ou en NOCODE */
+		/* aucun contr√¥le sur les ORG non √©crits ou en NOCODE */
 		if (ae->orgzone[i].memstart!=ae->orgzone[i].memend && !ae->orgzone[i].nocode) {
 			if (ae->orgzone[i].ibank==ae->activebank) {
 				if (ae->outputadr<ae->orgzone[i].memend && ae->outputadr>=ae->orgzone[i].memstart) {
@@ -18564,7 +20446,7 @@ void __STRUCT(struct s_assenv *ae) {
 	struct s_rasmstruct rasmstruct={0};
 	struct s_rasmstruct rasmstructalias={0};
 	struct s_label curlabel={0};
-	int crc,i,j,irs;
+	int crc,i,j,k,l,irs;
 	/* filler */
 	int localsize,cursize;
 
@@ -18576,7 +20458,7 @@ void __STRUCT(struct s_assenv *ae) {
 			if (!ae->getstruct) {
 				/* cannot be an existing label or EQU (but variable ok) */
 				crc=GetCRC(ae->wl[ae->idx+1].w);
-				if ((SearchLabel(ae,ae->wl[ae->idx+1].w,crc))!=NULL || (SearchAlias(ae,crc,ae->wl[ae->idx+1].w))!=-1) {
+				if (SearchLabel(ae,ae->wl[ae->idx+1].w,crc) || SearchAlias(ae,crc,ae->wl[ae->idx+1].w)) {
 					MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"STRUCT name must be different from existing labels ou aliases\n");
 				} else {
 					ae->backup_filename=GetCurrentFile(ae);
@@ -18630,6 +20512,13 @@ void __STRUCT(struct s_assenv *ae) {
 #if TRACE_STRUCT
 printf("***** structure insertion inside struct [%s] inside struct ***\n",ae->wl[ae->idx+2].w);
 #endif
+
+					if (irs==ae->irasmstruct-1) {
+						MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Cannot insert self struct Object inside struct\n");
+						while (!ae->wl[ae->idx].t) ae->idx++;
+						return;
+					}
+
 					/* struct inside struct */
 					rasmstructalias.name=MemMalloc(strlen(ae->rasmstruct[ae->irasmstruct-1].name)+2+strlen(ae->wl[ae->idx+2].w));
 					sprintf(rasmstructalias.name,"%s.%s",ae->rasmstruct[ae->irasmstruct-1].name,ae->wl[ae->idx+2].w);
@@ -18641,14 +20530,17 @@ printf("***** structure insertion inside struct [%s] inside struct ***\n",ae->wl
 printf("structalias [%s] ptr=%d size=%d\n",rasmstructalias.name,rasmstructalias.ptr,rasmstructalias.size);
 #endif
 				/* extra parameter to declare an array? */
-				if (!ae->wl[ae->idx+2].t && !StringIsQuote(ae->wl[ae->idx+3].w)) {
-					ExpressionFastTranslate(ae,&ae->wl[ae->idx+3].w,0);
-					nbelem=RoundComputeExpression(ae,ae->wl[ae->idx+3].w,ae->outputadr,0,0);
-					if (nbelem<1) {
-						MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Struct array need a positive number of elements!\n");
-						nbelem=1;
+				if (!ae->wl[ae->idx+2].t) {
+				       if (!StringIsQuote(ae->wl[ae->idx+3].w)) {
+						ExpressionFastTranslate(ae,&ae->wl[ae->idx+3].w,0);
+						nbelem=RoundComputeExpression(ae,ae->wl[ae->idx+3].w,ae->outputadr,0,0);
+						if (nbelem<1) {
+							MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"Struct array need a positive number of elements!\n");
+							nbelem=1;
+						}
+					} else {
+						MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"usage is STRUCT <structType> <structName>[,<arrayNbElement>[,<fieldFiller>, ...]]\n");
 					}
-					ae->idx++;
 				}
 				rasmstructalias.nbelem=nbelem;
 #if TRACE_STRUCT
@@ -18657,7 +20549,7 @@ printf("EVOL 119 - tableau! %d elem%s\n",nbelem,nbelem>1?"s":"");
 				ObjectArrayAddDynamicValueConcat((void **)&ae->rasmstructalias,&ae->irasmstructalias,&ae->mrasmstructalias,&rasmstructalias,sizeof(rasmstructalias));
 				
 				/* create label for global struct ptr */
-				curlabel.iw=-1;
+				//curlabel.iw=-1;
 				curlabel.ptr=ae->codeadr;
 				curlabel.fileidx=ae->wl[ae->idx+2].ifile;
 
@@ -18686,7 +20578,7 @@ printf("EVOL 119 - tableau! %d elem%s\n",nbelem,nbelem>1?"s":"");
 #if TRACE_STRUCT
 printf("create subfields\n");
 #endif
-				curlabel.iw=-1;
+				//curlabel.iw=-1;
 				curlabel.ptr=ae->codeadr;
 				curlabel.ibank=ae->activebank<BANK_MAX_NUMBER?ae->activebank:0;
 				for (i=0;i<ae->rasmstruct[irs].irasmstructfield;i++) {
@@ -18725,82 +20617,157 @@ printf("pushLight [%s] %d:%X\n",curlabel.name,curlabel.ibank,curlabel.ptr);
 
 				/* is there any filler in the declaration? */
 				localsize=0;
+				ae->idx+=2; // skip structType + structName
+				if (!ae->wl[ae->idx].t) ae->idx++; // skip nbElem
 
-#if 0
-
+				
 #if TRACE_STRUCT
-printf("struct new behaviour (scan for %d fields)\n",ae->rasmstruct[irs].irasmstructfield);
-#endif
-				/* dÈterminer si on est en remplissage par dÈfaut ou remplissage surchargÈ */
-				for (i=0;i<ae->rasmstruct[irs].irasmstructfield;i++) {
+for (i=0;i<ae->rasmstruct[irs].irasmstructfield;i++) {
+	if (ae->rasmstruct[irs].rasmstructfield[i].size)
+	printf("field[%d] size=%d idata=%d offset=%d fullname=[%s] name=[%s]\n",i,ae->rasmstruct[irs].rasmstructfield[i].size,ae->rasmstruct[irs].rasmstructfield[i].idata,ae->rasmstruct[irs].rasmstructfield[i].offset,
+			ae->rasmstruct[irs].rasmstructfield[i].fullname,ae->rasmstruct[irs].rasmstructfield[i].name);
+}
 
-					if (!ae->wl[ae->idx+2+i].t || i+1>=ae->rasmstruct[irs].irasmstructfield) {
-						/* si le champ est sur le mÍme offset que le prÈcÈdent, on le saute */
-						if (i && ae->rasmstruct[irs].rasmstructfield[i].offset>ae->rasmstruct[irs].rasmstructfield[i-1].offset) continue;
-
-#if TRACE_STRUCT
-printf("get field? (%d)\n",irs);
-#endif
-						if (!StringIsQuote(ae->wl[ae->idx+i].w)) {
-							ExpressionFastTranslate(ae,&ae->wl[ae->idx+i].w,1);
-							zeval=RoundComputeExpressionCore(ae,ae->wl[ae->idx+i].w,ae->codeadr,0);
-						} else {
-							// push string
-						}
-
-						localsize+=ae->rasmstruct[irs].rasmstructfield[i].size;
-
-						/* pour du single shot ?
-						pushbyte(s) at ae->codeadr+ae->rasmstruct[irs].rasmstructfield[i].offset
-						*/
-
-						//ae->rasmstruct[irs].size;
-
-					} else {
-#if TRACE_STRUCT
-printf("*break*\n");
-#endif
-						break;
-					}
-				}
+printf("struct new behaviour (scan for %d fields) NBELEM=%d\n",ae->rasmstruct[irs].irasmstructfield,nbelem);
 #endif
 
-				/* (LEGACY) filler, on balance des zÈros en attendant d'avoir la complÈtion par init */
-#if TRACE_STRUCT
-printf("struct (almost) legacy filler from %d to %d-1\n",localsize,ae->rasmstruct[irs].size);
-#endif
 				while (nbelem) {
-#if 0
-					cursize=localsize;
-					for (i=0;i<ae->rasmstruct[irs].irasmstructfield;i++) {
-						cursize+=ae->rasmstruct[irs].rasmstructfield[i].size;
-					}
-					#if TRACE_STRUCT
-					printf("cursize to insert = %d\n",cursize);
-					#endif
-#endif
-
+					for (i=j=0;i<ae->rasmstruct[irs].irasmstructfield;i++) {
+						if (!ae->rasmstruct[irs].rasmstructfield[i].size) continue;
+						if (!ae->wl[ae->idx+j].t) {
+							// we have an extra parameter, is it ok with the current field?
+							j++;
+							// if it's a quote, copy char...
+							if (StringIsQuote(ae->wl[ae->idx+j].w)) {
+								unsigned char c,zeQuote=ae->wl[ae->idx+j].w[0];
+								unsigned char hexValue;
+								// fill up to field size
+								k=1; l=0;
+								while (l<ae->rasmstruct[irs].rasmstructfield[i].size) {
+									if (!ae->wl[ae->idx+j].w[k] || ae->wl[ae->idx+j].w[k]==zeQuote) break;
+									if (ae->wl[ae->idx+j].w[k]=='\\') {
+										k++;
+										if (ae->wl[ae->idx+j].w[k]!='\\') {
+											/* no conversion on escaped chars EXCEPT escape char ^_^ */
+											c=ae->wl[ae->idx+j].w[k];
+											switch (c) {
+												case 'e':___output(ae,0x1B);break;
+												case 'a':___output(ae,0x07);break; // alarm
+												case 'b':___output(ae,'\b');break;
+												case 'v':___output(ae,'\v');break; // v-tab
+												case 'f':___output(ae,'\f');break; // feed
+												case '0':___output(ae,'\0');break;
+												case 'r':___output(ae,'\r');break; // return
+												case 'n':___output(ae,'\n');break; // carriage-return
+												case 't':___output(ae,'\t');break; // tab
+												case 'x':// hexadecimal output
+													k++;
+													c=tolower(ae->wl[ae->idx+j].w[k]);
+													if ((c>='0' && c<='9') || (c>='a' && c<='f')) {
+														if (c<='9') hexValue=c-'0'; else hexValue=c-'a'+10;
+														k++;
+														c=tolower(ae->wl[ae->idx+j].w[k]);
+														if ((c>='0' && c<='9') || (c>='a' && c<='f')) {
+															hexValue<<=4;
+															if (c<='9') hexValue|=c-'0'; else hexValue|=c-'a'+10;
+															___output(ae,hexValue);
+														} else {
+															MakeError(ae,ae->idx+j,GetCurrentFile(ae),ae->wl[ae->idx+j].l,"DEFB invalid escaped hexadecimal value!\n");
+															k--; // in case of zero or quote
+														}
+													} else {
+														MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx+j].l,"DEFB invalid escaped hexadecimal value!\n");
+														k--; // in case of zero or quote
+													}
+													break;
+												default:
+												___output(ae,c);
+											}
+											k++;
+											l++;
+										} else {
+											___output(ae,ae->charset[(unsigned int)(ae->wl[ae->idx+j].w[k]&0xFF)]);
+											k++;
+											l++;
+										}
+										ae->nop+=1;
+									} else {
+										if (ae->iUtf8Remap && ((unsigned char)ae->wl[ae->idx+j].w[k])>126) {
+											int ik,il,found=0;
+											/* UTF8 conversion */
+											for (ik=0;ik<ae->iUtf8Remap;ik++) {
+												for (il=0;il<ae->utf8Remap[ik].utf8Len;il++) if (ae->utf8Remap[ik].utf8Code[il]!=(unsigned char)ae->wl[ae->idx+j].w[k+il]) break;
+												if (il==ae->utf8Remap[ik].utf8Len) {
+													found=1;
+													break;
+												}
+											}
+											if (found) {
+												___output(ae,ae->utf8Remap[ik].ccode);
+												k+=ae->utf8Remap[ik].utf8Len-1;
+												ae->nop+=1;
+											} else {
+												rasm_printf(ae,KWARNING"[%s:%d] Warning: UTF8 mapping was defined but no code were found for this one! [#%02X]\n",GetCurrentFile(ae),ae->wl[ae->idx+j].l,(unsigned char)ae->wl[ae->idx+j].w[k]);
+												if (ae->erronwarn) MaxError(ae);
+											}
+										} else {
+											/* charset conversion on the fly */
+											___output(ae,ae->charset[(unsigned int)(ae->wl[ae->idx+j].w[k]&0xFF)]);
+											ae->nop+=1;
+										}
+										k++;
+										l++;
+									}
+								}
+								if (l==ae->rasmstruct[irs].rasmstructfield[i].size) {
+									// check overrun
+									if (ae->wl[ae->idx+j].w[k] && ae->wl[ae->idx+j].w[k]!=zeQuote) {
+										rasm_printf(ae,KWARNING"[%s:%d] Warning: struct field number %d overrun! (%d byte%s max)!\n",GetCurrentFile(ae),ae->wl[ae->idx+j].l,j,ae->rasmstruct[irs].rasmstructfield[i].size,ae->rasmstruct[irs].rasmstructfield[i].size>1?"s":"");
+										if (ae->erronwarn) MaxError(ae);
+									}
+								} else if (l<ae->rasmstruct[irs].rasmstructfield[i].size) {
+								// complete with default data if it's not enough
+									for (k=l;k<ae->rasmstruct[irs].rasmstructfield[i].idata;k++) {
+										___output(ae,ae->rasmstruct[irs].rasmstructfield[i].data[k]);
+										ae->nop+=1;
+									}
+								}
+							} else {
+								// depending the size of the field, compute and PUSH
+								switch (ae->rasmstruct[irs].rasmstructfield[i].size) {
+									case 1: PushExpression(ae,ae->idx+j,E_EXPRESSION_0V8);ae->nop+=1;break;
+									case 2: PushExpression(ae,ae->idx+j,E_EXPRESSION_0V16);ae->nop+=2;break;
+									case 4: PushExpression(ae,ae->idx+j,E_EXPRESSION_0V32);ae->nop+=4;break;
+									case 5: PushExpression(ae,ae->idx+j,E_EXPRESSION_0VR);ae->nop+=5;break;
+									default: rasm_printf(ae,KWARNING"[%s:%d] Warning: struct field description is an expression [%s] but size is %d bytes\n",
+											GetCurrentFile(ae),ae->wl[ae->idx+j].l,ae->wl[ae->idx+j].w,ae->rasmstruct[irs].rasmstructfield[i].size);
+										if (ae->erronwarn) MaxError(ae);
+										for (k=0;k<ae->rasmstruct[irs].rasmstructfield[i].idata;k++) {
+											___output(ae,ae->rasmstruct[irs].rasmstructfield[i].data[k]);
+											ae->nop+=1;
+										}
+										break; // warning remover
+								}
+							}
+						} else {
 #if TRACE_STRUCT
-	printf("nbfield=%d\n",ae->rasmstruct[irs].irasmstructfield);
+							printf("No more init param, break\n");
 #endif
-					for (i=0;i<ae->rasmstruct[irs].irasmstructfield;i++) {
-#if TRACE_STRUCT
-	printf("  field[%d] stored data=%d size=%d\n",i,ae->rasmstruct[irs].rasmstructfield[i].idata,ae->rasmstruct[irs].rasmstructfield[i].size);
-#endif
-						for (j=0;j<ae->rasmstruct[irs].rasmstructfield[i].idata;j++) {
-							___output(ae,ae->rasmstruct[irs].rasmstructfield[i].data[j]);
+							break;
 						}
-						for (;j<ae->rasmstruct[irs].rasmstructfield[i].size;j++) {
-							___output(ae,0);
+					}
+					// we may have break the initialisation, check and use default if needed
+					for (;i<ae->rasmstruct[irs].irasmstructfield;i++) {
+#if TRACE_STRUCT
+							printf("output default for [%s]\n",ae->rasmstruct[irs].rasmstructfield[i].fullname);
+#endif
+						for (k=0;k<ae->rasmstruct[irs].rasmstructfield[i].idata;k++) {
+							___output(ae,ae->rasmstruct[irs].rasmstructfield[i].data[k]);
+							ae->nop+=1;
 						}
 					}
 					nbelem--;
 				}
-
-#if 0
-				for (i=localsize;i<ae->rasmstruct[irs].size;i++) ___output(ae,0);
-#endif
-				ae->idx+=2; // probablement ‡ revoir dans le cas d'une init!!!
 			}
 		}
 	} else {
@@ -18825,7 +20792,7 @@ void __ENDSTRUCT(struct s_assenv *ae) {
 			/* SIZEOF like Vasm with struct name */
 			curlabel.name=TxtStrDup(ae->rasmstruct[ae->irasmstruct-1].name);
 			curlabel.crc=ae->rasmstruct[ae->irasmstruct-1].crc;
-			curlabel.iw=-1;
+			//curlabel.iw=-1;
 			curlabel.ptr=ae->rasmstruct[ae->irasmstruct-1].size;
 			//curlabel.fileidx wont be used
 			PushLabelLight(ae,&curlabel);
@@ -19128,11 +21095,11 @@ printf("AudioLoadSample filesize=%d st=%d normalize=%.2lf\n",filesize,sample_typ
 		
 		idx=subchunk-data;
 	} else {
-		// lecture brute du fichier car il ne ressemble pas ‡ un WAV :)
+		// lecture brute du fichier car il ne ressemble pas √† un WAV :)
 		idx=0;
 		nbchannel=1;
 		nbsample=filesize;
-		_internal_getsample=__internal_getsample8; // 8 bits signÈs
+		_internal_getsample=__internal_getsample8; // 8 bits sign√©s
 	}
 
 	switch (sample_type) {
@@ -19155,7 +21122,7 @@ printf("AudioLoadSample filesize=%d st=%d normalize=%.2lf\n",filesize,sample_typ
 			}
 			break;
 		case AUDIOSAMPLE_SM2:
-			/* +1 pour Èviter le segfault */
+			/* +1 pour √©viter le segfault */
 			for (i=0;i<nbsample+1;i+=2) {
 				for (j=0;j<2;j++) {
 					/* downmixing */
@@ -19182,7 +21149,7 @@ printf("AudioLoadSample filesize=%d st=%d normalize=%.2lf\n",filesize,sample_typ
 				  10 -> 14 // 3/4
 				  11 -> 15 // 4/4			
 			***/
-			/* +3 pour Èviter le segfault */
+			/* +3 pour √©viter le segfault */
 			for (i=0;i<nbsample+3;i+=4) {
 				for (j=0;j<4;j++) {
 					/* downmixing */
@@ -19193,7 +21160,8 @@ printf("AudioLoadSample filesize=%d st=%d normalize=%.2lf\n",filesize,sample_typ
 					/* normalize */
 					cursample=MinMaxInt(floor(((accumulator/nbchannel)*normalize)+0.5)+128,0,255);
 					/* PSG levels & packing */
-					samplevalue=(samplevalue<<2)+(ae->psgtab[cursample]>>2);
+					if ((ae->psgtab[cursample]+1)>>2) samplevalue=(samplevalue<<2)+((ae->psgtab[cursample]+1)>>2)-1;
+					else samplevalue=(samplevalue<<2);
 				}
 				/* output */
 				___output(ae,samplevalue);
@@ -19261,31 +21229,10 @@ printf("AudioLoadSample filesize=%d st=%d normalize=%.2lf\n",filesize,sample_typ
 }
 
 
-#ifdef NOAPULTRA
-  int LZSA_crunch(unsigned char *input_data,int input_size,unsigned char **lzdata,int *lzlen) {
-	  lzdata=MemMalloc(4);
-	  *lzlen=0;
-
-printf("no LZSA support in this version!\n");
-fprintf(stderr,"no LZSA support in this version!\n");
-
-	  return 0;
-  }
-  int APULTRA_crunch(unsigned char *input_data,int input_size,unsigned char **lzdata,int *lzlen) {
-	  lzdata=MemMalloc(4);
-	  *lzlen=0;
-
-printf("no AP-Ultra support in this version!\n");
-fprintf(stderr,"no AP-Ultra support in this version!\n");
-
-	  return 0;
-  }
-#endif
-
 /*
-	meta fonction qui gËre le INCBIN standard plus les variantes SMP et DMA
+	meta fonction qui g√®re le INCBIN standard plus les variantes SMP et DMA
 */
-void __READ(struct s_assenv *ae) {
+void __ERRRD(struct s_assenv *ae) {
 	if (!ae->wl[ae->idx].t) {
 		int idx;
 
@@ -19317,6 +21264,7 @@ void __HEXBIN(struct s_assenv *ae) {
 	struct s_hexbin *curhexbin;
 	unsigned char *newdata=NULL;
 	int fileok=0,incwav=0;
+	int ifExists=0;
 	
 	if (!ae->wl[ae->idx].t) {
 		ExpressionFastTranslate(ae,&ae->wl[ae->idx+1].w,1);
@@ -19343,7 +21291,11 @@ printf("Hexbin for WAV-> %s (no operation until delayed load)\n",ae->wl[ae->idx+
 #if TRACE_HEXBIN
 printf("Hexbin legacy datalen=%d\n",ae->hexbin[hbinidx].datalen);
 #endif
-				if (strcmp("REVERT",ae->wl[ae->idx+2].w)==0) {
+				if (strcmp("EXISTS",ae->wl[ae->idx+2].w)==0) {
+					ifExists=1;
+					offset=size=0; // full file
+					ae->idx++;
+				} else if (strcmp("REVERT",ae->wl[ae->idx+2].w)==0) {
 					/* revert data */
 					if (!ae->wl[ae->idx+2].t) {
 						MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"INCBIN REVERT does not need extra parameters\n");
@@ -19460,8 +21412,9 @@ printf(" -> VTILES loading\n");
 									crc=GetCRC(ae->wl[ae->idx+6].w);
 									if ((rvar=SearchDico(ae,ae->wl[ae->idx+6].w,crc))!=NULL) {
 										rvar->v=ae->hexbin[hbinidx].rawlen;
+										rvar->used=1;
 									} else {
-										/* mais ne peut Ítre un label ou un alias */
+										/* mais ne peut √™tre un label ou un alias */
 										ExpressionSetDicoVar(ae,ae->wl[ae->idx+6].w,ae->hexbin[hbinidx].rawlen,0);
 									}
 									ae->idx+=6;
@@ -19501,7 +21454,7 @@ printf("we look for tags in the name of a file which were not found\n");
 			for (lm=touched=0;newfilename[lm];lm++) {
 				if (newfilename[lm]=='{') touched++; else if (newfilename[lm]=='}') touched--; else if (touched) newfilename[lm]=toupper(newfilename[lm]);
 			}
-			/* on essaie d'interprÈter le nom du fichier en dynamique */
+			/* on essaie d'interpr√©ter le nom du fichier en dynamique */
 			newfilename=TranslateTag(ae,newfilename,&touched,1,E_TAGOPTION_REMOVESPACE);
 
 			/* Where is the file to load? */
@@ -19538,7 +21491,9 @@ printf("Hexbin -> surprise! we found the file!\n");
 				deload=1;
 			} else {
 				/* still not found */
-				MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"file not found [%s]\n",newfilename);
+				if (!ifExists) {
+					MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"file not found [%s]\n",newfilename);
+				}
 				MemFree(newfilename);
 				return;
 			}
@@ -19630,7 +21585,7 @@ printf("Hexbin -> %s\n",ae->wl[ae->idx+2].w);
 				/* pre-parametres OK (longueur+IDX struct) */
 				if (size<0) {
 #if TRACE_HEXBIN
-printf("taille nÈgative %d -> conversion en %d\n",size,ae->hexbin[hbinidx].datalen+size);
+printf("taille n√©gative %d -> conversion en %d\n",size,ae->hexbin[hbinidx].datalen+size);
 #endif
 					size=ae->hexbin[hbinidx].datalen+size;
 					if (size<1) {
@@ -19640,7 +21595,7 @@ printf("taille nÈgative %d -> conversion en %d\n",size,ae->hexbin[hbinidx].datal
 				/* negative offset conversion */
 				if (offset<0) {
 #if TRACE_HEXBIN
-printf("offset nÈgatif %d -> conversion en %d\n",offset,ae->hexbin[hbinidx].datalen+offset);
+printf("offset n√©gatif %d -> conversion en %d\n",offset,ae->hexbin[hbinidx].datalen+offset);
 #endif
 					offset=ae->hexbin[hbinidx].datalen+offset;
 				}
@@ -19665,7 +21620,7 @@ printf("taille nulle et offset=%d -> conversion en %d\n",offset,size);
 						int outputidx=0;
 						outputdata=MemMalloc(ae->hexbin[hbinidx].datalen);
 #if TRACE_HEXBIN
-printf("output fictif pour rÈorganiser les donnÈes\n");
+printf("output fictif pour r√©organiser les donn√©es\n");
 #endif
 
 						if (revert) {
@@ -19768,37 +21723,42 @@ if (curhexbin->crunch) printf("CRUNCHED! (%d)\n",curhexbin->crunch);
 									rasm_printf(ae,KVERBOSE"crunched with LZ4 into %d byte(s)\n",outputidx);
 									#endif
 									break;
-
+#ifndef NOAPULTRA
 								case 70:
 									{
-									int delta,slzlen;
+									unsigned char *input_data;
 
-									if (outputidx>=1024 && MAX_OFFSET_ZX0>5000) rasm_printf(ae,KWARNING"ZX0 is crunching %.1fkb this may take a while, be patient...\n",outputidx/1024.0);
-									newdata=zx0_compress(zx0_optimize(outputdata, outputidx, 0, MAX_OFFSET_ZX0), outputdata, outputidx, 0, 0, 1, &slzlen, &delta);
-									outputidx=slzlen;
-									MemFree(outputdata);
-									outputdata=newdata;
+									if (!ae->nowarning)
+									if (!ae->nocrunchwarning && outputidx>=20000) rasm_printf(ae,KWARNING"ZX0 is crunching %.1fkb this may take a while, be patient...\n",outputidx/1024.0);
+									input_data=MemMalloc(outputidx); memcpy(input_data,outputdata,outputidx); // copy buffer to input
+									outputdata=MemRealloc(outputdata,salvador_get_max_compressed_size(outputidx)); // enlarge output buffer
+									memset(outputdata,0,salvador_get_max_compressed_size(outputidx)); // then raz !
+									outputidx=salvador_compress(input_data,outputdata,outputidx,salvador_get_max_compressed_size(outputidx),1,32640,0,NULL,NULL);
+									MemFree(input_data);
 									#if TRACE_PREPRO
-									rasm_printf(ae,KVERBOSE"crunched with ZX0 into %d byte(s) delta=%d\n",outputidx,delta);
+									rasm_printf(ae,KVERBOSE"crunched with ZX0 into %d byte(s)\n",outputidx);
 									#endif
 									}
 									break;
 								case 71:
 									{
-									int delta,slzlen;
+									unsigned char *input_data;
 
-									if (outputidx>=1024 && MAX_OFFSET_ZX0>5000) rasm_printf(ae,KWARNING"ZX0 is crunching %.1fkb this may take a while, be patient...\n",outputidx/1024.0);
+									if (!ae->nowarning)
+									if (!ae->nocrunchwarning && outputidx>=20000) rasm_printf(ae,KWARNING"ZX0 is crunching %.1fkb this may take a while, be patient...\n",outputidx/1024.0);
+									input_data=MemMalloc(outputidx);
+									memcpy(input_data,outputdata,outputidx);
+									memset(outputdata,0,outputidx);
+									zx0_reverse(input_data,input_data+outputidx-1);
+									outputidx=salvador_compress(input_data,outputdata,outputidx,outputidx,1+2 /* FLG_IS_BACKWARD */ ,32640,0,NULL,NULL);
 									zx0_reverse(outputdata,outputdata+outputidx-1);
-									newdata=zx0_compress(zx0_optimize(outputdata, outputidx, 0, MAX_OFFSET_ZX0), outputdata, outputidx, 0, 1, 0,&slzlen, &delta);
-        								zx0_reverse(newdata,newdata+slzlen-1);
-									outputidx=slzlen;
-									MemFree(outputdata);
-									outputdata=newdata;
+									MemFree(input_data);
 									#if TRACE_PREPRO
-									rasm_printf(ae,KVERBOSE"crunched with ZX0 backward into %d byte(s) delta=%d\n",outputidx,delta);
+									rasm_printf(ae,KVERBOSE"crunched with ZX0 backward into %d byte(s)\n",outputidx);
 									#endif
 									}
 									break;
+#endif // NOAPULTRA
 								case 7:
 									{
 									int slzlen;
@@ -19812,7 +21772,8 @@ if (curhexbin->crunch) printf("CRUNCHED! (%d)\n",curhexbin->crunch);
 									}
 									break;
 								case 8:
-									if (outputidx>=1024) rasm_printf(ae,KWARNING"Exomizer is crunching %.1fkb this may take a while, be patient...\n",outputidx/1024.0);
+									if (!ae->nowarning)
+									if (!ae->nocrunchwarning && outputidx>=512) rasm_printf(ae,KWARNING"Exomizer is crunching %.1fkb this may take a while, be patient...\n",outputidx/1024.0);
 									newdata=Exomizer_crunch(outputdata,outputidx,&outputidx);
 									MemFree(outputdata);
 									outputdata=newdata;
@@ -19820,8 +21781,10 @@ if (curhexbin->crunch) printf("CRUNCHED! (%d)\n",curhexbin->crunch);
 									rasm_printf(ae,KVERBOSE"crunched with Exomizer into %d byte(s)\n",outputidx);
 									#endif
 									break;
+#ifndef NOAPULTRA
 								case 17:
-									if (outputidx>=1024) rasm_printf(ae,KWARNING"AP-Ultra is crunching %.1fkb this may take a while, be patient...\n",outputidx/1024.0);
+									if (!ae->nowarning)
+									if (!ae->nocrunchwarning && outputidx>=1024) rasm_printf(ae,KWARNING"AP-Ultra is crunching %.1fkb this may take a while, be patient...\n",outputidx/1024.0);
 									{
 									int nnewlen;
 									APULTRA_crunch(outputdata,outputidx,&newdata,&nnewlen);
@@ -19834,10 +21797,17 @@ if (curhexbin->crunch) printf("CRUNCHED! (%d)\n",curhexbin->crunch);
 									#endif
 									break;
 								case 18:
-									if (outputidx>=16384 && curhexbin->version==2) rasm_printf(ae,KWARNING"LZSA2 is crunching %.1fkb this may take a while, be patient...\n",outputidx/1024.0);
+									if (!ae->nowarning)
+									if (!ae->nocrunchwarning && outputidx>=16384 && curhexbin->version==2) rasm_printf(ae,KWARNING"LZSA2 is crunching %.1fkb this may take a while, be patient...\n",outputidx/1024.0);
 									{
 									int nnewlen;
 									LZSA_crunch(outputdata,outputidx,&newdata,&nnewlen,curhexbin->version,curhexbin->minmatch);
+									if (nnewlen==0) {
+										if (outputidx>65536)
+										MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"LZSA cannot crunch more than 64K in RAW MODE\n");
+										else
+										MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"LZSA cannot crunch this and i dont know why!\n");
+									}
 									outputidx=nnewlen;
 									}
 									MemFree(outputdata);
@@ -19847,6 +21817,7 @@ if (curhexbin->crunch) printf("CRUNCHED! (%d)\n",curhexbin->crunch);
 									#endif
 									break;
 								#endif
+#endif
 								case 48:
 									newdata=LZ48_crunch(outputdata,outputidx,&outputidx);
 									MemFree(outputdata);
@@ -19946,7 +21917,7 @@ void __SAVE(struct s_assenv *ae) {
 				if (!ae->wl[ae->idx+2].t && ae->wl[ae->idx+3].t!=2) {
 					cursave.ibank=ae->activebank;
 					cursave.ioffset=ae->idx+2;
-					ExpressionFastTranslate(ae,&ae->wl[ae->idx+2].w,1); // si on utilise des variables Áa Èvite la grouille post traitement...
+					ExpressionFastTranslate(ae,&ae->wl[ae->idx+2].w,1); // si on utilise des variables √ßa √©vite la grouille post traitement...
 					cursave.isize=ae->idx+3;
 					ExpressionFastTranslate(ae,&ae->wl[ae->idx+3].w,1); // idem
 					if (!touched) cursave.iw=ae->idx+1; else cursave.filename=filename;
@@ -19985,6 +21956,14 @@ void __SAVE(struct s_assenv *ae) {
 											break;
 									}
 								}
+								if (!ae->wl[ae->idx+5].t) {
+						 			if (strncmp(ae->wl[ae->idx+6].w,"PROT",4)==0) cursave.iprotect=ae->idx+6; else
+						 			if (strcmp(ae->wl[ae->idx+6].w,"HIDDEN")==0) cursave.ihidden=ae->idx+6;
+									if (!ae->wl[ae->idx+6].t) {
+										if (strncmp(ae->wl[ae->idx+7].w,"PROT",4)==0) cursave.iprotect=ae->idx+7; else
+										if (strcmp(ae->wl[ae->idx+7].w,"HIDDEN")==0) cursave.ihidden=ae->idx+7;
+									}
+								}
 							} else {
 								if (ae->nbsave && ae->save[ae->nbsave-1].iwdskname!=-1) {
 									cursave.iwdskname=ae->save[ae->nbsave-1].iwdskname; /* previous DSK */
@@ -19995,7 +21974,7 @@ void __SAVE(struct s_assenv *ae) {
 								}
 							}
 						} else {
-							MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"SAVE 4th parameter must be empty or AMSDOS or DSK\n");
+							MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"SAVE 4th parameter must be empty or AMSDOS or HOBETA or DSK\n");
 							ko=0;
 						}
 					}
@@ -20023,11 +22002,14 @@ void __MODULE(struct s_assenv *ae) {
 				ae->module=NULL;
 				ae->modulen=0;
 			} else {
+				int touched;
 				if (ae->modulen || ae->module) {
 					MemFree(ae->module);
 				}
-				ae->modulen=strlen(ae->wl[ae->idx+1].w);
+
 				ae->module=TxtStrDup(ae->wl[ae->idx+1].w);
+				ae->module=TranslateTag(ae,ae->module,&touched,1,E_TAGOPTION_REMOVESPACE);
+				ae->modulen=strlen(ae->module);
 			}
 		} else {
 			MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"usage is MODULE [<module name>|OFF], directive without parameter or using 'OFF' will quit the current module\n");
@@ -20069,6 +22051,29 @@ void __SUMMEM(struct s_assenv *ae) {
 		___output(ae,0);
 	} else {
 		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"usage is SUMMEM start,end\n");
+	}
+}
+
+void __SUM16(struct s_assenv *ae) {
+	struct s_poker poker={0};
+
+	if (!ae->wl[ae->idx].t && !ae->wl[ae->idx+1].t && ae->wl[ae->idx+2].t==1) {
+		/* no poke in a NOCODE section */
+		if (!ae->nocode) {
+			poker.method=E_POKER_SUM16;
+			poker.istart=ae->idx+1;
+			poker.iend=ae->idx+2;
+			ExpressionFastTranslate(ae,&ae->wl[ae->idx+1].w,1);
+			ExpressionFastTranslate(ae,&ae->wl[ae->idx+2].w,1);
+			poker.outputadr=ae->outputadr;
+			poker.ibank=ae->activebank;
+			poker.ipoker=ae->idx;
+			ObjectArrayAddDynamicValueConcat((void**)&ae->poker,&ae->nbpoker,&ae->maxpoker,&poker,sizeof(poker));
+		}
+		___output(ae,0);
+		___output(ae,0);
+	} else {
+		MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"usage is SUM16 start,end\n");
 	}
 }
 
@@ -20324,8 +22329,8 @@ struct s_asm_keyword instruction[]={
 {"PROTECT",0,0,__PROTECT},
 {"WHILE",0,0,__WHILE},
 {"WEND",0,0,__WEND},
-{"READ",0,0,__READ},
-{"INCLUDE",0,0,__READ}, // anti-label
+//{"READ",0,0,__READ},
+{"INCLUDE",0,0,__ERRRD}, // anti-label
 {"HEXBIN",0,0,__HEXBIN},
 {"ALIGN",0,0,__ALIGN},
 {"CONFINE",0,0,__CONFINE},
@@ -20354,8 +22359,10 @@ struct s_asm_keyword instruction[]={
 {"LET",0,0,__LET},
 {"ASSERT",0,0,__ASSERT},
 {"CHARSET",0,0,__CHARSET},
+{"UTF8REMAP",0,0,__UTF8REMAP},
 {"RUN",0,0,__RUN},
 {"SAVE",0,0,__SAVE},
+{"REDEFINE_BRK",0,0,__REDEFINE_BRK},
 {"BRK",0,0,__BRK},
 {"NOLIST",0,0,__NOLIST},
 {"LIST",0,0,__LIST},
@@ -20369,6 +22376,7 @@ struct s_asm_keyword instruction[]={
 {"BANK",0,0,__BANK},
 {"BANKSET",0,0,__BANKSET},
 {"NAMEBANK",0,0,__NameBANK},
+{"NAMEROM",0,0,__NameROM},
 {"LIMIT",0,0,__LIMIT},
 {"LZEXO",0,0,__LZEXO},
 {"LZX7",0,0,__LZX7},
@@ -20407,6 +22415,7 @@ struct s_asm_keyword instruction[]={
 {"ENDMODULE",0,0,__ENDMODULE},
 {"TIMESTAMP",0,0,__TIMESTAMP},
 {"SUMMEM",0,0,__SUMMEM},
+{"SUM16",0,0,__SUM16},
 {"XORMEM",0,0,__XORMEM},
 {"CIPHERMEM",0,0,__CIPHERMEM},
 {"EXTERNAL",0,0,__EXTERNAL},
@@ -20417,6 +22426,7 @@ struct s_asm_keyword instruction[]={
 {"ENDRELOCATE",0,0,__ENDRELOCATE},
 {"EDSK",0,0,__EDSK},
 {"HFE",0,0,__HFE},
+{"ERRRD",0,0,__ERRRD},
 {"",0,0,NULL}
 };
 
@@ -20514,12 +22524,8 @@ unsigned char * _internal_export_REMU(struct s_assenv *ae, unsigned int *rchksiz
 		if (ae->label[i].autorise_export && !ae->label[i].make_alias) {
 			if (isrom) strcat(remu_output,"romlabel "); else strcat(remu_output,"label ");
 			memset(shortlabel,0,sizeof(shortlabel));
-			if (!ae->label[i].name) {
-				strncpy(shortlabel,ae->wl[ae->label[i].iw].w,sizeof(shortlabel)-1);
-			} else {
-				if (ae->label[i].localsize && ae->label[i].name[ae->label[i].localsize]!='_') sprintf(&ae->label[i].name[ae->label[i].localsize],"_%x",localcpt++);
-				strncpy(shortlabel,ae->label[i].name,sizeof(shortlabel)-1);
-			}
+			if (ae->label[i].localsize && ae->label[i].name[ae->label[i].localsize]!='_') sprintf(&ae->label[i].name[ae->label[i].localsize],"_%x",localcpt++);
+			strncpy(shortlabel,ae->label[i].name,sizeof(shortlabel)-1);
 			strcat(remu_output,shortlabel);
 			if (!isrom) {
 				// RAM can be gathered
@@ -20567,6 +22573,28 @@ unsigned char * _internal_export_REMU(struct s_assenv *ae, unsigned int *rchksiz
 		}
 		strcat(remu_output,zedigit);
 	}
+	for (i=0;i<ae->iacebrk;i++) {
+		unsigned int v;
+		strcat(remu_output,"acebreak ");
+		strcat(remu_output,ae->acebrk[i].brkType); strcat(remu_output,",");
+		strcat(remu_output,ae->acebrk[i].aMode); strcat(remu_output,",");
+		strcat(remu_output,ae->acebrk[i].runMode); strcat(remu_output,",");
+		if (ae->acebrk[i].iaddr) v=RoundComputeExpression(ae,ae->wl[ae->acebrk[i].iaddr].w+5,0,0,0); else v=ae->acebrk[i].addr;
+		strcat(remu_output,"addr="); sprintf(zedigit,"%d,",v);strcat(remu_output,zedigit);
+		if (ae->acebrk[i].imask) v=RoundComputeExpression(ae,ae->wl[ae->acebrk[i].imask].w+5,0,0,0); else v=ae->acebrk[i].mask;
+		strcat(remu_output,"mask="); sprintf(zedigit,"%d,",v);strcat(remu_output,zedigit);
+		if (ae->acebrk[i].isize) v=RoundComputeExpression(ae,ae->wl[ae->acebrk[i].isize].w+5,0,0,0); else v=ae->acebrk[i].size;
+		strcat(remu_output,"size="); sprintf(zedigit,"%d,",v);strcat(remu_output,zedigit);
+		if (ae->acebrk[i].ivalue) v=RoundComputeExpression(ae,ae->wl[ae->acebrk[i].ivalue].w+6,0,0,0); else v=ae->acebrk[i].value;
+		strcat(remu_output,"value="); sprintf(zedigit,"%d,",v);strcat(remu_output,zedigit);
+		if (ae->acebrk[i].ivalmask) v=RoundComputeExpression(ae,ae->wl[ae->acebrk[i].ivalmask].w+8,0,0,0); else v=ae->acebrk[i].valmask;
+		strcat(remu_output,"valmask="); sprintf(zedigit,"%d,",v);strcat(remu_output,zedigit);
+		strcat(remu_output,"name="); strcat(remu_output,ae->acebrk[i].name); strcat(remu_output,",");
+		strcat(remu_output,"condition="); strcat(remu_output,ae->acebrk[i].condition); strcat(remu_output,",");
+		if (ae->acebrk[i].istep) v=RoundComputeExpression(ae,ae->wl[ae->acebrk[i].istep].w+5,0,0,0); else v=ae->acebrk[i].step;
+		strcat(remu_output,"step="); sprintf(zedigit,"%d;",v);strcat(remu_output,zedigit);
+	}
+
 	chunksize=strlen(remu_output)-8;
 	remu_output[4]=chunksize&0xFF;
 	remu_output[5]=(chunksize>>8)&0xFF;
@@ -20611,6 +22639,7 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 	int backbank;
 	int backcode;
 	int backnop,backtick;
+	int idstart,idend;
 
 	for (i=0;i<256;i++) {
 		if (i==0 || (i>='a' && i<='z') || (i>='A' && i<='Z')) AutomateCharStop[i]=1; else AutomateCharStop[i]=0;
@@ -20775,9 +22804,6 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 	/* add a fictive expression to simplify test when parsing expressions */
 	ObjectArrayAddDynamicValueConcat((void **)&ae->expression,&ae->ie,&ae->me,&curexp,sizeof(curexp));
 	
-	/* compute CRC for keywords */
-	for (icrc=0;math_keyword[icrc].mnemo[0];icrc++) math_keyword[icrc].crc=GetCRC(math_keyword[icrc].mnemo);
-
 	if (ae->as80==1 || ae->pasmo) { /* not for UZ80 */
 		for (icrc=0;instruction[icrc].mnemo[0];icrc++) {
 			if (strcmp(instruction[icrc].mnemo,"DEFB")==0 || strcmp(instruction[icrc].mnemo,"DB")==0) {
@@ -20835,8 +22861,6 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 	ae->idx=1;
 	if (!ae->verbose_assembling)
 	while (wordlist[ae->idx].t!=2) {
-		curcrc=GetCRCandLength(wordlist[ae->idx].w,&ilength);
-
 #if TRACE_ASSEMBLE
 		{
 			int insTR=ae->idx;
@@ -20846,9 +22870,18 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 				if (insTR==ae->idx+1) printf(" %s",wordlist[insTR].w); else printf(",%s",wordlist[insTR].w);
 			}
 			printf("\n");
-			printf("IR:%d IW:%d II:%d ISW:%d\n",ae->ir,ae->iw,ae->ii,ae->isw);
+			printf("IR:%d IW:%d II:%d ISW:%d E:%d\n",ae->ir,ae->iw,ae->ii,ae->isw,wordlist[ae->idx].e);
 		}
 #endif
+
+
+		if (!wordlist[ae->idx].e) {
+			curcrc=GetCRC(wordlist[ae->idx].w);
+			ilength=wordlist[ae->idx].len;
+		} else {
+			curcrc=0; // does not need CRC with expressions
+		}
+
 		/********************************************************************
 		  c o n d i t i o n n a l    a s s e m b l y    m a n a g e m e n t
 		********************************************************************/
@@ -21007,41 +23040,46 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 		/*****************************************
 		  e x e c u t e    i n s t r u c t i o n
 		*****************************************/
-		executed=0;
-		if (ilength<INSTRUCTION_MAXLENGTH && (ifast=ae->fastmatch[(int)wordlist[ae->idx].w[0]][ilength])!=-1) {
-			while (instruction[ifast].mnemo[0]==wordlist[ae->idx].w[0]) {
-				if (instruction[ifast].crc==curcrc && strcmp(instruction[ifast].mnemo,wordlist[ae->idx].w)==0) {
-					instruction[ifast].makemnemo(ae);
-					wordlist=ae->wl;
-					executed=1;
-					// normalement inutile
-					while (!wordlist[ae->idx].t) {
-						ae->idx++;
+	       	if (!wordlist[ae->idx].e) {
+			executed=0;
+			if (ilength<INSTRUCTION_MAXLENGTH && (ifast=ae->fastmatch[(int)wordlist[ae->idx].w[0]][ilength])!=-1) {
+				do {
+					if (instruction[ifast].crc==curcrc && strcmp(instruction[ifast].mnemo+1,wordlist[ae->idx].w+1)==0) {
+						//wordlist[ae->idx].fastptr=instruction[ifast].makemnemo;
+						instruction[ifast].makemnemo(ae);
+						wordlist=ae->wl;
+						executed=1;
+						// normalement inutile => boucles!
+						while (!wordlist[ae->idx].t) {
+							ae->idx++;
+						}
+						break;
 					}
-					break;
+					ifast++;
+				} while (instruction[ifast].mnemo[0]==wordlist[ae->idx].w[0]);
+				if (executed) {
+					ae->idx++; 
+					continue;
 				}
-				ifast++;
 			}
-		}
-		/*****************************************
-		       e x e c u t e    m a c r o
-		*****************************************/
-		if (!executed) {
+			/*****************************************
+			       e x e c u t e    m a c r o
+			*****************************************/
 			/* is it a macro? */
 			if ((ifast=SearchMacro(ae,curcrc,wordlist[ae->idx].w))>=0) {
 				wordlist=__MACRO_EXECUTE(ae,ifast);
 				continue;
 			}
-			/*********************************************************************
-			  e x e c u t e    e x p r e s s i o n   o r    p u s h    l a b e l
-			*********************************************************************/
-			/* neither instruction nor macro executed, this is a label or an assignement */
-			if (wordlist[ae->idx].e) {
-				ExpressionFastTranslate(ae,&wordlist[ae->idx].w,0);
-				ComputeExpression(ae,wordlist[ae->idx].w,ae->codeadr,0,0);
-			} else {
-				PushLabel(ae);
-			}
+			/**************************
+			    p u s h    l a b e l
+			**************************/
+			PushLabel(ae);
+		} else {
+			/****************************************
+			  e x e c u t e    e x p r e s s i o n   
+			****************************************/
+			ExpressionFastTranslate(ae,&wordlist[ae->idx].w,0);
+			ComputeExpression(ae,wordlist[ae->idx].w,ae->codeadr,0,0);
 		}
 
 		ae->idx++; 
@@ -21198,14 +23236,6 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 			if (ilength<INSTRUCTION_MAXLENGTH && (ifast=ae->fastmatch[(int)wordlist[ae->idx].w[0]][ilength])!=-1) {
 				while (instruction[ifast].mnemo[0]==wordlist[ae->idx].w[0]) {
 					if (instruction[ifast].crc==curcrc && strcmp(instruction[ifast].mnemo,wordlist[ae->idx].w)==0) {
-#define CRC_REPEAT	0xC9791639
-#define CRC_REND	0x87E997A1
-#define CRC_UNTIL	0xCC12A604
-#define CRC_WHILE	0xBC268FF1
-#define CRC_WEND	0xAF85D5A6
-#define CRC_ORG	        0xE1871B60
-#define CRC_BANK	0x3AB794
-#define CRC_BREAK	0xCD364DDD
 						if (curcrc==CRC_REND) {
 							if (ae->ir) {
 								printf(KBOLD"----- "KLWHITE"REND"KNORMAL" "KBOLD"----- ;"KNORMAL" counter=%d Level %d ",ae->repeat[ae->ir-1].repeat_counter,ae->ir-1);
@@ -21424,6 +23454,7 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 		printf("Compute all EQU which are supposed to be statics!\n");
 #endif
 		for (i=0;i<ae->ialias;i++) {
+			struct s_alias *curalias;
 			char alias_value[128];
 			double v;
 			// compute EQU defined in crunched sections
@@ -21434,6 +23465,10 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 				MemFree(ae->alias[i].translation);
 				ae->alias[i].translation=TxtStrDup(alias_value);
 				ae->alias[i].len=strlen(ae->alias[i].translation);
+				// update tree
+				curalias=SearchAlias(ae,ae->alias[i].crc,ae->alias[i].alias);
+				curalias->translation=ae->alias[i].translation;
+				curalias->len=ae->alias[i].len;
 			}
 		}
 #if TRACE_LZ
@@ -21445,7 +23480,7 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 #endif
 
 		for (i=0;i<ae->ilz;i++) {
-			/* on dÈpile les symboles dans l'ordre mais on ne reloge pas sur les zones intermÈdiaires ou post-crunched */
+			/* on d√©pile les symboles dans l'ordre mais on ne reloge pas sur les zones interm√©diaires ou post-crunched */
 			if (ae->lzsection[i].lzversion!=0) {
 				if (ae->lzsection[i].memend==-1) {
 					/* patch idx */
@@ -21468,51 +23503,63 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 				} else {
 					switch (ae->lzsection[i].lzversion) {
 
+	#ifndef NO_3RD_PARTIES
+	#ifndef NOAPULTRA
 						case 70:
-							#ifndef NO_3RD_PARTIES
-							if (input_size>=1024 && MAX_OFFSET_ZX0>5000) rasm_printf(ae,KWARNING"ZX0 is crunching %.1fkb this may take a while, be patient...\n",input_size/1024.0);
-							lzdata=zx0_compress(zx0_optimize(input_data, input_size, 0, MAX_OFFSET_ZX0), input_data, input_size, 0, 0, 1,&slzlen, &delta);
-							lzlen=slzlen;
-							#endif
+							if (!ae->nowarning)
+							if (!ae->nocrunchwarning && input_size>=1024 && MAX_OFFSET_ZX0>5000) rasm_printf(ae,KWARNING"ZX0 is crunching %.1fkb this may take a while, be patient...\n",input_size/1024.0);
+							//lzdata=zx0_compress(zx0_optimize(input_data, input_size, 0, MAX_OFFSET_ZX0), input_data, input_size, 0, 0, 1,&slzlen, &delta);
+							//lzlen=slzlen;
+							lzdata=MemMalloc(input_size+16);
+							lzlen=salvador_compress(input_data,lzdata,input_size,input_size,1,32640,0,NULL,NULL);
 							break;
 						case 71:
-							#ifndef NO_3RD_PARTIES
-							if (input_size>=1024 && MAX_OFFSET_ZX0>5000) rasm_printf(ae,KWARNING"ZX0 is crunching %.1fkb this may take a while, be patient...\n",input_size/1024.0);
+							if (!ae->nowarning)
+							if (!ae->nocrunchwarning && input_size>=1024 && MAX_OFFSET_ZX0>5000) rasm_printf(ae,KWARNING"ZX0 is crunching %.1fkb this may take a while, be patient...\n",input_size/1024.0);
+							//zx0_reverse(input_data,input_data+input_size-1);
+							//lzdata=zx0_compress(zx0_optimize(input_data, input_size, 0, MAX_OFFSET_ZX0), input_data, input_size, 0, 1, 0,&slzlen, &delta);
+       							//zx0_reverse(lzdata,lzdata+slzlen-1);
+							//lzlen=slzlen;
 							zx0_reverse(input_data,input_data+input_size-1);
-							lzdata=zx0_compress(zx0_optimize(input_data, input_size, 0, MAX_OFFSET_ZX0), input_data, input_size, 0, 1, 0,&slzlen, &delta);
-       							zx0_reverse(lzdata,lzdata+slzlen-1);
-							lzlen=slzlen;
-							#endif
+							lzdata=MemMalloc(input_size+16);
+							lzlen=salvador_compress(input_data,lzdata,input_size,input_size,1+2,32640,0,NULL,NULL);
+       							zx0_reverse(lzdata,lzdata+lzlen-1);
 							break;
+	#endif
+	#endif
+	#ifndef NO_3RD_PARTIES
 						case 7:
-							#ifndef NO_3RD_PARTIES
 							lzdata=ZX7_compress(zx7_optimize(input_data, input_size), input_data, input_size, &slzlen);
 							lzlen=slzlen;
-							#endif
 							break;
 						case 4:
-							#ifndef NO_3RD_PARTIES
 							lzdata=LZ4_crunch(input_data,input_size,&lzlen);
-							#endif
 							break;
 						case 8:
-							#ifndef NO_3RD_PARTIES
-							if (input_size>=1024) rasm_printf(ae,KWARNING"Exomizer is crunching %.1fkb this may take a while, be patient...\n",input_size/1024.0);
+							if (!ae->nowarning)
+							if (!ae->nocrunchwarning && input_size>=512) rasm_printf(ae,KWARNING"Exomizer is crunching %.1fkb this may take a while, be patient...\n",input_size/1024.0);
 							lzdata=Exomizer_crunch(input_data,input_size,&lzlen);
-							#endif
 							break;
+	#endif
+	#ifndef NO_3RD_PARTIES
+	#ifndef NOAPULTRA
 						case 17:
-							#ifndef NO_3RD_PARTIES
-							if (input_size>=1024) rasm_printf(ae,KWARNING"AP-Ultra is crunching %.1fkb this may take a while, be patient...\n",input_size/1024.0);
+							if (!ae->nowarning)
+							if (!ae->nocrunchwarning && input_size>=1024) rasm_printf(ae,KWARNING"AP-Ultra is crunching %.1fkb this may take a while, be patient...\n",input_size/1024.0);
 							APULTRA_crunch(input_data,input_size,&lzdata,&lzlen);
-							#endif
 							break;
 						case 18:
-							#ifndef NO_3RD_PARTIES
-							if (input_size>=16384 && ae->lzsection[i].version==2) rasm_printf(ae,KWARNING"LZSA is crunching %.1fkb this may take a while, be patient...\n",input_size/1024.0);
+							if (!ae->nowarning)
+							if (!ae->nocrunchwarning && input_size>=16384 && ae->lzsection[i].version==2) rasm_printf(ae,KWARNING"LZSA is crunching %.1fkb this may take a while, be patient...\n",input_size/1024.0);
 							LZSA_crunch(input_data,input_size,&lzdata,&lzlen,ae->lzsection[i].version,ae->lzsection[i].minmatch);
-							#endif
+							if (lzlen==0) {
+								if (input_size>65536)
+								MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"LZSA cannot crunch more than 64K in RAW MODE\n");
+								else MakeError(ae,ae->idx,GetCurrentFile(ae),ae->wl[ae->idx].l,"LZSA cannot crunch and i dont know why\n");
+							}
 							break;
+	#endif
+	#endif
 						case 48:
 							lzdata=LZ48_crunch(input_data,input_size,&lzlen);
 							break;
@@ -21571,7 +23618,7 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 					while (il<ae->il && ae->label[il].iorgzone<iorgzone) il++;
 
 					while (il<ae->il && ae->label[il].iorgzone==iorgzone) {
-						curlabel=SearchLabel(ae,ae->label[il].iw!=-1?wordlist[ae->label[il].iw].w:ae->label[il].name,ae->label[il].crc);
+						curlabel=SearchLabel(ae,ae->label[il].name,ae->label[il].crc);
 						/* CANNOT be NULL */
 #if TRACE_LZ
 			printf("label %s valeur=#%04X shifte vers #%04X\n",ae->label[il].iw!=-1?wordlist[ae->label[il].iw].w:ae->label[il].name,curlabel->ptr,curlabel->ptr+lzshift);
@@ -21667,6 +23714,7 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 	for (i=0;i<ae->nbpoker;i++) {
 		int istart=-1,iend=-1;
 		unsigned char xorval,sumval;
+		unsigned short int sum16;
 
 		/* start/end */
 		ae->idx=ae->poker[i].istart; /* exp hack */
@@ -21728,6 +23776,14 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 				if (zekey) MemFree(zekey);
 				}
 				break;
+			case E_POKER_SUM16:
+				sum16=0;
+				for (j=istart;j<iend;j++) {
+					sum16+=ae->mem[ae->poker[i].ibank][j];
+				}
+				ae->mem[ae->poker[i].ibank][ae->poker[i].outputadr]=sum16&0xFF;
+				ae->mem[ae->poker[i].ibank][ae->poker[i].outputadr+1]=sum16>>8;
+				break;
 			default:printf("warning remover\n");break;
 		}
 
@@ -21761,7 +23817,6 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 	}
 
 
-
 /***************************************************************************************************************************************************************************************
 ****************************************************************************************************************************************************************************************
       W R I T E      O U T P U T      F I L E S
@@ -21772,7 +23827,7 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 		
 		/* enregistrement des fichiers programmes par la directive SAVE */
 		PopAllSave(ae);
-		/* exÈcution des actions programmÈes par la directive EDSK */
+		/* ex√©cution des actions programm√©es par la directive EDSK */
 		PopAllEDSK(ae);
 		PopAllHFE(ae);
 
@@ -21788,7 +23843,7 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 					curalias.translation=MemMalloc(16); sprintf(curalias.translation,"%d",ae->label[i].ptr);
 					curalias.len=strlen(curalias.translation);
 					curalias.autorise_export=1;
-					curalias.iw=ae->label[i].iw;
+					curalias.iw=-1; //ae->label[i].iw;
 					curalias.fromstruct=1; // ACE debug related
 					ae->label[i].ibank=0;//
 					ObjectArrayAddDynamicValueConcat((void**)&ae->alias,&ae->ialias,&ae->malias,&curalias,sizeof(curalias));
@@ -21840,11 +23895,12 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 
 				for (i=0;i<ae->il;i++) {
 					if (ae->label[i].autorise_export && !ae->label[i].make_alias) {
-						if (!ae->label[i].name) {
+						/* if (!ae->label[i].name) {
 							if ((casefound=_internal_stristr(ae->rawfile[ae->label[i].fileidx],ae->rawlen[ae->label[i].fileidx],ae->wl[ae->label[i].iw].w))!=NULL) {
 								memcpy(ae->wl[ae->label[i].iw].w,casefound,strlen(ae->wl[ae->label[i].iw].w));
 							}
-						} else if (ae->export_local || !ae->label[i].local) {
+						} else */
+						if (ae->export_local || !ae->label[i].local) {
 							char splitlabel[256];
 							char casecharbackup;
 							int caseidx;
@@ -21902,10 +23958,12 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 			               C A R T R I D G E
 			**********************************************
 			*********************************************/
-			if (ae->forcecpr) {
+			if (ae->forcecpr || ae->snacpr) {
 				char ChunkName[32];
 				int ChunkSize;
 				unsigned char chunk_endian;
+				unsigned char *remu_output=NULL;
+				unsigned int remu_chunksize=0;
 			
 				if (ae->cartridge_name) {
 					sprintf(TMP_filename,"%s",ae->cartridge_name);
@@ -21916,8 +23974,21 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 				FileRemoveIfExists(TMP_filename);
 				
 				rasm_printf(ae,KIO"Write %scartridge file %s\n",ae->extendedCPR?"extended ":"",TMP_filename);
-				for (i=maxrom=0;i<ae->io;i++) {
-					if (ae->orgzone[i].ibank<256 && ae->orgzone[i].ibank>maxrom) maxrom=ae->orgzone[i].ibank;
+				if (!ae->snacpr) {
+					for (i=maxrom=0;i<ae->io;i++) {
+						if (ae->orgzone[i].ibank<256 && ae->orgzone[i].ibank>maxrom) maxrom=ae->orgzone[i].ibank;
+					}
+				} else {
+					// looking for logical indirect ROM from 128 to 128+31 included corresponding to 0-31 cartridge ROM
+					for (i=maxrom=0;i<257;i++) {
+						if (ae->rombank[i] && i>=128 && i<160) {
+							maxrom=i-128;
+						}
+					}
+				}
+				/* prepare REMU chunk to know the final size */
+				if (ae->remu) {
+					remu_output=_internal_export_REMU(ae,&remu_chunksize);
 				}
 				/* construction du CPR */
 				/* header blablabla */
@@ -21925,7 +23996,7 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 				FileWriteBinary(TMP_filename,ChunkName,4);
 
 				if (!ae->extendedCPR) {
-					ChunkSize=(maxrom+1)*(16384+8)+4;
+					ChunkSize=(maxrom+1)*(16384+8)+4+remu_chunksize+(remu_chunksize?8:0);
 					chunk_endian=ChunkSize&0xFF;FileWriteBinary(TMP_filename,(char*)&chunk_endian,1);
 					chunk_endian=(ChunkSize>>8)&0xFF;FileWriteBinary(TMP_filename,(char*)&chunk_endian,1);
 					chunk_endian=(ChunkSize>>16)&0xFF;FileWriteBinary(TMP_filename,(char*)&chunk_endian,1);
@@ -21939,7 +24010,7 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 						FileRemoveIfExists(xproutputname);
 					}
 
-					ChunkSize=(maxrom+1)*(16384+8)+4+10;
+					ChunkSize=(maxrom+1)*(16384+8)+4+10+remu_chunksize+(remu_chunksize?8:0);
 					chunk_endian=ChunkSize&0xFF;FileWriteBinary(TMP_filename,(char*)&chunk_endian,1);
 					chunk_endian=(ChunkSize>>8)&0xFF;FileWriteBinary(TMP_filename,(char*)&chunk_endian,1);
 					chunk_endian=(ChunkSize>>16)&0xFF;FileWriteBinary(TMP_filename,(char*)&chunk_endian,1);
@@ -21965,24 +24036,34 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 //printf("ORG[%03d]=B%02d/#%04X/#%04X\n",j,ae->orgzone[j].ibank,ae->orgzone[j].memstart,ae->orgzone[j].memend);
 //				}
 				for (i=0;i<=maxrom;i++) {
+					int backi;
+					if (ae->snacpr && maxrom<32) {
+						backi=i;
+						i=ae->rombank[i+128]; // hack
+					}
 					offset=65536;
 					endoffset=0;
 					for (j=0;j<ae->io;j++) {
 						if (ae->orgzone[j].protect) continue; /* protected zones exclusion */
 						/* bank data may start anywhere (typically #0000 or #C000) */
 						if (ae->orgzone[j].ibank==i && ae->orgzone[j].memstart!=ae->orgzone[j].memend) {
-							if (ae->orgzone[j].memstart<offset) offset=ae->orgzone[j].memstart;
-							if (ae->orgzone[j].memend>endoffset) endoffset=ae->orgzone[j].memend;
+							if (ae->orgzone[j].memstart<offset) {offset=ae->orgzone[j].memstart;idstart=j;}
+							if (ae->orgzone[j].memend>endoffset) {endoffset=ae->orgzone[j].memend;idend=j;}
 						}
 					}
+					if (ae->snacpr && !i) endoffset=offset=0; // hack
 					if (endoffset>offset) {
 						int lm=0;
 						if (ae->iwnamebank[i]>0) {
-							lm=strlen(ae->wl[ae->iwnamebank[i]].w)-2;
+							if (!ae->snacpr) lm=strlen(ae->wl[ae->iwnamebank[i]].w)-2; else {
+								if (i) lm=strlen(ae->wl[ae->iwnameromsna[i]].w)-2; else lm=0; // cannot have a ROM physically in 0 with snapshots
+							}
 						}
-						if (ae->cprinfo) rasm_printf(ae,KVERBOSE"WriteCPR bank %2d of %5d byte%s start at #%04X",i,endoffset-offset,endoffset-offset>1?"s":" ",offset);
+						if (ae->cprinfo) rasm_printf(ae,KVERBOSE"WriteCPR bank %2d of %5d byte%s start at #%04X",ae->snacpr?backi:i,endoffset-offset,endoffset-offset>1?"s":" ",offset);
 						if (endoffset-offset>16384) {
-							rasm_printf(ae,"\nROM %d is too big!!!\n",i);
+							rasm_printf(ae,KERROR"\nROM %d is too big!!! (%d byte%s too large)"KVERBOSE,i,endoffset-offset-16384,endoffset-offset-16384>1?"s":"");
+							rasm_printf(ae,KERROR"lowest  ORG [%s:%d] at #%04X\n"KVERBOSE,ae->filename[ae->orgzone[idstart].ifile],ae->orgzone[idstart].iline,offset);
+							rasm_printf(ae,KERROR"highest ORG [%s:%d] ends at #%04X\n"KVERBOSE,ae->filename[ae->orgzone[idend].ifile],ae->orgzone[idend].iline,endoffset);
 							FileWriteBinaryClose(TMP_filename);
 							FileRemoveIfExists(TMP_filename);
 							FreeAssenv(ae);
@@ -22004,7 +24085,10 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 						ChunkName[1]='X';
 						ChunkName[2]=i>>8;
 						ChunkName[3]=i&255;
-					} else sprintf(ChunkName,"cb%02d",i);
+					} else {
+						if (ae->snacpr) sprintf(ChunkName,"cb%02d",backi); // hack
+						else sprintf(ChunkName,"cb%02d",i);
+					}
 					FileWriteBinary(TMP_filename,ChunkName,4);
 					chunk_endian=ChunkSize&0xFF;FileWriteBinary(TMP_filename,(char*)&chunk_endian,1);
 					chunk_endian=(ChunkSize>>8)&0xFF;FileWriteBinary(TMP_filename,(char*)&chunk_endian,1);
@@ -22039,6 +24123,11 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 							FileWriteBinary(xproutputname,(char*)ae->mem[i]+offset,ChunkSize);
 						}
 					}
+					if (ae->snacpr) i=backi; // hack
+				}
+				if (ae->remu) {
+					FileWriteBinary(TMP_filename,(char*)remu_output,remu_chunksize+8); // 8 bytes for the chunk header
+					MemFree(remu_output);
 				}
 				FileWriteBinaryClose(TMP_filename);
 				rasm_printf(ae,"Total %d bank%s (%dK)\n",maxrom+1,maxrom+1>1?"s":"",(maxrom+1)*16);
@@ -22047,7 +24136,8 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 						       R O M       
 			**********************************************
 			*********************************************/
-			} else if (ae->forceROM) {
+			}
+			if (ae->forceROM) {
 				unsigned char filler[16384]={0};
 				int noflood=0;
 
@@ -22073,14 +24163,16 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 						if (ae->orgzone[j].protect) continue; /* protected zones exclusion */
 						/* bank data may start anywhere (typically #0000 or #C000) */
 						if (ae->orgzone[j].ibank==i && ae->orgzone[j].memstart!=ae->orgzone[j].memend) {
-							if (ae->orgzone[j].memstart<offset) offset=ae->orgzone[j].memstart;
-							if (ae->orgzone[j].memend>endoffset) endoffset=ae->orgzone[j].memend;
+							if (ae->orgzone[j].memstart<offset) {offset=ae->orgzone[j].memstart;idstart=j;}
+							if (ae->orgzone[j].memend>endoffset) {endoffset=ae->orgzone[j].memend;idend=j;}
 						}
 					}
 					if (endoffset>offset) {
 						/* cannot be bigger than 16K */
 						if (endoffset-offset>16384) {
-							rasm_printf(ae,"\nROM is too big!!!\n");
+							rasm_printf(ae,KERROR"\nROM is too big!!! (%d byte%s too large)\n"KVERBOSE,endoffset-offset-16384,endoffset-offset-16384>1?"s":"");
+							rasm_printf(ae,KERROR"lowest  ORG [%s:%d] at #%04X\n"KVERBOSE,ae->filename[ae->orgzone[idstart].ifile],ae->orgzone[idstart].iline,offset);
+							rasm_printf(ae,KERROR"highest ORG [%s:%d] ends at #%04X\n"KVERBOSE,ae->filename[ae->orgzone[idend].ifile],ae->orgzone[idend].iline,endoffset);
 							FileRemoveIfExists(TMP_filename);
 							FreeAssenv(ae);
 							exit(ABORT_ERROR);
@@ -22214,8 +24306,11 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 							bankset=i>>2;
 							if (ae->bankset[bankset]) {
 								memcpy(packed,ae->mem[i],65536);
-								if (i<4 || i+4>maxrom) rasm_printf(ae,KVERBOSE"WriteSNA bank %2d,%d,%d,%d packed\n",i,i+1,i+2,i+3);
-								else if (!noflood) {rasm_printf(ae,KVERBOSE"[...]\n");noflood=1;}
+								if (i<4 || i+4>maxrom) {
+									if (ae->cprinfo) rasm_printf(ae,KVERBOSE"WriteSNA RAM %2d,%d,%d,%d packed",i,i+1,i+2,i+3);
+									if (ae->cprinfo) if (ae->iwnamebank[i]) rasm_printf(ae," (%s)",ae->wl[ae->iwnamebank[i]].w);
+									if (ae->cprinfo) rasm_printf(ae,"\n");
+								} else if (!noflood) {rasm_printf(ae,KVERBOSE"[...]\n");noflood=1;}
 							} else {
 								memset(packed,0,65536);
 								for (k=0;k<4;k++) {
@@ -22225,12 +24320,14 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 										if (ae->orgzone[j].protect) continue; /* protected zones exclusion */
 										/* bank data may start anywhere (typically #0000 or #C000) */
 										if (ae->orgzone[j].ibank==i+k && ae->orgzone[j].memstart!=ae->orgzone[j].memend) {
-											if (ae->orgzone[j].memstart<offset) offset=ae->orgzone[j].memstart;
-											if (ae->orgzone[j].memend>endoffset) endoffset=ae->orgzone[j].memend;
+											if (ae->orgzone[j].memstart<offset) {offset=ae->orgzone[j].memstart;idstart=j;}
+											if (ae->orgzone[j].memend>endoffset) {endoffset=ae->orgzone[j].memend;idend=j;}
 										}
 									}
 									if (endoffset-offset>16384) {
-										rasm_printf(ae,KERROR"\nBANK is too big!!!\n");
+										rasm_printf(ae,KERROR"\nRAMBANK is too big!!! (%d byte%s too large)\n"KVERBOSE,endoffset-offset-16384,endoffset-offset-16384>1?"s":"");
+										rasm_printf(ae,KERROR"lowest  ORG [%s:%d] at #%04X\n"KVERBOSE,ae->filename[ae->orgzone[idstart].ifile],ae->orgzone[idstart].iline,offset);
+										rasm_printf(ae,KERROR"highest ORG [%s:%d] ends at #%04X\n"KVERBOSE,ae->filename[ae->orgzone[idend].ifile],ae->orgzone[idend].iline,endoffset);
 										if (!ae->flux) {
 											FileWriteBinaryClose(TMP_filename);
 											FileRemoveIfExists(TMP_filename);
@@ -22254,10 +24351,15 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 										if (ae->iwnamebank[i]>0) {
 											lm=strlen(ae->wl[ae->iwnamebank[i]].w)-2;
 										}
-										if (i<4 || i+4>maxrom) rasm_printf(ae,KVERBOSE"WriteSNA bank %2d of %5d byte%s start at #%04X",i+k,endoffset-offset,endoffset-offset>1?"s":" ",offset);
-										else if (!noflood) {rasm_printf(ae,KVERBOSE"[...]\n");noflood=1;}
+										if (i<4 || i+4>maxrom) {
+											if (ae->cprinfo) rasm_printf(ae,KVERBOSE"WriteSNA RAM %2d of %5d byte%s start at #%04X",i+k,endoffset-offset,endoffset-offset>1?"s":" ",offset);
+											if (ae->cprinfo) if (ae->iwnamebank[i]) rasm_printf(ae," (%s)",ae->wl[ae->iwnamebank[i]].w);
+											if (ae->cprinfo) rasm_printf(ae,"\n");
+										} else if (!noflood) {rasm_printf(ae,KVERBOSE"[...]\n");noflood=1;}
 										if (endoffset-offset>16384) {
-											rasm_printf(ae,KERROR"\nRAM block is too big!!!\n");
+											rasm_printf(ae,KERROR"\nRAM block is too big!!! (%d byte%s too large)\n"KVERBOSE,endoffset-offset-16384,endoffset-offset-16384>1?"s":"");
+											rasm_printf(ae,KERROR"lowest  ORG [%s:%d] at #%04X\n"KVERBOSE,ae->filename[ae->orgzone[idstart].ifile],ae->orgzone[idstart].iline,offset);
+											rasm_printf(ae,KERROR"highest ORG [%s:%d] ends at #%04X\n"KVERBOSE,ae->filename[ae->orgzone[idend].ifile],ae->orgzone[idend].iline,endoffset);
 											if (!ae->flux) {
 												FileWriteBinaryClose(TMP_filename);
 												FileRemoveIfExists(TMP_filename);
@@ -22270,8 +24372,8 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 										} else {
 											if (i<4 || i+4>maxrom) rasm_printf(ae,"\n");
 										}
-									} else {
-										if (i<4 || i+4>maxrom) rasm_printf(ae,KVERBOSE"WriteSNA bank %2d (empty)\n",i+k);
+									} else if (ae->cprinfo) {
+										if (i<4 || i+4>maxrom) rasm_printf(ae,KVERBOSE"WriteSNA RAM %2d (empty)\n",i+k);
 										else if (!noflood) {rasm_printf(ae,KVERBOSE"[...]\n");noflood=1;}
 									}
 								}
@@ -22286,7 +24388,7 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 									break;
 								}
 							} else {
-								/* compression par dÈfaut avec snapshot v3 */
+								/* compression par d√©faut avec snapshot v3 */
 								rlebank=EncodeSnapshotRLE(packed,&ChunkSize,65536);
 								
 								if (bankset>=0 && bankset<=8) {
@@ -22319,6 +24421,8 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 						for (i=0;i<257;i++) {
 							if (ae->rombank[i]) howmanyrom++;
 						}
+						if (howmanyrom) rasm_printf(ae,KVERBOSE"WriteSNA has %d ROM to export\n",howmanyrom);
+
 						for (i=0;i<257;i++) {
 							if (ae->rombank[i]) {
 								offset=65536;
@@ -22327,12 +24431,14 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 									if (ae->orgzone[j].protect) continue; /* protected zones exclusion */
 									/* bank data may start anywhere (typically #0000 or #C000) */
 									if (ae->orgzone[j].ibank==ae->rombank[i] && ae->orgzone[j].memstart!=ae->orgzone[j].memend) {
-										if (ae->orgzone[j].memstart<offset) offset=ae->orgzone[j].memstart;
-										if (ae->orgzone[j].memend>endoffset) endoffset=ae->orgzone[j].memend;
+										if (ae->orgzone[j].memstart<offset) {offset=ae->orgzone[j].memstart;idstart=j;}
+										if (ae->orgzone[j].memend>endoffset) {endoffset=ae->orgzone[j].memend;idend=j;}
 									}
 								}
 								if (endoffset-offset>16384) {
-									rasm_printf(ae,KERROR"\nBANK is too big!!!\n");
+									rasm_printf(ae,KERROR"\nROMBANK %d is too big!!! (%d byte%s too large)\n"KVERBOSE,i,endoffset-offset-16384,endoffset-offset-16384>1?"s":"");
+									rasm_printf(ae,KERROR"lowest  ORG [%s:%d] at #%04X\n"KVERBOSE,ae->filename[ae->orgzone[idstart].ifile],ae->orgzone[idstart].iline,offset);
+									rasm_printf(ae,KERROR"highest ORG [%s:%d] ends at #%04X\n"KVERBOSE,ae->filename[ae->orgzone[idend].ifile],ae->orgzone[idend].iline,endoffset);
 									if (!ae->flux) {
 										FileWriteBinaryClose(TMP_filename);
 										FileRemoveIfExists(TMP_filename);
@@ -22344,7 +24450,12 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 									continue;
 								}
 								if (!noflood || howmanyrom<=4) {
-									if (i<256) rasm_printf(ae,KVERBOSE"WriteSNA ROM %3d of %5d byte%s start at #%04X\n",i,endoffset-offset,endoffset-offset>1?"s":" ",offset); else rasm_printf(ae,KVERBOSE"WriteSNA LOWER   of %5d byte%s start at #%04X\n",endoffset-offset,endoffset-offset>1?"s":" ",offset);
+									if (ae->cprinfo) {
+									if (i<256) rasm_printf(ae,KVERBOSE"WriteSNA ROM %3d of %5d byte%s start at #%04X",i,endoffset-offset,endoffset-offset>1?"s":" ",offset);
+									      else rasm_printf(ae,KVERBOSE"WriteSNA LOWER   of %5d byte%s start at #%04X",endoffset-offset,endoffset-offset>1?"s":" ",offset);
+									if (ae->iwnameromsna[i]) rasm_printf(ae," (%s)",ae->wl[ae->iwnameromsna[i]].w);
+									rasm_printf(ae,"\n");
+									}
 								} else if (!noflood) {rasm_printf(ae,KVERBOSE"[...]\n");noflood=1;}
 								howmanyrom--;
 
@@ -22364,7 +24475,6 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 							}
 						}
 
-
 						/**************************************************************
 								snapshot additional chunks in v3+ only
 						**************************************************************/
@@ -22373,18 +24483,10 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 							struct s_breakpoint breakpoint={0};
 							/* add labels and local labels to breakpoint pool (if any) */
 							for (i=0;i<ae->il;i++) {
-								if (!ae->label[i].name) {
-									if (_internal_strnicmp(ae->wl[ae->label[i].iw].w,"BRK",3)==0 || _internal_strnicmp(ae->wl[ae->label[i].iw].w,"@BRK",4)==0 || _internal_stristr(ae->wl[ae->label[i].iw].w,strlen(ae->wl[ae->label[i].iw].w),".BRK")!=NULL) {
-										breakpoint.address=ae->label[i].ptr;
-										breakpoint.bank=ae->label[i].ibank;
-										ObjectArrayAddDynamicValueConcat((void **)&ae->breakpoint,&ae->ibreakpoint,&ae->maxbreakpoint,&breakpoint,sizeof(struct s_breakpoint));
-									}
-								} else {
-									if (_internal_strnicmp(ae->label[i].name,"BRK",3)==0 || _internal_strnicmp(ae->label[i].name,"@BRK",4)==0 || _internal_stristr(ae->label[i].name,strlen(ae->label[i].name),".BRK")) {
-										breakpoint.address=ae->label[i].ptr;
-										breakpoint.bank=ae->label[i].ibank;
-										ObjectArrayAddDynamicValueConcat((void **)&ae->breakpoint,&ae->ibreakpoint,&ae->maxbreakpoint,&breakpoint,sizeof(struct s_breakpoint));	
-									}
+								if (_internal_strnicmp(ae->label[i].name,"BRK",3)==0 || _internal_strnicmp(ae->label[i].name,"@BRK",4)==0 || _internal_stristr(ae->label[i].name,strlen(ae->label[i].name),".BRK")) {
+									breakpoint.address=ae->label[i].ptr;
+									breakpoint.bank=ae->label[i].ibank;
+									ObjectArrayAddDynamicValueConcat((void **)&ae->breakpoint,&ae->ibreakpoint,&ae->maxbreakpoint,&breakpoint,sizeof(struct s_breakpoint));	
 								}
 							}
 							if (ae->remu) {
@@ -22473,28 +24575,16 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 
 								for (i=0;i<ae->il;i++) {
 									if (ae->label[i].autorise_export && !ae->label[i].make_alias) {
-										if (!ae->label[i].name) {
-											symbol_len=strlen(ae->wl[ae->label[i].iw].w);
+										if (ae->export_local || !ae->label[i].local) {
+											symbol_len=strlen(ae->label[i].name);
 											if (symbol_len>255) symbol_len=255;
 											symbchunk[idx++]=symbol_len;
-											memcpy(symbchunk+idx,ae->wl[ae->label[i].iw].w,symbol_len);
+											memcpy(symbchunk+idx,ae->label[i].name,symbol_len);
 											idx+=symbol_len;
 											memset(symbchunk+idx,0,6);
 											idx+=6;
 											symbchunk[idx++]=(ae->label[i].ptr&0xFF00)/256;
 											symbchunk[idx++]=ae->label[i].ptr&0xFF;
-										} else {
-											if (ae->export_local || !ae->label[i].local) {
-												symbol_len=strlen(ae->label[i].name);
-												if (symbol_len>255) symbol_len=255;
-												symbchunk[idx++]=symbol_len;
-												memcpy(symbchunk+idx,ae->label[i].name,symbol_len);
-												idx+=symbol_len;
-												memset(symbchunk+idx,0,6);
-												idx+=6;
-												symbchunk[idx++]=(ae->label[i].ptr&0xFF00)/256;
-												symbchunk[idx++]=ae->label[i].ptr&0xFF;
-											}
 										}
 									}
 								}
@@ -22554,14 +24644,14 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 						rasm_printf(ae,KAYGREEN"Total %d bank%s (%dK)\n",maxrom,maxrom>1?"s":"",(maxrom)*16);
 					}
 				}
+			}
 			/*********************************************
 			**********************************************
 					  B I N A R Y     F I L E
 			**********************************************
 			*********************************************/
-			} else {
+			if (!ae->forcecpr && !ae->forcesnapshot && !ae->forceROM && !ae->snacpr) {
 				int lastspaceid=-1;
-				
 				if (ae->binary_name) {
 					sprintf(TMP_filename,"%s",ae->binary_name);
 				} else {
@@ -22569,7 +24659,7 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 				}
 				FileRemoveIfExists(TMP_filename);
 
-				/* en mode binaire classique on va recherche le dernier espace mÈmoire dans lequel on a travaillÈ qui n'est pas en 'nocode' */
+				/* en mode binaire classique on va recherche le dernier espace m√©moire dans lequel on a travaill√© qui n'est pas en 'nocode' */
 				for (i=0;i<ae->io;i++) {
 					/* uniquement si le ORG a ete suivi d'ecriture */
 					if (ae->orgzone[i].memstart!=ae->orgzone[i].memend && ae->orgzone[i].nocode!=1) {
@@ -22931,12 +25021,10 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 		********************************/
 		if (ae->warn_unused) {
 			for (i=0;i<ae->ialias;i++) {
-				if (strcmp(ae->alias[i].alias,"IX") && strcmp(ae->alias[i].alias,"IY")) {
 					if (!ae->alias[i].used) {
 						rasm_printf(ae,KWARNING"[%s:%d] Warning: alias %s declared but not used\n",ae->filename[ae->wl[ae->alias[i].iw].ifile],ae->wl[ae->alias[i].iw].l,ae->alias[i].alias);
 						if (ae->erronwarn) MaxError(ae);
 					}
-				}
 			}
 			WarnLabelTree(ae);
 			WarnDicoTree(ae);
@@ -22947,7 +25035,7 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 		  S Y M B O L   E X P O R T
 		*****************************
 		****************************/
-		if (ae->remu && !ae->forcesnapshot) {
+		if (ae->remu) {
 #define MAKE_REMU_NAME if (ae->symbol_name) {sprintf(TMP_filename,"%s",ae->symbol_name);} else {sprintf(TMP_filename,"%s.rasm",ae->outputfilename);}
 			unsigned char *remu_output=NULL;
 			unsigned int chunksize;
@@ -22996,15 +25084,9 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 									sprintf(TMP_filename,"%s.sym.bank%d",ae->outputfilename,ae->label[i].ibank);
 								}
 							}
-							
-							if (!ae->label[i].name) {
-								sprintf(symbol_line,"%d:%04X %s\n",ae->label[i].ibank,ae->label[i].ptr,ae->wl[ae->label[i].iw].w);
+							if (ae->export_local || !ae->label[i].local) {
+								sprintf(symbol_line,"%d:%04X %s\n",ae->label[i].ibank,ae->label[i].ptr,ae->label[i].name);
 								FileWriteLine(TMP_filename,symbol_line);
-							} else {
-								if (ae->export_local || !ae->label[i].local) {
-									sprintf(symbol_line,"%d:%04X %s\n",ae->label[i].ibank,ae->label[i].ptr,ae->label[i].name);
-									FileWriteLine(TMP_filename,symbol_line);
-								}
 							}
 						}
 					}
@@ -23016,10 +25098,8 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 					}
 					if (ae->export_equ) {
 						for (i=0;i<ae->ialias;i++) {
-							if (strcmp(ae->alias[i].alias,"IX") && strcmp(ae->alias[i].alias,"IY")) {
 								sprintf(symbol_line,"%04X %s\n",RoundComputeExpression(ae,ae->alias[i].translation,0,-ae->alias[i].iw,0),ae->alias[i].alias);
 								FileWriteLine(TMP_filename,symbol_line);
-							}
 						}
 					}
 					break;
@@ -23034,15 +25114,9 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 									sprintf(TMP_filename,"%s.sym.bank%d",ae->outputfilename,ae->label[i].ibank);
 								}
 							}
-
-							if (!ae->label[i].name) {
-								sprintf(symbol_line,ae->flexible_export,ae->wl[ae->label[i].iw].w,ae->label[i].ptr);
+							if (ae->export_local || !ae->label[i].local) {
+								sprintf(symbol_line,ae->flexible_export,ae->label[i].name,ae->label[i].ptr);
 								FileWriteLine(TMP_filename,symbol_line);
-							} else {
-								if (ae->export_local || !ae->label[i].local) {
-									sprintf(symbol_line,ae->flexible_export,ae->label[i].name,ae->label[i].ptr);
-									FileWriteLine(TMP_filename,symbol_line);
-								}
 							}
 						}
 					}
@@ -23053,10 +25127,8 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 					}
 					if (ae->export_equ) {
 						for (i=0;i<ae->ialias;i++) {
-							if (strcmp(ae->alias[i].alias,"IX") && strcmp(ae->alias[i].alias,"IY")) {
 								sprintf(symbol_line,ae->flexible_export,ae->alias[i].alias,RoundComputeExpression(ae,ae->alias[i].translation,0,-ae->alias[i].iw,0));
 								FileWriteLine(TMP_filename,symbol_line);
-							}
 						}
 					}
 					FileWriteLineClose(TMP_filename);
@@ -23072,14 +25144,9 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 									sprintf(TMP_filename,"%s.sym.bank%d",ae->outputfilename,ae->label[i].ibank);
 								}
 							}
-							if (!ae->label[i].name) {
-								sprintf(symbol_line,"%s #%04X\n",ae->wl[ae->label[i].iw].w,ae->label[i].ptr);
+							if (ae->export_local || !ae->label[i].local) {
+								sprintf(symbol_line,"%s #%04X\n",ae->label[i].name,ae->label[i].ptr);
 								FileWriteLine(TMP_filename,symbol_line);
-							} else {
-								if (ae->export_local || !ae->label[i].local) {
-									sprintf(symbol_line,"%s #%04X\n",ae->label[i].name,ae->label[i].ptr);
-									FileWriteLine(TMP_filename,symbol_line);
-								}
 							}
 						}
 					}
@@ -23090,10 +25157,8 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 					}
 					if (ae->export_equ) {
 						for (i=0;i<ae->ialias;i++) {
-							if (strcmp(ae->alias[i].alias,"IX") && strcmp(ae->alias[i].alias,"IY")) {
 								sprintf(symbol_line,"%s #%04X\n",ae->alias[i].alias,RoundComputeExpression(ae,ae->alias[i].translation,0,-ae->alias[i].iw,0));
 								FileWriteLine(TMP_filename,symbol_line);
-							}
 						}
 					}
 					FileWriteLineClose(TMP_filename);
@@ -23109,14 +25174,9 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 									sprintf(TMP_filename,"%s.sym.bank%d",ae->outputfilename,ae->label[i].ibank);
 								}
 							}
-							if (!ae->label[i].name) {
-								sprintf(symbol_line,"%s EQU 0%04XH\n",ae->wl[ae->label[i].iw].w,ae->label[i].ptr);
+							if (ae->export_local || !ae->label[i].local) {
+								sprintf(symbol_line,"%s EQU 0%04XH\n",ae->label[i].name,ae->label[i].ptr);
 								FileWriteLine(TMP_filename,symbol_line);
-							} else {
-								if (ae->export_local || !ae->label[i].local) {
-									sprintf(symbol_line,"%s EQU 0%04XH\n",ae->label[i].name,ae->label[i].ptr);
-									FileWriteLine(TMP_filename,symbol_line);
-								}
 							}
 						}
 					}
@@ -23127,10 +25187,8 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 					}
 					if (ae->export_equ) {
 						for (i=0;i<ae->ialias;i++) {
-							if (strcmp(ae->alias[i].alias,"IX") && strcmp(ae->alias[i].alias,"IY")) {
 								sprintf(symbol_line,"%s EQU 0%04XH\n",ae->alias[i].alias,RoundComputeExpression(ae,ae->alias[i].translation,0,-ae->alias[i].iw,0));
 								FileWriteLine(TMP_filename,symbol_line);
-							}
 						}
 					}
 					FileWriteLineClose(TMP_filename);
@@ -23146,14 +25204,9 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 									sprintf(TMP_filename,"%s.sym.bank%d",ae->outputfilename,ae->label[i].ibank);
 								}
 							}
-							if (!ae->label[i].name) {
-								sprintf(symbol_line,"%s #%X B%d L\n",ae->wl[ae->label[i].iw].w,ae->label[i].ptr,ae->label[i].ibank>31?0:ae->label[i].ibank);
+							if (ae->export_local || !ae->label[i].local) {
+								sprintf(symbol_line,"%s #%X B%d L\n",ae->label[i].name,ae->label[i].ptr,ae->label[i].ibank>31?0:ae->label[i].ibank);
 								FileWriteLine(TMP_filename,symbol_line);
-							} else {
-								if (ae->export_local || !ae->label[i].local) {
-									sprintf(symbol_line,"%s #%X B%d L\n",ae->label[i].name,ae->label[i].ptr,ae->label[i].ibank>31?0:ae->label[i].ibank);
-									FileWriteLine(TMP_filename,symbol_line);
-								}
 							}
 						}
 					}
@@ -23164,7 +25217,7 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 					}
 					if (ae->export_equ) {
 						for (i=0;i<ae->ialias;i++) {
-							if (strcmp(ae->alias[i].alias,"IX") && strcmp(ae->alias[i].alias,"IY") && ae->alias[i].autorise_export) {
+							if (ae->alias[i].autorise_export) {
 								if (ae->alias[i].fromstruct) sprintf(symbol_line,"%s #%X B0 I\n",ae->alias[i].alias,RoundComputeExpression(ae,ae->alias[i].translation,0,-ae->alias[i].iw,0));
 								else sprintf(symbol_line,"%s #%X B0 A\n",ae->alias[i].alias,RoundComputeExpression(ae,ae->alias[i].translation,0,-ae->alias[i].iw,0));
 								FileWriteLine(TMP_filename,symbol_line);
@@ -23195,18 +25248,10 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 
 			/* add labels and local labels to breakpoint pool (if any) */
 			for (i=0;i<ae->il;i++) {
-				if (!ae->label[i].name) {
-					if (strncmp(ae->wl[ae->label[i].iw].w,"BRK",3)==0 || strncmp(ae->wl[ae->label[i].iw].w,"@BRK",4)==0 || strstr(ae->wl[ae->label[i].iw].w,".BRK")) {
-						breakpoint.address=ae->label[i].ptr;
-						if (ae->label[i].ibank>3) breakpoint.bank=1; else breakpoint.bank=0;
-						ObjectArrayAddDynamicValueConcat((void **)&ae->breakpoint,&ae->ibreakpoint,&ae->maxbreakpoint,&breakpoint,sizeof(struct s_breakpoint));
-					}
-				} else {
-					if (strncmp(ae->label[i].name,"BRK",3)==0 || strncmp(ae->label[i].name,"@BRK",4)==0 || strstr(ae->label[i].name,".BRK")) {
-						breakpoint.address=ae->label[i].ptr;
-						if (ae->label[i].ibank>3) breakpoint.bank=1; else breakpoint.bank=0;
-						ObjectArrayAddDynamicValueConcat((void **)&ae->breakpoint,&ae->ibreakpoint,&ae->maxbreakpoint,&breakpoint,sizeof(struct s_breakpoint));								
-					}
+				if (strncmp(ae->label[i].name,"BRK",3)==0 || strncmp(ae->label[i].name,"@BRK",4)==0 || strstr(ae->label[i].name,".BRK")) {
+					breakpoint.address=ae->label[i].ptr;
+					if (ae->label[i].ibank>3) breakpoint.bank=1; else breakpoint.bank=0;
+					ObjectArrayAddDynamicValueConcat((void **)&ae->breakpoint,&ae->ibreakpoint,&ae->maxbreakpoint,&breakpoint,sizeof(struct s_breakpoint));
 				}
 			}
 
@@ -23248,26 +25293,30 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 *******************************************************************************************/
 	if (ae->dependencies) {
 		int trigdep=0;
-		
-		/* depends ALL */
-		if (ae->outputfilename && strcmp(ae->outputfilename,"rasmoutput")) {
-			trigdep=1;
-			printf("%s",ae->outputfilename);
-			if (ae->dependencies==E_DEPENDENCIES_MAKE) printf(" "); else printf("\n");
+	
+		if (ae->nberr)	{
+			rasm_printf(ae,KERROR"Fix error%s to see dependencies\n",ae->nberr,ae->nberr>1?"s":"");
+		} else {
+			/* depends ALL */
+			if (ae->outputfilename && strcmp(ae->outputfilename,"rasmoutput")) {
+				trigdep=1;
+				printf("%s",ae->outputfilename);
+				if (ae->dependencies==E_DEPENDENCIES_MAKE) printf(" "); else printf("\n");
+			}
+			for (i=1;i<ae->ifile;i++) {
+				trigdep=1;
+				SimplifyPath(ae->filename[i]);
+				printf("%s",ae->filename[i]);
+				if (ae->dependencies==E_DEPENDENCIES_MAKE) printf(" "); else printf("\n");
+			}
+			for (i=0;i<ae->ih;i++) {
+				trigdep=1;
+				SimplifyPath(ae->hexbin[i].filename);
+				printf("%s",ae->hexbin[i].filename);
+				if (ae->dependencies==E_DEPENDENCIES_MAKE) printf(" "); else printf("\n");
+			}
+			if (ae->dependencies==E_DEPENDENCIES_MAKE && trigdep) printf("\n");
 		}
-		for (i=1;i<ae->ifile;i++) {
-			trigdep=1;
-			SimplifyPath(ae->filename[i]);
-			printf("%s",ae->filename[i]);
-			if (ae->dependencies==E_DEPENDENCIES_MAKE) printf(" "); else printf("\n");
-		}
-		for (i=0;i<ae->ih;i++) {
-			trigdep=1;
-			SimplifyPath(ae->hexbin[i].filename);
-			printf("%s",ae->hexbin[i].filename);
-			if (ae->dependencies==E_DEPENDENCIES_MAKE) printf(" "); else printf("\n");
-		}
-		if (ae->dependencies==E_DEPENDENCIES_MAKE && trigdep) printf("\n");
 	}
 
 /*******************************************************************************************
@@ -23316,7 +25365,7 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 	* ******************************************************************/
 	/* get back memory if requested */
 	if (ae->retdebug && ae->debug.emuram && ae->debug.lenram) {
-	       int ramidx,ramend,maxbank;
+	       int ramidx,ramend,maxbank,ochk;
 
 	       maxbank=ae->debug.lenram>>14;
 	       ramidx=0;
@@ -23327,60 +25376,198 @@ int Assemble(struct s_assenv *ae, unsigned char **dataout, int *lenout, struct s
 				       ae->debug.emuram[ramidx++]=ae->mem[i][j];
 			       }
 		       } else {
-			       printf("@@@ simple banking unsupported => todo\n");
-			       /* unsupported now => @@TODO */
+			       // check ORG
+			       // get start addr in bank
+			       // copy 16k in emu RAM place
+			       minmem=65536;maxmem=0;
+				for (ochk=0;ochk<ae->io;ochk++) {
+					if (ae->orgzone[ochk].protect) continue; /* protected zones exclusion */
+					/* uniquement si le ORG a ete suivi d'ecriture et n'est pas en 'nocode' */
+					if (ae->orgzone[ochk].ibank==i && ae->orgzone[ochk].memstart!=ae->orgzone[ochk].memend && ae->orgzone[ochk].nocode!=1) {
+						if (ae->orgzone[ochk].memstart<minmem) minmem=ae->orgzone[ochk].memstart;
+						if (ae->orgzone[ochk].memend>maxmem) maxmem=ae->orgzone[ochk].memend;
+					}
+				}
+				if (minmem+16384>65536) ramend=65536; else ramend=minmem+16384;
+				memcpy(&ae->debug.emuram[i*16384],ae->mem[i]+minmem,ramend-minmem);
 		       }
 	       }
 	}
-
 
 	FreeAssenv(ae);
 	return ok;
 }
 
-
-void EarlyPrepSrc(struct s_assenv *ae, char **listing, char *filename) {
-	int l,idx,c,quote_type=0;
+/***********************************************************************
+ - remove single line comments
+ - remove multi line comments
+ - merge lines when requested
+ - convert AF' to AF
+ - convert tabs to spaces
+ - convert shifts << & >> to a single bracket
+ - convert code to upper chars (but not in quotes)
+***********************************************************************/
+int EarlyPrepSrc(struct s_assenv *ae, char **listing, char *filename) {
+	int l,idx,c,qopen=0;
 	int mlc_start,mlc_idx;
+	int midx=0,nextidx,previdx,superFusion;
+	int lastAp=0;
+	unsigned char zeQuote;
 
-	/* virer les commentaires en ;, // mais aussi multi-lignes et convertir les decalages, passer les chars en upper case */
 	l=idx=0;
 	while (listing[l]) {
 		c=listing[l][idx++];
-
-		if (!c) {
-			l++;
-			idx=0;
-			continue;
-		} else {
-			if (!quote_type) {
-
-				/* upper case */
-				if (c>='a' && c<='z') {
-					listing[l][idx-1]=c=c-'a'+'A';
-				}
-
-				if (c=='\'') {
-				       if (idx>2 && strncmp(&listing[l][idx-3],"AF'",3)==0) {
-						/* il ne faut rien faire */
-					} else {
-						quote_type=c;
+		switch (c) {
+			/* end of line, test for fusion */
+			case 0: if (idx>1) {
+					if (midx<idx) midx=idx+256; // legacy
+					idx-=2;
+					while (idx && (listing[l][idx]==' ' || (listing[l][idx]<=0x0D && listing[l][idx]))) {
+						idx--;
 					}
-				} else if (c=='"') {
-					quote_type=c;
-				} else if (c==';' || (c=='/' && listing[l][idx]=='/')) {
-					idx--;
-					while (listing[l][idx] && listing[l][idx]!=0x0D && listing[l][idx]!=0x0A) listing[l][idx++]=':';
-					idx--;
-				} else if (c=='>' && listing[l][idx]=='>' && !quote_type) {
-					listing[l][idx-1]=']';
-					listing[l][idx++]=' ';
-					continue;
-				} else if (c=='<' && listing[l][idx]=='<' && !quote_type) {
-					listing[l][idx-1]='[';
-					listing[l][idx++]=' ';
-					continue;
-				} else if (c=='/' && listing[l][idx]=='*' && !quote_type) {
+					if (listing[l][idx]=='\\') {
+						if (listing[l+1]) {
+							/* fusion avec la ligne suivante qui est pr√©sente + trim */
+							superFusion=nextidx=0;
+							while (listing[l+1][nextidx]==' ' || listing[l+1][nextidx]==0x09) nextidx++;
+							if (idx) previdx=idx-1; else previdx=0;
+							while (previdx && (listing[l][previdx]==' ' || listing[l][previdx]==0x09)) previdx--;
+							if (listing[l][previdx]=='\'' || listing[l][previdx]=='"') {
+								if (listing[l][previdx]==listing[l+1][nextidx]) {
+									// fusion des quotes identiques
+									zeQuote=listing[l][previdx];
+									idx=previdx;
+									nextidx++;
+									superFusion=1;
+								}
+							}
+
+							listing[l]=MemRealloc(listing[l],strlen(listing[l])+strlen(listing[l+1]+nextidx)+1);
+							strcpy(listing[l]+idx,listing[l+1]+nextidx);
+							strcpy(listing[l+1],"");
+							/* et on continue l'analyse de la ligne apr√®s fusion MAIS pas apr√®s une super fusion */
+							if (superFusion) {
+								qopen=1;
+								while (listing[l][idx]) {
+									// escape in quotes
+									if (listing[l][idx]=='\\') {
+										if (listing[l][idx+1]) {
+											  idx++;
+										} else {
+											MakeError(ae,0,filename,l+1,"Cannot escape at the end of the line inside a quote\n");
+											break;
+										}
+									} else if (listing[l][idx]==zeQuote) {
+										qopen=0;
+										idx++;
+										break;
+									}
+									idx++;
+								}
+								if (qopen) MakeError(ae,0,filename,l+1,"Quote opened but not closed before the end of the line\n");
+							}
+							//idx=strlen(listing[l])+1;
+							//if (midx<idx) midx=idx+256;
+						} else {
+							MakeError(ae,0,filename,l+1,"Cannot merge with next line as there is no more line!\n");
+							idx=0;
+							l++;
+						}
+					} else {
+						// regular EOL
+						idx=0;
+						l++;
+					}
+				} else {
+					// ligne vide
+					if (midx<idx) midx=idx+256;
+					idx=0;
+					l++;
+				}
+				break;
+			/* upper case & AF' */
+			case 'a':listing[l][idx-1]='A';break;
+			case 'b':listing[l][idx-1]='B';break;
+			case 'c':listing[l][idx-1]='C';break;
+			case 'd':listing[l][idx-1]='D';break;
+			case 'e':listing[l][idx-1]='E';break;
+			case 'f':listing[l][idx-1]='F';
+			case 'F':if (listing[l][idx]=='\'' && idx>3 && listing[l][idx-2]=='A') { // ", AF'"
+					int reverseIdx=idx-3;
+					while (reverseIdx && listing[l][reverseIdx]==' ') reverseIdx--;
+					if (listing[l][reverseIdx]==',') listing[l][idx]=' ';
+				 }
+				 break;
+			case 'g':listing[l][idx-1]='G';break;
+			case 'h':listing[l][idx-1]='H';break;
+			case 'i':listing[l][idx-1]='I';break;
+			case 'j':listing[l][idx-1]='J';break;
+			case 'k':listing[l][idx-1]='K';break;
+			case 'l':listing[l][idx-1]='L';break;
+			case 'm':listing[l][idx-1]='M';break;
+			case 'n':listing[l][idx-1]='N';break;
+			case 'o':listing[l][idx-1]='O';break;
+			case 'p':listing[l][idx-1]='P';break;
+			case 'q':listing[l][idx-1]='Q';break;
+			case 'r':listing[l][idx-1]='R';break;
+			case 's':listing[l][idx-1]='S';break;
+			case 't':listing[l][idx-1]='T';break;
+			case 'u':listing[l][idx-1]='U';break;
+			case 'v':listing[l][idx-1]='V';break;
+			case 'w':listing[l][idx-1]='W';break;
+			case 'x':listing[l][idx-1]='X';break;
+			case 'y':listing[l][idx-1]='Y';break;
+			case 'z':listing[l][idx-1]='Z';break;
+			// tab => space
+			case '\t':listing[l][idx-1]=' ';break;
+			// escape
+			case '\\':if (listing[l][idx]) {
+					  idx++;
+				  } else {
+					  // we may escape at the end of the line (to concat lines)
+				  }
+				 break;
+			// quotes
+			case '\'': qopen=1;
+				   while (listing[l][idx]) {
+					   // escape in quotes
+					if (listing[l][idx]=='\\') {
+						if (listing[l][idx+1]) {
+							  idx++;
+						} else {
+							MakeError(ae,0,filename,l+1,"Cannot escape at the end of the line inside a quote\n");
+							break;
+						}
+					} else if (listing[l][idx]=='\'') {
+						qopen=0;
+						idx++;
+						break;
+					}
+					idx++;
+				  }
+				  if (qopen) MakeError(ae,0,filename,l+1,"Quote opened but not closed before the end of the line\n");
+				  break;
+			case '"': qopen=1;
+				  while (listing[l][idx]) {
+					   // escape in quotes
+					if (listing[l][idx]=='\\') {
+						if (listing[l][idx+1]) {
+							  idx++;
+						} else {
+							MakeError(ae,0,filename,l+1,"Cannot escape at the end of the line inside a quote\n");
+							break;
+						}
+					} else if (listing[l][idx]=='"') {
+						qopen=0;
+						idx++;
+						break;
+					}
+					idx++;
+				  }
+				  if (qopen) MakeError(ae,0,filename,l+1,"Quote opened but not closed before the end of the line\n");
+				  break;
+			 // comments
+			case '/':if (listing[l][idx]=='*') {
 					/* multi-line comment */
 					mlc_start=l;
 					mlc_idx=idx-1;
@@ -23392,7 +25579,8 @@ void EarlyPrepSrc(struct s_assenv *ae, char **listing, char *filename) {
 							l++;
 							if (!listing[l]) {
 								MakeError(ae,0,filename,l+1,"opened comment to the end of the file\n");
-								return;
+								if (midx<idx) midx=idx+256;
+								return midx;
 							}
 						} else if (c=='*' && listing[l][idx]=='/') {
 							idx++;
@@ -23411,38 +25599,28 @@ void EarlyPrepSrc(struct s_assenv *ae, char **listing, char *filename) {
 						mlc_idx=0;
 						while (mlc_idx<idx) listing[l][mlc_idx++]=' '; /* raz beginning of the line */
 					}
-				}
-			} else {
-				/* in quote */
-				if (c=='\\') {
-					if (listing[l][idx]) {
-						idx++;
-					}
-				} else if (c==quote_type) {
-					quote_type=0;
-				}
-			}
-		}
-	}
-	l-=2;
-	if (l>0)
-	while (l>=0) {
-		/* patch merge line with '\' only outside quotes */
-		idx=strlen(listing[l])-1;
-		
-		if (idx>0) {
-			while (idx && (listing[l][idx]==' ' || listing[l][idx]==0x0D || listing[l][idx]==0x0A || listing[l][idx]==0x0B)) {
+					break;
+				 } else {
+					if (listing[l][idx]!='/')
+						break;
+				 }
+			case ';': idx--;
+				while (listing[l][idx] && listing[l][idx]!=0x0D && listing[l][idx]!=0x0A) listing[l][idx++]=':';
 				idx--;
-			}
-
-			if (listing[l][idx]=='\\') {
-				/* fusion avec la ligne suivante qui est obligatoirement prÈsente */
-				listing[l]=MemRealloc(listing[l],strlen(listing[l])+strlen(listing[l+1])+1);
-				strcpy(listing[l]+idx,listing[l+1]);
-				strcpy(listing[l+1],"");
-			}
+				break;
+			// shifts
+			case '>':if (listing[l][idx]=='>') {
+					listing[l][idx-1]=']';
+					listing[l][idx++]=' ';
+				}
+				break;
+			case '<':if (listing[l][idx]=='<') {
+					listing[l][idx-1]='[';
+					listing[l][idx++]=' ';
+				}
+				break;
+			default:break;
 		}
-		l--;
 	}
 #if TRACE_LIGHT_PREPRO
 	l=0;
@@ -23453,6 +25631,7 @@ void EarlyPrepSrc(struct s_assenv *ae, char **listing, char *filename) {
 	}
 	printf("-----------------\n");
 #endif
+	return midx;
 }
 
 void PreProcessingSplitListing(struct s_listing **listing, int *il, int *ml, int idx, int end, int start)
@@ -23500,11 +25679,17 @@ void PreProcessingInsertListing(struct s_listing **reflisting, int *il, int *ml,
 	}
 }
 
-int cmpkeyword(const void * a, const void * b)
-{
+int cmpkeyword(const void * a, const void * b) {
 	struct s_asm_keyword *sa,*sb;
 	sa=(struct s_asm_keyword *)a;
 	sb=(struct s_asm_keyword *)b;
+	// sort on length THEN on alphabetical order
+	if (sa->length!=sb->length) return sa->length-sb->length; else return strcmp(sa->mnemo,sb->mnemo);
+}
+int cmpmathkeyword(const void * a, const void * b) {
+	struct s_math_keyword *sa,*sb;
+	sa=(struct s_math_keyword *)a;
+	sb=(struct s_math_keyword *)b;
 	// sort on length THEN on alphabetical order
 	if (sa->length!=sb->length) return sa->length-sb->length; else return strcmp(sa->mnemo,sb->mnemo);
 }
@@ -23532,7 +25717,7 @@ struct s_assenv *PreProcessing(char *filename, int flux, const char *datain, int
 	int ilisting=0,maxlisting=0;
 	
 	char **listing_include=NULL;
-	int i,j,l=0,idx=0,c=0,li,le;
+	int i,j,l=0,idx=0,c=0,li,le,di,midx=0;
 	char Automate[256]={0};
 	char AutomatePrepro[256]={0};
 	struct s_hexbin curhexbin;
@@ -23548,39 +25733,28 @@ struct s_assenv *PreProcessing(char *filename, int flux, const char *datain, int
 	int ival=0,sval=256;
 	char *qval=NULL;
 	int iqval=0,sqval=256;
-	struct s_repeat_index *TABrindex=NULL;
-	struct s_repeat_index *TABwindex=NULL;
-	struct s_repeat_index rindex={0};
-	struct s_repeat_index windex={0};
 	int nri=0,mri=0,ri=0;
 	int nwi=0,mwi=0,wi=0;
 	/* state machine trigger */
 	int waiting_quote=0,lquote=0;
 	int macro_trigger=0;
 	int escape_code=0;
-	int quote_type=0;
-	int incbin=0,include=0,crunch=0;
+	int quote_type=0,parenth=0;
+	int incbin=0,include=0,crunch=0,incCheck;
 	int rewrite=0,hadcomma=0;
 	int nbinstruction;
 	int ifast,texpr;
 	int ispace=0;
 	char opassign=0;
 	/* incbin bug */
-	int incstartL=0;
 	char *original_filename=NULL;
+	char errSep1[128]={0};
+	int nobreak=0;
 
 #if TRACE_PREPRO
 printf("start prepro, alloc assenv\n");
 #endif
 
-	windex.cl=-1;
-	windex.cidx=-1;
-	rindex.cl=-1;
-	rindex.cidx=-1;
-
-#if TRACE_PREPRO
-printf("malloc+memset\n");
-#endif
 	ae=MemMalloc(sizeof(struct s_assenv));
 	memset(ae,0,sizeof(struct s_assenv));
 
@@ -23595,7 +25769,7 @@ printf("paramz 1\n");
 		ae->export_equ=param->export_equ;
 		ae->export_sna=param->export_sna;
 		ae->export_snabrk=param->export_snabrk;
-		if (param->export_sna || param->export_snabrk) {
+		if (param->export_sna) {
 			ae->forcesnapshot=1;
 		}
 		ae->export_brk=param->export_brk;
@@ -23623,6 +25797,7 @@ printf("paramz 1\n");
 		ae->maxerr=param->maxerr;
 		ae->extended_error=param->extended_error;
 		ae->nowarning=param->nowarning;
+		ae->nocrunchwarning=param->nocrunchwarning;
 		ae->erronwarn=param->erronwarn;
 		ae->utf8enable=param->utf8enable;
 		ae->freequote=param->freequote;
@@ -23663,8 +25838,8 @@ printf("paramz 1\n");
 printf("init 0 amper=%d\n",ae->noampersand);
 #endif
 	/* generic init */
-	ae->ctx1.maxivar=1;
-	ae->ctx2.maxivar=1;
+	//ae->ctx1.maxivar=1;
+	//ae->ctx2.maxivar=1;
 	ae->computectx=&ae->ctx1;
 	ae->flux=flux;
 	/* check snapshot structure */
@@ -23709,6 +25884,7 @@ printf("init 0 amper=%d\n",ae->noampersand);
 	ae->snapshot.gatearray.palette[16]=0x04;
 
 	ae->snapshot.gatearray.multiconfiguration=0x8D; // lower/upper ROM off + mode 1
+	ae->snapshot.ramconfiguration=0xC0; // default
 	ae->snapshot.CPCType=2; /* 6128 */
 	ae->snapshot.crtcstate.model=0; /* CRTC 0 */
 	ae->snapshot.vsyncdelay=2;
@@ -23767,7 +25943,7 @@ printf("paramz\n");
 					/* sjasm */
 					*labelsep1=0;
 					curlabel.name=labelines[i];
-					curlabel.iw=-1;
+					//curlabel.iw=-1;
 					curlabel.crc=GetCRC(curlabel.name);
 					curlabel.ptr=strtol(labelsep1+6,NULL,16);
 					PushLabelLight(ae,&curlabel);
@@ -23775,7 +25951,7 @@ printf("paramz\n");
 					/* pasmo */
 					*labelsep1=0;
 					curlabel.name=labelines[i];
-					curlabel.iw=-1;
+					//curlabel.iw=-1;
 					curlabel.crc=GetCRC(curlabel.name);
 					curlabel.ptr=strtol(labelsep1+6,NULL,16);
 					//ObjectArrayAddDynamicValueConcat((void **)&ae->label,&ae->il,&ae->ml,&curlabel,sizeof(curlabel));
@@ -23785,7 +25961,7 @@ printf("paramz\n");
 					if (*(labelsep1+1)=='#') {
 						*labelsep1=0;
 						curlabel.name=labelines[i];
-						curlabel.iw=-1;
+						//curlabel.iw=-1;
 						curlabel.crc=GetCRC(curlabel.name);
 						curlabel.ptr=strtol(labelsep1+2,NULL,16);
 						//ObjectArrayAddDynamicValueConcat((void **)&ae->label,&ae->il,&ae->ml,&curlabel,sizeof(curlabel));
@@ -23805,15 +25981,13 @@ printf("init 3\n");
 #endif
 	/* 32 CPR default roms but 260+ max snapshot RAM pages + one workspace */
 	for (i=0;i<BANK_MAX_NUMBER+1;i++) {
-		mem=MemMalloc(65536);
-		memset(mem,0,65536);
+		mem=NULL;
 		ObjectArrayAddDynamicValueConcat((void**)&ae->mem,&ae->nbbank,&ae->maxbank,&mem,sizeof(mem));
 		IntArrayAddDynamicValueConcat(&ae->memsize,&ae->nbmemsize,&ae->maxmemsize,65536);
 	}
-#if TRACE_PREPRO
-printf("nbbank=%d initialised\n",ae->nbbank);
-#endif
 	ae->activebank=BANK_MAX_NUMBER; ae->maxptr=ae->memsize[ae->activebank]; // inseparable
+	ae->mem[ae->activebank]=MemMalloc(65536);
+	memset(ae->mem[ae->activebank],0,65536);
 	for (i=0;i<256;i++) { ae->charset[i]=(unsigned char)i; }
 
 	if (param && param->outputfilename) {
@@ -23833,7 +26007,7 @@ printf("nbbank=%d initialised\n",ae->nbbank);
 	} else {
 		ae->outputfilename=TxtStrDup("rasmoutput");
 	}
-	/* si on est en ligne de commande ET que le fichier n'est pas trouvÈ */
+	/* si on est en ligne de commande ET que le fichier n'est pas trouv√© */
 	if (param && param->filename && !FileExists(param->filename)) {
 		char *LTryExtension[]={".asm",".z80",".inc",".src",".dam",".mxm",".txt",
 					".ASM",".Z80",".INC",".SRC",".DAM",".MXM",".TXT",".o",".s",".O",".S","",NULL};
@@ -23905,7 +26079,9 @@ printf("nbbank=%d initialised\n",ae->nbbank);
 	}
 	if (original_filename) MemFree(original_filename);
 	
-	if (param) rasm_printf(ae,KAYGREEN"Pre-processing [%s]\n",param->filename);
+	if (param) {
+		rasm_printf(ae,KAYGREEN"Pre-processing [%s]\n",param->filename?param->filename:"inline string");
+	}
 
 	// count instructions and fill crc/length in the dynamic array of RASM instructions
 	for (nbinstruction=0;instruction[nbinstruction].mnemo[0];nbinstruction++) {
@@ -23927,16 +26103,39 @@ printf("nbbank=%d initialised\n",ae->nbbank);
 	for (i=0;i<nbinstruction;i++) {
 		if (ae->fastmatch[(int)instruction[i].mnemo[0]][instruction[i].length]==-1) ae->fastmatch[(int)instruction[i].mnemo[0]][instruction[i].length]=i;
 	} 
+
+	/* compute CRC for math keywords */
+	for (nbinstruction=0;math_keyword[nbinstruction].mnemo[0];nbinstruction++) {
+		math_keyword[nbinstruction].crc=GetCRCandLength(math_keyword[nbinstruction].mnemo,&math_keyword[nbinstruction].length);
+		if (math_keyword[nbinstruction].length>=FUNCTION_MAXLENGTH) {
+			rasm_printf(ae,"Internal Error, please resize fastmath length for [%s] with %d\n",math_keyword[nbinstruction].mnemo,math_keyword[nbinstruction].length+1);
+			exit(-666);
+		}
+	}
+	qsort(math_keyword,nbinstruction,sizeof(struct s_math_keyword),cmpmathkeyword);
+	// init fastmatch table
+	for (i=0;i<256;i++) {
+		for (l=0;l<FUNCTION_MAXLENGTH;l++) {
+			ae->fastmath[i][l]=-1;
+		}
+	}
+	// fill fastmath table with idx
+	for (i=0;i<nbinstruction;i++) {
+		if (ae->fastmath[(int)math_keyword[i].mnemo[0]][math_keyword[i].length]==-1) ae->fastmath[(int)math_keyword[i].mnemo[0]][math_keyword[i].length]=i;
+	} 
+
 	for (i=0;CharWord[i];i++) {Automate[((int)CharWord[i])&0xFF]=1;}
 	for (i=0;i<256;i++) {
-		if (((i>='A' && i<='Z') || (i>='0' && i<='9') || i=='@' || i=='_') && !quote_type) AutomatePrepro[i]=1; else AutomatePrepro[i]=0;
+		if ((i>='A' && i<='Z') || (i>='0' && i<='9') || i=='@' || i=='_') AutomatePrepro[i]=1; else AutomatePrepro[i]=0;
 	}
-	 /* separators */
+	/* string terminator handled in regular char */
+	Automate[0]=1;
+	/* separators */
 	Automate[' ']=2;
 	Automate[',']=2;
 	Automate['\t']=2;
 	/* end of line */
-	Automate[':']=3; /* les 0x0A et 0x0D seront deja† remplaces en ':' */
+	Automate[':']=3; /* les 0x0A et 0x0D seront deja  remplaces en ':' */
 	/* expression */
 	Automate['=']=4; /* on stocke l'emplacement de l'egalite */
 	Automate['<']=4; /* ou des operateurs */
@@ -23949,25 +26148,37 @@ printf("nbbank=%d initialised\n",ae->nbbank);
 	w[0]=0;
 	bval[0]=0;
 	qval[0]=0;
-	
+
+
 #if TRACE_PREPRO
 printf("read file/flux\n");
 #endif
 
 	if (!ae->flux) {
-		zelines=FileReadLines(ae,filename);
-		FieldArrayAddDynamicValueConcat(&ae->filename,&ae->ifile,&ae->maxfile,filename);
-		if (ae->enforce_symbol_case) {
-			ae->rawfile=MemRealloc(ae->rawfile,sizeof(char **)*ae->ifile);
-			ae->rawlen=MemRealloc(ae->rawlen,sizeof(int)*ae->ifile);
-			ae->rawfile[ae->ifile-1]=ae->source_bigbuffer;
-			ae->rawlen[ae->ifile-1]=ae->source_bigbuffer_len;
+		if (filename) {
+			zelines=FileReadLines(ae,filename);
+			FieldArrayAddDynamicValueConcat(&ae->filename,&ae->ifile,&ae->maxfile,filename);
+			if (ae->enforce_symbol_case) {
+				ae->rawfile=MemRealloc(ae->rawfile,sizeof(char **)*ae->ifile);
+				ae->rawlen=MemRealloc(ae->rawlen,sizeof(int)*ae->ifile);
+				ae->rawfile[ae->ifile-1]=ae->source_bigbuffer;
+				ae->rawlen[ae->ifile-1]=ae->source_bigbuffer_len;
+			}
+		} else if (param->inline_asm) {
+			zelines=MemMalloc(sizeof(char *)*2);
+			zelines[0]=TxtStrDup(param->inline_asm);
+			zelines[1]=NULL;
+			FieldArrayAddDynamicValueConcat(&ae->filename,&ae->ifile,&ae->maxfile,"inline string");
+			ae->enforce_symbol_case=0;
+		} else {
+			fprintf(stderr,"internal error (no filename, no inline string, not in flux mode)\n");
+			exit(-1);
 		}
 	} else {
 		int flux_nblines=0;
 		int flux_curpos;
 
-		/* copie des donnÈes */
+		/* copie des donn√©es */
 		for (i=0;i<datalen;i++) {
 			if (datain[i]=='\n') flux_nblines++;
 		}
@@ -23980,7 +26191,7 @@ printf("read file/flux\n");
 				zelines[flux_nblines]=MemMalloc(i-flux_curpos+2);
 				/* copy data+CR */
 				memcpy(zelines[flux_nblines],datain+flux_curpos,i-flux_curpos+1);
-				/* et on ajoute un petit zÈro ‡ la fin! */
+				/* et on ajoute un petit z√©ro √† la fin! */
 				zelines[flux_nblines][i-flux_curpos+1]=0;
 #if 0
 if (flux_nblines<50) printf("%02d[%s]\n",flux_nblines,zelines[flux_nblines]);
@@ -24003,9 +26214,12 @@ if (flux_nblines<50) printf("%02d[%s]\n",flux_nblines,zelines[flux_nblines]);
 	}	
 
 #if TRACE_PREPRO
-printf("remove comz, do includes\n");
+printf("remove comz, merge lines, upper case for code\n");
 #endif
-	EarlyPrepSrc(ae,zelines,ae->filename[ae->ifile-1]);
+	midx=EarlyPrepSrc(ae,zelines,ae->filename[ae->ifile-1]);
+	StateMachineResizeBuffer(&w,midx+256,&mw);
+	StateMachineResizeBuffer(&bval,midx+256,&sval);
+	StateMachineResizeBuffer(&qval,midx+256,&sqval);
 
 	for (i=0;zelines[i];i++) {
 		curlisting.ifile=0;
@@ -24023,925 +26237,682 @@ printf("remove comz, do includes\n");
 		listing[ilisting-1].listing[datalen+1]=0;
 	}
 
-	waiting_quote=quote_type=0;
+	waiting_quote=quote_type=include=0;
 
+#if TRACE_PREPRO
+printf("do includes, remove CR => %d line(s) to process\n",ilisting);
+#endif
 	/************************************************************************************/
 	/************************************************************************************/
 	/* simplify case, carriage return and some tricky quotes ****************************/
 	/* also do all sources and binaries includes ****************************************/
 	/************************************************************************************/
+	/*** POLARIS new automate ***********************************************************/
 	/************************************************************************************/
 
 	l=idx=0;
 	while (l<ilisting) {
 
 #if TRACE_PREPRO || TRACE_LIGHT_PREPRO
-if (!idx) printf("[%s]\n",listing[l].listing);
+if (!idx) printf("L%05d=[%s]\n",l,listing[l].listing);
 #endif
 
-		c=listing[l].listing[idx++];
-		if (!c) {
-			l++;
-			idx=0;
-			continue;
-		}
-		if (c=='\\' && !waiting_quote) {
-			idx++;
-			continue;
-		}
-		
-		if (c==0x0D || c==0x0A) {
-			listing[l].listing[idx-1]=':';
-			c=':';
-		} else if (c=='\'') {
-			// test this only if there is a single quote
-		       	if (idx>2 && strncmp(&listing[l].listing[idx-3],"AF'",3)==0) {
-				/* nothing */
-			} else {
-				if (!quote_type) {
-					quote_type=c;
-					lquote=l;
-				} else {
-					if (c==quote_type) {
-						quote_type=0;
-					}
-				}
-			}
-		} else if (c=='"') {
-			if (!quote_type) {
-				quote_type=c;
-				lquote=l;
-			} else {
-				if (c==quote_type) {
-					quote_type=0;
-				}
-			}
-		}
+		c=listing[l].listing[idx];
 
-		if (waiting_quote) {
-			/* expecting quote and NOTHING else */
-			switch (waiting_quote) {
-				case 1:
-					if (c==quote_type) waiting_quote=2; else {
-						/* enforce there is only spaces or tabs between READ/INC and string */
-						if (c!=' ' && c!=0x9) {
-							MakeError(ae,0,ae->filename[listing[l].ifile],listing[l].iline,"A quoted string must follow INCLUDE/READ directive\n");
-							waiting_quote=0;
-							idx--;
-							continue;
-						}
-					}
-					break;
-				case 2:
-					if (!quote_type) {
-						waiting_quote=3;
-						qval[iqval]=0;
-					} else {
-						qval[iqval++]=c;
-						StateMachineResizeBuffer(&qval,iqval,&sqval);
-						qval[iqval]=0;
-					}
-			}
-			if (waiting_quote==3) {
-				if (incbin) {
-					int fileok=0,ilookfile;
-					/* qval contient le nom du fichier a lire */
-					filename_toread=MergePath(ae,ae->filename[listing[l].ifile],qval);
-					if (FileExists(filename_toread)) {
-						fileok=1;
-					} else {
-						for (ilookfile=0;ilookfile<ae->ipath && !fileok;ilookfile++) {
-							filename_toread=MergePath(ae,ae->includepath[ilookfile],qval);
-							if (FileExists(filename_toread)) {
-								fileok=1;
-							}
-						}
-					}
-					curhexbin.filename=TxtStrDup(filename_toread);
-					curhexbin.crunch=crunch;
-					switch (crunch) {
-						case 18:
-							curhexbin.version=1;
-							curhexbin.minmatch=5;
-							break;
-						case 19:
-							curhexbin.crunch=18;
-							curhexbin.version=2;
-							curhexbin.minmatch=2;
-							break;
-						default:break;
-					}
-
-					/* TAG + info */
-					curhexbin.datalen=-1;
-					curhexbin.data=NULL;
-					/* not yet an error, we will know later when executing the code */
-					ObjectArrayAddDynamicValueConcat((void**)&ae->hexbin,&ae->ih,&ae->mh,&curhexbin,sizeof(curhexbin));
-
-					/* v0.130 handling error case with filename on multiple lines */
-					if (incstartL!=l) {
-						int iconcat=incstartL;
-						int ilen;
-
-						MakeError(ae,0,ae->filename[listing[incstartL].ifile],listing[incstartL].iline,"INCBIN filename cannot be on multiple lines\n");
-
-						ilen=strlen(listing[iconcat].listing)+1;
-						idx+=ilen-rewrite;
-						while (iconcat<l) {
-							int tlen;
-							iconcat++;
-							tlen=strlen(listing[iconcat].listing);
-							ilen+=tlen;
-							if (iconcat<l) idx+=tlen;
-						}
-
-						iconcat=incstartL;
-						listing[iconcat].listing=MemRealloc(listing[iconcat].listing,ilen);
-						while (iconcat<l) {
-							iconcat++;
-							strcat(listing[incstartL].listing,listing[iconcat].listing);
-							listing[iconcat].listing[0]=0;
-						}
-						l=incstartL;
-
-						/* patch data to remain Assembler silent about this */
-						for (i=rewrite;i<idx;i++) listing[incstartL].listing[i]=' ';
-						/* delete entry */
-						MemFree(curhexbin.filename);
-						ae->ih--;
-					} else {
-						/* insertion */
-						le=strlen(listing[l].listing);
-
-						newlistingline=MemMalloc(le+32);
-						memcpy(newlistingline,listing[l].listing,rewrite);
-						rewrite+=sprintf(newlistingline+rewrite,"HEXBIN #%X",ae->ih-1);
-						strcat(newlistingline+rewrite,listing[l].listing+idx);
-						idx=rewrite;
-						MemFree(listing[l].listing);
-						listing[l].listing=newlistingline;
-					}
-					incbin=0;
-				} else if (include) {
-					/* qval contient le nom du fichier a lire */
-					int fileok=0,ilookfile;
-					/* cette notion n'existe pas dans le cas normal */
-					curhexbin.datalen=0;
-					/* qval contient le nom du fichier a lire */
-					filename_toread=MergePath(ae,ae->filename[listing[l].ifile],qval);
-					if (FileExists(filename_toread)) {
-						fileok=1;
-					} else {
-						for (ilookfile=0;ilookfile<ae->ipath && !fileok;ilookfile++) {
-							filename_toread=MergePath(ae,ae->includepath[ilookfile],qval);
-							if (FileExists(filename_toread)) {
-								fileok=1;
-							}
-						}
-					}
-
-					/* v0.130 handling error case with filename on multiple lines */
-					if (incstartL!=l) {
-						int iconcat=incstartL;
-						int ilen;
-
-						MakeError(ae,0,ae->filename[listing[incstartL].ifile],listing[incstartL].iline,"INCLUDE filename cannot be on multiple lines\n");
-						ilen=strlen(listing[iconcat].listing)+1;
-						idx+=ilen-rewrite;
-						while (iconcat<l) {
-							int tlen;
-							iconcat++;
-							tlen=strlen(listing[iconcat].listing);
-							ilen+=tlen;
-							if (iconcat<l) idx+=tlen;
-						}
-
-						iconcat=incstartL;
-						listing[iconcat].listing=MemRealloc(listing[iconcat].listing,ilen);
-						while (iconcat<l) {
-							iconcat++;
-							strcat(listing[incstartL].listing,listing[iconcat].listing);
-							listing[iconcat].listing[0]=0;
-						}
-						l=incstartL;
-
-					} else {
-						if (fileok) {
-							#if TRACE_PREPRO
-							rasm_printf(ae,KIO"include [%s]\n",filename_toread);
-							#endif
-							
-							/* lecture */
-							listing_include=FileReadLines(ae,filename_toread);
-							FieldArrayAddDynamicValueConcat(&ae->filename,&ae->ifile,&ae->maxfile,filename_toread);
-							if (ae->enforce_symbol_case) {
-								ae->rawfile=MemRealloc(ae->rawfile,sizeof(char **)*ae->ifile);
-								ae->rawlen=MemRealloc(ae->rawlen,sizeof(int)*ae->ifile);
-								ae->rawfile[ae->ifile-1]=ae->source_bigbuffer;
-								ae->rawlen[ae->ifile-1]=ae->source_bigbuffer_len;
-							}
-							/* virer les commentaires + prÈ-traitement */
-							EarlyPrepSrc(ae,listing_include,ae->filename[ae->ifile-1]);
-
-							/* split de la ligne en cours + suppression de l'instruction include */
-							PreProcessingSplitListing(&listing,&ilisting,&maxlisting,l,rewrite,idx);
-							/* insertion des nouvelles lignes + reference fichier + numeros de ligne */
-							PreProcessingInsertListing(&listing,&ilisting,&maxlisting,l,listing_include,ae->ifile-1);
-
-							MemFree(listing_include); /* free le tableau mais pas les lignes */
-							listing_include=NULL;
-							idx=0; /* on reste sur la meme ligne mais on se prepare a relire du caractere 0! */
-						} else {
-							/********************************************
-							*      E R R O R    M a n a g e m e n t     *
-							********************************************/
-							char tmp_insert[128];
-
-							for (i=rewrite;i<idx;i++) listing[incstartL].listing[i]=' ';
-							sprintf(tmp_insert,"READ %d",ae->ih);
-							memcpy(listing[incstartL].listing+rewrite,tmp_insert,strlen(tmp_insert));
-							
-							filename_toread=MergePath(ae,ae->filename[listing[l].ifile],qval);
-							curhexbin.filename=TxtStrDup(filename_toread);
-							curhexbin.crunch=crunch;
-
-							/* TAG + info */
-							curhexbin.datalen=-2;
-							curhexbin.data=NULL;
-							/* not yet an error, we will know later when executing the code */
-							ObjectArrayAddDynamicValueConcat((void**)&ae->hexbin,&ae->ih,&ae->mh,&curhexbin,sizeof(curhexbin));
-						}
-					}
-					include=0;
-				}
-				waiting_quote=0;
-				qval[0]=0;
-				iqval=0;
-			}
-		} else {
-			/* classic behaviour */
-
-			/* looking for include/incbin */
-			//if (((c>='A' && c<='Z') || (c>='0' && c<='9') || c=='@' || c=='_')&& !quote_type) {
-			if (AutomatePrepro[((int)c)&0xFF] && !quote_type) {
-				bval[ival++]=c;
-				StateMachineResizeBuffer(&bval,ival,&sval);
-				bval[ival]=0;
-			} else {
-				switch (bval[0]) {
-					case 'I':
-						if (bval[1]=='N' && bval[2]=='C') {
-							if (strcmp(bval,"INCLUDE")==0) {
-								incstartL=l;
-								include=1;
-								waiting_quote=1;
-								rewrite=idx-7-1;
-								/* quote right after keyword */
-								if (c==quote_type) {
-									waiting_quote=2;
-								}
-							} else if (strcmp(bval,"INCLZSA2")==0) {
-								incstartL=l;
-								incbin=1;
-								crunch=19;
-								waiting_quote=1;
-								rewrite=idx-8-1;
-								/* quote right after keyword */
-								if (c==quote_type) {
-									waiting_quote=2;
-								}
-							} else if (strcmp(bval,"INCLZSA1")==0) {
-								incstartL=l;
-								incbin=1;
-								crunch=18;
-								waiting_quote=1;
-								rewrite=idx-8-1;
-								/* quote right after keyword */
-								if (c==quote_type) {
-									waiting_quote=2;
-								}
-							} else if (strcmp(bval,"INCAPU")==0) {
-								incstartL=l;
-								incbin=1;
-								crunch=17;
-								waiting_quote=1;
-								rewrite=idx-6-1;
-								/* quote right after keyword */
-								if (c==quote_type) {
-									waiting_quote=2;
-								}
-							} else if (strcmp(bval,"INCLZ4")==0) {
-								incstartL=l;
-								incbin=1;
-								crunch=4;
-								waiting_quote=1;
-								rewrite=idx-6-1;
-								/* quote right after keyword */
-								if (c==quote_type) {
-									waiting_quote=2;
-								}
-							} else if (strcmp(bval,"INCEXO")==0) {
-								incstartL=l;
-								incbin=1;
-								crunch=8;
-								waiting_quote=1;
-								rewrite=idx-6-1;
-								/* quote right after keyword */
-								if (c==quote_type) {
-									waiting_quote=2;
-								}
-							} else if (strcmp(bval,"INCZX0")==0) {
-								incstartL=l;
-								incbin=1;
-								crunch=70;
-								waiting_quote=1;
-								rewrite=idx-6-1;
-								/* quote right after keyword */
-								if (c==quote_type) {
-									waiting_quote=2;
-								}
-							} else if (strcmp(bval,"INCZX0B")==0) {
-								incstartL=l;
-								incbin=1;
-								crunch=71;
-								waiting_quote=1;
-								rewrite=idx-7-1;
-								/* quote right after keyword */
-								if (c==quote_type) {
-									waiting_quote=2;
-								}
-							} else if (strcmp(bval,"INCZX7")==0) {
-								incstartL=l;
-								incbin=1;
-								crunch=7;
-								waiting_quote=1;
-								rewrite=idx-6-1;
-								/* quote right after keyword */
-								if (c==quote_type) {
-									waiting_quote=2;
-								}
-							} else if (strcmp(bval,"INCL48")==0) {
-								incstartL=l;
-								incbin=1;
-								crunch=48;
-								waiting_quote=1;
-								rewrite=idx-6-1;
-								/* quote right after keyword */
-								if (c==quote_type) {
-									waiting_quote=2;
-								}
-							} else if (strcmp(bval,"INCL49")==0) {
-								incstartL=l;
-								incbin=1;
-								crunch=49;
-								waiting_quote=1;
-								rewrite=idx-6-1;
-								/* quote right after keyword */
-								if (c==quote_type) {
-									waiting_quote=2;
-								}
-							} else if (strcmp(bval,"INCBIN")==0) {
-								incstartL=l;
-								incbin=1;
-								crunch=0;
-								waiting_quote=1;
-								rewrite=idx-6-1;
-								/* quote right after keyword */
-								if (c==quote_type) {
-									waiting_quote=2;
-								}
-							} else if (strcmp(bval,"INCWAV")==0) {
-								incstartL=l;
-								incbin=1;
-								crunch=0;
-								waiting_quote=1;
-								rewrite=idx-6-1;
-								/* quote right after keyword */
-								if (c==quote_type) {
-									waiting_quote=2;
-								}
-							}
-						}
-						break;
-
-					case 'U':
-						/* code dupliquÈ du REND */
-						if (strcmp(bval,"UNTIL")==0) {
-							/* retrouver la structure repeat_index correspondant a l'ouverture */
-							for (ri=nri-1;ri>=0;ri--) {
-								if (TABrindex[ri].cl==-1) {
-									TABrindex[ri].cl=c;
-									TABrindex[ri].cidx=idx;
-									break;
-								}
-							}
-							if (ri==-1) {
-								MakeError(ae,0,ae->filename[listing[l].ifile],listing[l].iline,"%s refers to unknown REPEAT\n",bval);
-								//exit(1);
-							}
-						}
-						break;
-
-					case 'R':
-						if (strcmp(bval,"READ")==0) {
-							incstartL=l;
-							include=1;
-							waiting_quote=1;
-							rewrite=idx-4-1;
-							/* quote right after keyword */
-							if (c==quote_type) {
-								waiting_quote=2;
-							}
-						/* code dupliquÈ du UNTIL */
-						} else if (strcmp(bval,"REND")==0) {
-							/* retrouver la structure repeat_index correspondant a l'ouverture */
-							for (ri=nri-1;ri>=0;ri--) {
-								if (TABrindex[ri].cl==-1) {
-									TABrindex[ri].cl=c;
-									TABrindex[ri].cidx=idx;
-									break;
-								}
-							}
-							if (ri==-1) {
-								MakeError(ae,0,ae->filename[listing[l].ifile],listing[l].iline,"%s refers to unknown REPEAT\n",bval);
-								//exit(1);
-							}
-						} else if (strcmp(bval,"REPEAT")==0) {
-							/* remplir la structure repeat_index */
-							rindex.ol=listing[l].iline;
-							rindex.oidx=idx;
-							rindex.ifile=ae->ifile-1;
-							ObjectArrayAddDynamicValueConcat((void**)&TABrindex,&nri,&mri,&rindex,sizeof(rindex));
-						}
-						break;
-
-					case 'W':
-						if (strcmp(bval,"WHILE")==0) {
-							/* remplir la structure repeat_index */
-							windex.ol=listing[l].iline;
-							windex.oidx=idx;
-							windex.ifile=ae->ifile-1;
-							ObjectArrayAddDynamicValueConcat((void**)&TABwindex,&nwi,&mwi,&windex,sizeof(windex));
-						} else if (strcmp(bval,"WEND")==0) {
-							/* retrouver la structure repeat_index correspondant a l'ouverture */
-							for (wi=nwi-1;wi>=0;wi--) {
-								if (TABwindex[wi].cl==-1) {
-									TABwindex[wi].cl=c;
-									TABwindex[wi].cidx=idx;
-									break;
-								}
-							}
-							if (wi==-1) {
-								MakeError(ae,0,ae->filename[listing[l].ifile],listing[l].iline,"WEND refers to unknown WHILE\n");
-								//exit(1);
-							}
-								
-						}
-						break;
-
-					default: if (ae->noampersand && c=='&') {
-							  listing[l].listing[idx-1]='#';
-#if TRACE_PREPRO
-printf("patch & => #\n");
-#endif
-						}
-						break;
-				}
-
-#if TRACE_PREPRO
-printf("bval=[%s]\n",bval);
-#endif
-				bval[0]=0;
+		switch (c) {
+			// terminator
+			case 0: l++;
+				idx=-1;
 				ival=0;
-			}
-		}
-	}
-	if (waiting_quote && ilisting) {
-		MakeError(ae,0,ae->filename[listing[ilisting-1].ifile],listing[ilisting-1].iline,"A quoted string must follow INCLUDE/READ directive\n");
-	}
-
-#if TRACE_PREPRO
-printf("check quotes and repeats\n");
+#if TRACE_PREPRO || TRACE_LIGHT_PREPRO
+	printf("Next line\n");
 #endif
-	if (quote_type) {
-		MakeError(ae,0,ae->filename[listing[lquote].ifile],listing[lquote].iline,"quote opened was not closed\n");
-		//exit(1);
-	}
+				break;
+			// escape
+			case '\\': if (listing[l].listing[idx+1]) idx++;
+				break;
+			case 0x0D:
+			case 0x0A: listing[l].listing[idx]=':';
+				ival=0;
+				break;
+			// single quote
+			case '\'':
+				//lquote=l;
+				idx++;
+				// read or skip the quote
+				while (1) {
+					if (!listing[l].listing[idx]) {
+						idx=-1;
+						l++;
+						if (l>=ilisting) break; // end of source
+					} else 	if (listing[l].listing[idx]=='\\' && listing[l].listing[idx+1]) {
+						idx++; // escape
+					} else if (listing[l].listing[idx]=='\'') {
+						break; // end of quote
+					}
+					idx++;
+				}
+				break;
+			case '"':
+				idx++;
+				// read or skip the quote
+				while (1) {
+					if (!listing[l].listing[idx]) {
+						idx=-1;
+						l++;
+						if (l>=ilisting) break; // end of source
+					} else 	if (listing[l].listing[idx]=='\\' && listing[l].listing[idx+1]) {
+						idx++; // escape
+					} else if (listing[l].listing[idx]=='"') {
+						break; // end of quote
+					}
+					idx++;
+				}
+				break;
+			// for these MAXAM coders
+			case '&':if (ae->noampersand) listing[l].listing[idx]='#';
+				break;
+			// INCLUDES
+			case 'I':if (!ival && listing[l].listing[idx+1]=='N' && listing[l].listing[idx+2]=='C' && listing[l].listing[idx+3]!=' ') { // discard as fast as possible regular INC
+					switch (listing[l].listing[idx+3]) {
+						 case 'A': if (strncmp(&listing[l].listing[idx+4],"PU",2)==0) {include=17;incCheck=6;}
+							   break;
+						 case 'B': if (strncmp(&listing[l].listing[idx+4],"IN",2)==0)   {include=10;incCheck=6;}
+							   break;
+						 case 'E': if (strncmp(&listing[l].listing[idx+4],"XO",2)==0)   {include=8;incCheck=6;}
+							   break;
+						 case 'L': if (strncmp(&listing[l].listing[idx+4],"ZSA1",4)==0) {include=18;incCheck=8;} else
+							   if (strncmp(&listing[l].listing[idx+4],"ZSA2",4)==0) {include=19;incCheck=8;} else
+							   if (strncmp(&listing[l].listing[idx+4],"UDE",3)==0)  {include=1;incCheck=7;} else
+							   if (strncmp(&listing[l].listing[idx+4],"48",2)==0)   {include=48;incCheck=6;} else
+							   if (strncmp(&listing[l].listing[idx+4],"49",2)==0)   {include=49;incCheck=6;} else
+							   if (strncmp(&listing[l].listing[idx+4],"Z4",2)==0)   {include=4;incCheck=6;}
+							   break;
+						 case 'W': if (strncmp(&listing[l].listing[idx+4],"AV",2)==0)   {include=10;incCheck=6;}
+							   break;
+						 case 'Z': if (strncmp(&listing[l].listing[idx+4],"X0B",3)==0)  {include=71;incCheck=7;} else
+							   if (strncmp(&listing[l].listing[idx+4],"X0",2)==0)   {include=70;incCheck=6;} else
+							   if (strncmp(&listing[l].listing[idx+4],"X7",2)==0)   {include=7;incCheck=6;}
+							   break;
+						 default:break;
+					}
+					if (include) {
+						if (listing[l].listing[idx+incCheck]==' ' || listing[l].listing[idx+incCheck]=='\'' || listing[l].listing[idx+incCheck]=='"') {
+							// skip spaces
+							while (listing[l].listing[idx+incCheck]==' ') incCheck++; 
+							// check there is a filename
+							if (listing[l].listing[idx+incCheck]=='\'' || listing[l].listing[idx+incCheck]=='"') {
+								quote_type=listing[l].listing[idx+incCheck];
+								incCheck++;
+								iqval=0;
+								// search end of quote to get the filename
+								while (listing[l].listing[idx+incCheck] && listing[l].listing[idx+incCheck]!=quote_type) {
+									qval[iqval++]=listing[l].listing[idx+incCheck];
+									incCheck++;
+								}
+								if (listing[l].listing[idx+incCheck]==quote_type) {
+									// legacy indexes
+									rewrite=idx;
+									idx+=incCheck+1;
 
-	/* repeat expansion check */
-	for (ri=0;ri<nri;ri++) {
-		if (TABrindex[ri].cl==-1) {
-			MakeError(ae,0,ae->filename[TABrindex[ri].ifile],TABrindex[ri].ol,"REPEAT was not closed\n");
+									qval[iqval]=0;
+									// we have the name
+	//printf("INC* [%s]\n",qval);
+									/***********************************************************************
+									 *                      include text file as source
+									***********************************************************************/
+									if (include==1) {
+										/* qval contient le nom du fichier a lire */
+										int fileok=0,ilookfile;
+										/* cette notion n'existe pas dans le cas normal */
+										curhexbin.datalen=0;
+										/* qval contient le nom du fichier a lire */
+										filename_toread=MergePath(ae,ae->filename[listing[l].ifile],qval);
+										if (FileExists(filename_toread)) {
+											fileok=1;
+										} else {
+											for (ilookfile=0;ilookfile<ae->ipath && !fileok;ilookfile++) {
+												filename_toread=MergePath(ae,ae->includepath[ilookfile],qval);
+												if (FileExists(filename_toread)) {
+													fileok=1;
+												}
+											}
+										}
+										if (fileok) {
+											int newmidx;
+						#if TRACE_PREPRO
+						rasm_printf(ae,KIO"include [%s]\n",filename_toread);
+						#endif
+											
+											/* lecture */
+											listing_include=FileReadLines(ae,filename_toread);
+											FieldArrayAddDynamicValueConcat(&ae->filename,&ae->ifile,&ae->maxfile,filename_toread);
+											if (ae->enforce_symbol_case) {
+												ae->rawfile=MemRealloc(ae->rawfile,sizeof(char **)*ae->ifile);
+												ae->rawlen=MemRealloc(ae->rawlen,sizeof(int)*ae->ifile);
+												ae->rawfile[ae->ifile-1]=ae->source_bigbuffer;
+												ae->rawlen[ae->ifile-1]=ae->source_bigbuffer_len;
+											}
+											/* virer les commentaires + pr√©-traitement */
+											newmidx=EarlyPrepSrc(ae,listing_include,ae->filename[ae->ifile-1]);
+											if (newmidx>midx) {
+												midx=newmidx+256;
+												StateMachineResizeBuffer(&w,midx+256,&mw);
+												StateMachineResizeBuffer(&bval,midx+256,&sval);
+												StateMachineResizeBuffer(&qval,midx+256,&sqval);
+											}
+//printf("before split/insert [%s]\n[%s]\n",listing[l].listing,listing[l+1].listing?listing[l+1].listing:"(null)");
+											/* split de la ligne en cours + suppression de l'instruction include */
+											PreProcessingSplitListing(&listing,&ilisting,&maxlisting,l,rewrite,idx);
+											/* insertion des nouvelles lignes + reference fichier + numeros de ligne */
+											PreProcessingInsertListing(&listing,&ilisting,&maxlisting,l,listing_include,ae->ifile-1);
+//printf("after  split/insert [%s]\n[%s]\n",listing[l].listing,listing[l+1].listing?listing[l+1].listing:"(null)");
+
+											MemFree(listing_include); /* free le tableau mais pas les lignes */
+											listing_include=NULL;
+											idx=-1; /* on reste sur la meme ligne mais on se prepare a relire du caractere 0! */
+										} else {
+											/********************************************
+											*      E R R O R    M a n a g e m e n t     *
+											********************************************/
+											char tmp_insert[128];
+						#if TRACE_PREPRO
+						rasm_printf(ae,KIO"include KO [%s]\n",filename_toread);
+						#endif
+
+											for (i=rewrite;i<idx;i++) listing[l].listing[i]=' ';
+											sprintf(tmp_insert,"ERRRD %d",ae->ih);
+											memcpy(listing[l].listing+rewrite,tmp_insert,strlen(tmp_insert));
+											
+											filename_toread=MergePath(ae,ae->filename[listing[l].ifile],qval);
+											curhexbin.filename=TxtStrDup(filename_toread);
+											curhexbin.crunch=crunch;
+
+											/* TAG + info */
+											curhexbin.datalen=-2;
+											curhexbin.data=NULL;
+											/* not yet an error, we will know later when executing the code */
+											ObjectArrayAddDynamicValueConcat((void**)&ae->hexbin,&ae->ih,&ae->mh,&curhexbin,sizeof(curhexbin));
+											idx--; //@@TOCHECK?
+										}
+									} else {
+										/***********************************************************************
+										 *              include binary files (optionnaly crunched)
+										***********************************************************************/
+										int fileok=0,ilookfile;
+										/* qval contient le nom du fichier a lire */
+										filename_toread=MergePath(ae,ae->filename[listing[l].ifile],qval);
+										if (FileExists(filename_toread)) {
+											fileok=1;
+										} else {
+											for (ilookfile=0;ilookfile<ae->ipath && !fileok;ilookfile++) {
+												filename_toread=MergePath(ae,ae->includepath[ilookfile],qval);
+												if (FileExists(filename_toread)) {
+													fileok=1;
+												}
+											}
+										}
+										curhexbin.filename=TxtStrDup(filename_toread);
+										// legacy crunch value
+										crunch=include;
+										if (crunch==10) crunch=0;
+
+										curhexbin.crunch=crunch;
+										switch (crunch) {
+											case 18:
+												curhexbin.version=1;
+												curhexbin.minmatch=5;
+												break;
+											case 19:
+												curhexbin.crunch=18;
+												curhexbin.version=2;
+												curhexbin.minmatch=2;
+												break;
+											default:break;
+										}
+
+										/* TAG + info */
+										curhexbin.datalen=-1;
+										curhexbin.data=NULL;
+										/* not yet an error, we will know later when executing the code */
+										ObjectArrayAddDynamicValueConcat((void**)&ae->hexbin,&ae->ih,&ae->mh,&curhexbin,sizeof(curhexbin));
+//printf("INCBIN before [%s]\n",listing[l].listing);
+										/* insertion */
+										le=strlen(listing[l].listing);
+										newlistingline=MemMalloc(le+32);
+										memcpy(newlistingline,listing[l].listing,rewrite);
+										rewrite+=sprintf(newlistingline+rewrite,"HEXBIN #%X",ae->ih-1);
+										strcat(newlistingline+rewrite,listing[l].listing+idx);
+										MemFree(listing[l].listing);
+										listing[l].listing=newlistingline;
+										idx=rewrite-1;
+//printf("INCBIN after  [%s]\n",listing[l].listing);
+									}
+
+
+								} else {
+									idx+=incCheck-1;
+									qval[0]=0;
+									MakeError(ae,0,ae->filename[listing[l].ifile],listing[l].iline,"INCLUDE/INC* filename cannot be on multiple lines\n");
+								}
+							} else {
+								MakeError(ae,0,ae->filename[listing[l].ifile],listing[l].iline,"A quoted string must follow any INCLUDE/INC* directive\n");
+							}
+						} else {
+							// else wrong trigger, its another word beginning like INC*
+						       	switch (listing[l].listing[idx+incCheck]) {
+								case 0:
+								case ':':
+								case 0x0A:
+								case 0x0D:
+									MakeError(ae,0,ae->filename[listing[l].ifile],listing[l].iline,"A quoted string must follow any INCLUDE/INC* directive\n");
+									break;
+								default:;
+							}
+						}
+						include=0;
+					}
+				 }
+			// Freequotes
+			case 'F': if (!ival && strncmp(&listing[l].listing[idx+1],"REEQUOTES",9)==0 && ( listing[l].listing[idx+10]==' ' || listing[l].listing[idx+10]==':')) {
+					ae->freequote=1;
+				  }
+			// authorized chars
+			case 'A':case 'B':case 'C':case 'D':case 'E':
+			case 'G':case 'H':case 'J':case 'K':case 'L':
+			case 'M':case 'N':case 'O':case 'P':case 'Q':case 'R':
+			case 'S':case 'T':case 'U':case 'V':case 'W':case 'X':
+			case 'Y':case 'Z':
+			case '0':case '1':case '2':case '3':case '4':
+			case '5':case '6':case '7':case '8':case '9':
+			case '@':case '_':
+				ival++;
+				break;
+			// separator (even unknown one)
+			default: ival=0;
 		}
+		idx++;
 	}
 
-	/* creer une liste de mots */
+	/************************************************************************
+	*************************************************************************
+	***** build wordlist ****************************************************
+	*************************************************************************
+	************************************************************************/
 	curw.w=TxtStrDup("BEGIN");
+	//curw.fastptr=NULL;
 	curw.l=0;
 	curw.ifile=0;
 	curw.t=1;
 	curw.e=0;
+	curw.len=strlen(curw.w);
 	ObjectArrayAddDynamicValueConcat((void**)&wordlist,&nbword,&maxword,&curw,sizeof(curw));
 
 	/* pour les calculs d'adresses avec IX et IY on enregistre deux variables bidons du meme nom */
 	curw.e=7;
 	curw.w=TxtStrDup("SYNCHRO~256");
-	ObjectArrayAddDynamicValueConcat((void**)&wordlist,&nbword,&maxword,&curw,sizeof(curw));
-	curw.e=2;
-	curw.w=TxtStrDup("IX~0");
-	ObjectArrayAddDynamicValueConcat((void**)&wordlist,&nbword,&maxword,&curw,sizeof(curw));
-	curw.w=TxtStrDup("IY~0");
+	curw.len=strlen(curw.w);
 	ObjectArrayAddDynamicValueConcat((void**)&wordlist,&nbword,&maxword,&curw,sizeof(curw));
 	curw.e=12;
-	curw.w=TxtStrDup("RASM_VERSION~"PROGRAM_VERSION);
+	curw.w=TxtStrDup("RASM_VERSION~"PROGRAM_VERSION_FLOAT);
+	curw.len=strlen(curw.w);
 	ObjectArrayAddDynamicValueConcat((void**)&wordlist,&nbword,&maxword,&curw,sizeof(curw));
 	curw.e=0;
 
 #if TRACE_PREPRO
 	l=0;
 	while (l<ilisting) {
-		rasm_printf(ae,"listing[%d]\n%s\n",l,listing[l].listing);
+		rasm_printf(ae,"listing[%d]=[%s]\n",l,listing[l].listing);
 		l++;
 	}
 #endif	
-	texpr=quote_type=0;
+
+	texpr=quote_type=parenth=0;
 	l=lw=idx=0;
 	ispace=0;
 	w[0]=0;
 	while (l<ilisting) {
 		c=listing[l].listing[idx++];
-		if (!c) {
-			idx=0;
-			l++;
-			continue;
-		}
 
-		if (!quote_type) {
 #if TRACE_PREPRO
-//printf("c='%c' automate[c]=%d\n",c>31?c:'.',Automate[((int)c)&0xFF]);			
+//printf("c='%c' automate[c]=%d\n",c>31?c:'.',Automate[((int)c)&0xFF]);
 #endif
-			switch (Automate[((int)c)&0xFF]) {
-				case 0:
-					MakeError(ae,0,ae->filename[listing[l].ifile],listing[l].iline,"invalid char '%c' (%d) char %d\n",c,c,idx);
+		switch (Automate[((int)c)&0xFF]) {
+			/*************************************************************
+			**************************************************************
+			****  invalid char     ***************************************
+			**************************************************************
+			*************************************************************/
+			case 0:
+				if (idx<126) {
+					int ierrsep;
+					for (ierrsep=0;ierrsep<idx;ierrsep++) errSep1[ierrsep]=' ';
+					errSep1[ierrsep++]='^';
+					errSep1[ierrsep]=0;
+					MakeError(ae,0,ae->filename[listing[l].ifile],listing[l].iline,"invalid char '%c' (%d) char %d\n[%s]\n%s\n",c>31?c:'?',c,idx,listing[l].listing,errSep1);
+				} else {
+					MakeError(ae,0,ae->filename[listing[l].ifile],listing[l].iline,"invalid char '%c' (%d) char %d\n[%s]\n",c>31?c:'?',c,idx,listing[l].listing);
+				}
 #if TRACE_PREPRO
 printf("c='%c' automate[c]=%d\n",c>31?c:'.',Automate[((int)c)&0xFF]);			
 #endif
-					exit(1);
-					break;
-				case 1:
-					if (c=='\'') {
-						if (idx>2 && strncmp(&listing[l].listing[idx-3],"AF'",3)==0) {
-							w[lw++]=c;
-							StateMachineResizeBuffer(&w,lw,&mw);
-							w[lw]=0;
-							break;
-						}
+				exit(1);
+				break;
+			/*************************************************************
+			**************************************************************
+			****  regular char     ***************************************
+			**************************************************************
+			*************************************************************/
+			case 1:
+				switch (c) {
+					case 0: idx=0;
+						l++;
+						continue;
+					case '\'':
+					case '"':
 #if TRACE_PREPRO
-printf("quote\n");
+printf("quotes\n");
 #endif
-						/* on finalise le mot si on est en dÈbut d'une nouvelle instruction ET que c'est un SAVE */
+						/* on finalise le mot si on est en d√©but d'une nouvelle instruction ET que c'est un SAVE */
 						if (strcmp(w,"SAVE")==0) {
 							// on ne break pas pour passer dans le case 2 (separator)
 							idx--;
+							nobreak=1;
 						} else {
+							/*************************************************************
+							**************************************************************
+							****  quote processing ***************************************
+							**************************************************************
+							*************************************************************/
 							quote_type=c;
 							w[lw++]=c;
-							StateMachineResizeBuffer(&w,lw,&mw);
+							//StateMachineResizeBuffer(&w,lw,&mw);
 							w[lw]=0;
-							break;
-						}
-					} else if (c=='"') {
 #if TRACE_PREPRO
-printf("quote\n");
+				printf("quote start with the char [%c] %d\n",c>31?c:'?',c);
 #endif
-						/* on finalise le mot si on est en dÈbut d'une nouvelle instruction ET que c'est un SAVE */
-						if (strcmp(w,"SAVE")==0) {
-							// on ne break pas pour passer dans le case 2 (separator)
-							idx--;
-						} else {
-							quote_type=c;
+							/* quoted string always starts with a single or a double quote */
+							c=listing[l].listing[idx++];
 							w[lw++]=c;
-							StateMachineResizeBuffer(&w,lw,&mw);
-							w[lw]=0;
-							break;
-						}
-					} else {
-						if (c!=' ' && c!='\t') {
-							w[lw++]=c;
-							StateMachineResizeBuffer(&w,lw,&mw);
-							w[lw]=0;
-						} else {
-							/* Winape/Maxam operator compatibility on expressions */
-#if TRACE_PREPRO
-printf("1/2 Winape maxam operator test for [%s]\n",w+ispace);
-#endif
-							if (texpr) {
-								if (strcmp(w+ispace,"AND")==0) {
-									w[ispace]='&';
-									lw=ispace+1;
-								} else if (strcmp(w+ispace,"OR")==0) {
-#if TRACE_PREPRO
-printf("conversion OR vers |\n");
-#endif
-									w[ispace]='|';
-									lw=ispace+1;
-								} else if (strcmp(w+ispace,"MOD")==0) {
-									w[ispace]='m';
-									lw=ispace+1;
-								} else if (strcmp(w+ispace,"XOR")==0) {
-									w[ispace]='^';
-									lw=ispace+1;
-								} else if (strcmp(w+ispace,"%")==0) {
-									w[ispace]='m';
-									lw=ispace+1;
+							//StateMachineResizeBuffer(&w,lw,&mw);
+							if (c=='\\') {
+								escape_code=1;
+							} else if (c==quote_type) {
+								quote_type=0;
+								//MakeError(ae,0,ae->filename[listing[l].ifile],listing[l].iline,"Quote cannot be empty!\n");
+								if (!ae->nowarning) {
+									rasm_printf(ae,KWARNING"Warning - Quote is empty\n");
+									if (ae->erronwarn) MaxError(ae);
 								}
 							}
-							ispace=lw;
+
+							if (quote_type) // should always happend but...
+							do {
+								c=listing[l].listing[idx++];
+								if (!c) {
+									MakeError(ae,0,ae->filename[listing[l].ifile],listing[l].iline,"Quoted string must be on a single line!\n");
+									idx=0;
+									l++;
+									lw=0; // to avoid side effects
+									quote_type=0; // leave anyway
+								} else {
+									w[lw++]=c;
+									//StateMachineResizeBuffer(&w,lw,&mw);
+
+									// string is stored with quotes
+									if (!escape_code) {
+										if (c=='\\') {
+											escape_code=1;
+										} else if (c==quote_type) {
+											quote_type=0;
+										}
+									} else {
+										// if previous char is an escape char, do not take care about ending quote
+										escape_code=0;
+									}
+								}
+							} while (quote_type);
+							// EOL for new word!
+							w[lw]=0;
+
+							if (ae->utf8enable) {
+								int utidx;
+								for (utidx=0;w[utidx];utidx++) {
+									if ((unsigned char)w[utidx]>126) {
+										switch ((unsigned char)w[utidx]) {
+											case 0xC2:
+												if ((unsigned char)w[utidx+1]==0xBF) w[utidx]=174; else // ¬ø
+												if ((unsigned char)w[utidx+1]==0xA1) w[utidx]=175; else // ¬°
+													MakeError(ae,0,ae->filename[listing[l].ifile],listing[l].iline,"Unsupported UTF8 char for quoted string\n");
+												break;
+											case 0xC3:
+												if ((unsigned char)w[utidx+1]==0xB9) w[utidx]=124; else // √π
+												if ((unsigned char)w[utidx+1]==0xA9) w[utidx]=123; else // √©
+												if ((unsigned char)w[utidx+1]==0xA8) w[utidx]=125; else // √®
+												if ((unsigned char)w[utidx+1]==0xA0) w[utidx]=64; else  // √†
+												if ((unsigned char)w[utidx+1]==0x91) w[utidx]=161; else // √ë
+												if ((unsigned char)w[utidx+1]==0xB1) w[utidx]=171; else // √±
+												if ((unsigned char)w[utidx+1]==0xA7) {                  // √ß
+													w[utidx]=92;
+													w[utidx+1]=92; // conversion to "\\"
+												} else
+													MakeError(ae,0,ae->filename[listing[l].ifile],listing[l].iline,"Unsupported UTF8 char for quoted string\n");
+												break;
+											default:
+												MakeError(ae,0,ae->filename[listing[l].ifile],listing[l].iline,"Unsupported UTF8 char for quoted string\n");
+										}
+										// shift string bytes except for \ char
+										if (w[utidx+1] && w[utidx+1]!=92) {
+											int utshift;
+											utshift=utidx+1; do { w[utshift]=w[utshift+1]; utshift++; } while (w[utshift]);
+										}
+									}
+								}
+							} else if (!ae->freequote) {
+								// control special chars except in freequote mode
+								int utidx;
+								for (utidx=0;w[utidx];utidx++) {
+									if ((w[utidx]>=32 && w[utidx]<127) || w[utidx]=='\t') {
+										// is ok
+									} else {
+										char before[16]={0};
+										int bidx=0,backut;
+										backut=utidx;
+										utidx-=15;
+										if (utidx<0) utidx=0;
+										for (;w[utidx];utidx++) {
+											if (w[utidx]>=32 && w[utidx]<127) before[bidx++]=(unsigned char)w[utidx]; else break;
+										}
+
+										MakeError(ae,0,ae->filename[listing[l].ifile],listing[l].iline,"Invalid char for quoted string [%s(%X)] use -fq option to allow UTF8\n",before,w[utidx]);
+										utidx=backut;
+									}
+								}
+							}
+#if TRACE_PREPRO
+				printf("quote end w=%s\n",w);
+#endif
 						}
 						break;
-					}
-				case 2:
-					/* separator (space, tab, comma) */
-#if TRACE_PREPRO
-printf("*** separator='%c'\n",c);
-#endif
-					
-					/* patch argument suit une expression d'Èvaluation (ASSERT) */
-					if (c==',') hadcomma=1;
-					
-					if (lw) {
+					case '(': parenth++;Automate[',']=1; // allow comma as part of the word
+						w[lw++]=c;
+						//StateMachineResizeBuffer(&w,lw,&mw);
 						w[lw]=0;
-						if (texpr && !wordlist[nbword-1].t && wordlist[nbword-1].e && !hadcomma) {
-							/* pour compatibilite Winape avec AND,OR,XOR */
+						break;
+					case ')': parenth--;if (!parenth) Automate[',']=2; // comma become separator again
+						w[lw++]=c;
+						//StateMachineResizeBuffer(&w,lw,&mw);
+						w[lw]=0;
+						break;
+					case '\t':
+					case ' ':
+						/* Winape/Maxam operator compatibility on expressions */
+						if (texpr) {
+#if TRACE_PREPRO
+printf("1/2 Winape maxam operator test for [%s] [%s] %d lw=%d\n",w,w+ispace,ispace,lw);
+#endif
+							switch (lw-ispace) {
+								case 1:if (w[ispace]=='%') w[ispace]='m';break;
+								case 2:if (w[ispace]=='O' && w[ispace+1]=='R') {w[ispace]='|';lw=ispace+1;}break;
+								case 3:if (w[ispace]=='A' && w[ispace+1]=='N' && w[ispace+2]=='D') {
+									       w[ispace]='&';lw=ispace+1;
+								       } else if (w[ispace+1]=='O') {
+										if (w[ispace]=='X' && w[ispace+2]=='R') {
+											w[ispace]='^';lw=ispace+1;
+										} else if (w[ispace]=='M' && w[ispace+2]=='D') {
+											w[ispace]='m';lw=ispace+1;
+										}
+								       }
+								default:;
+							}
+						}
+						ispace=lw;
+						break;
+					default:
+						w[lw++]=c;
+						//StateMachineResizeBuffer(&w,lw,&mw);
+						w[lw]=0;
+						break;
+				}
+				if (!nobreak) break; else nobreak=0; // besoin de pouvoir passer directement de l'√©tat 1 √† l'√©tat 2 pour le SAVE
+			/*************************************************************
+			**************************************************************
+			****  separator char   ***************************************
+			**************************************************************
+			*************************************************************/
+			case 2:
+				/* separator (space, tab, comma) */
+#if TRACE_PREPRO
+printf("*** separator='%c'   texpr=%d wordlist.t=%d wordlist.e=%d hadcomma=%d\n",c,texpr,wordlist[nbword-1].t, wordlist[nbword-1].e, hadcomma);
+#endif
+				
+				/* patch argument suit une expression d'√©valuation (ASSERT) */
+				if (c==',') hadcomma=1;
+				
+				if (lw) {
+					w[lw]=0;
+#if 0
+
+					if (texpr && !wordlist[nbword-1].t && wordlist[nbword-1].e && !hadcomma) {
 #if TRACE_PREPRO
 printf("2/2 Winape maxam operator test for expression [%s]\n",w+ispace);
 #endif
-							if (strcmp(w,"AND")==0) {
-								wtmp=TxtStrDup("&");
-							} else if (strcmp(w,"OR")==0) {
-								wtmp=TxtStrDup("|");
-							} else if (strcmp(w,"XOR")==0) {
-								wtmp=TxtStrDup("^");
-							} else if (strcmp(w,"%")==0) {
-								wtmp=TxtStrDup("m");
-							} else {
-								wtmp=TxtStrDup(w);
-							}
-							/* on concatËne le nouveau mot ‡ l'expression */
+printf("#################################\n");
+printf("#################################\n");
+printf("### seems to be dead code here...\n");
+printf("#################################\n");
+printf("#################################\n");
+						// winape operator patches before concat
+					#if 0
+						switch (lw) {
+							case 1:if (w[0]=='%') w[0]='m';break;
+							case 2:if (w[0]=='O' && w[1]=='R') {w[0]='|';w[1]=0;lw=1;}break;
+							case 3:if (w[0]=='A' && w[1]=='N' && w[2]=='D') {
+								       w[0]='&';w[1]=0;lw=1;
+							       } else if (w[0]=='X' && w[1]=='O' && w[2]=='R') {
+								       w[0]='^';w[1]=0;lw=1;
+							       }
+							default:
+						}
+					#endif
+						// only one realloc check
+						di=le=wordlist[nbword-1].len;
+						//StateMachineResizeBuffer(&w,lw+di,&mw);
+						nbword--;
+						// move new word
+						for (li=0;li<=lw;li++) w[le++]=w[li];
+						for (li=0;li<di;li++) w[li]=wordlist[nbword].w[li];
+						MemFree(wordlist[nbword].w);
+						lw=di;
+
+						/* et on modifie l'automate pour la suite! */
+						Automate[' ']=1;
+						Automate['\t']=1;
+						ispace=lw;
+					} else
+#endif
+					if (lw==3 && strcmp(w,"EQU")==0) {
+#if TRACE_PREPRO
+printf("separator => test EQU match!\n",w+ispace);
+#endif
+						/* il y avait un mot avant alors on va reorganiser la ligne */
+						if (!wordlist[nbword-1].t) {
 							nbword--;
 							lw=0;
 							for (li=0;wordlist[nbword].w[li];li++) {
 								w[lw++]=wordlist[nbword].w[li];
-								StateMachineResizeBuffer(&w,lw,&mw);
-							}
-							w[lw]=0;
-							MemFree(wordlist[nbword].w);
-							
-							for (li=0;wtmp[li];li++) {
-								w[lw++]=wtmp[li];
-								StateMachineResizeBuffer(&w,lw,&mw);
-							}
-							w[lw]=0;
-							MemFree(wtmp);
-							/* et on modifie l'automate pour la suite! */
-							Automate[' ']=1;
-							Automate['\t']=1;
-							ispace=lw;
-						} else if (strcmp(w,"EQU")==0) {
-							/* il y avait un mot avant alors on va reorganiser la ligne */
-							nbword--;
-							lw=0;
-							for (li=0;wordlist[nbword].w[li];li++) {
-								w[lw++]=wordlist[nbword].w[li];
-								StateMachineResizeBuffer(&w,lw,&mw);
+								//StateMachineResizeBuffer(&w,lw,&mw);
 							}
 							MemFree(wordlist[nbword].w);
 							curw.e=lw+1;
 							/* on ajoute l'egalite d'alias*/
 							w[lw++]='~';
-							StateMachineResizeBuffer(&w,lw,&mw);
+							//StateMachineResizeBuffer(&w,lw,&mw);
 							w[lw]=0;
 							Automate[' ']=1;
 							Automate['\t']=1;
 							ispace=lw;
 							texpr=1;
 						} else {
-							curw.w=TxtStrDup(w);
-							curw.l=listing[l].iline;
-							curw.ifile=listing[l].ifile;
-							curw.t=0;
+							MakeError(ae,0,ae->filename[listing[l].ifile],listing[l].iline,"an alias name must precede the EQU\n");
+						}
+					} else {
+						curw.len=lw; curw.w=MemMalloc(lw+1); memcpy(curw.w,w,lw+1);
+						curw.l=listing[l].iline;
+						curw.ifile=listing[l].ifile;
+						curw.t=0;
 #if TRACE_PREPRO
 if (curw.w[0]=='=') {
-	printf("(1) bug prout\n");
-	exit(1);
+printf("(1) bug prout\n");
+exit(1);
 }
 printf("ajout du mot [%s]\n",curw.w);
 #endif
-							ObjectArrayAddDynamicValueConcat((void**)&wordlist,&nbword,&maxword,&curw,sizeof(curw));
-							//texpr=0; /* reset expr */
-							curw.e=0;
-							lw=0;
-							w[lw]=0;
+						ObjectArrayAddDynamicValueConcat((void**)&wordlist,&nbword,&maxword,&curw,sizeof(curw));
+						//texpr=0;
+						//curw.fastptr=NULL;
+						curw.e=0;
+						lw=0;
+						w[0]=0;
 
-							/* match keyword? then next spaces will be ignored*/
-							if (macro_trigger) {
-								struct s_macro_fast curmacrofast;
-								Automate[' ']=1;
-								Automate['\t']=1;
-								ispace=0;
-								texpr=1;
+						/* match keyword? then next spaces will be ignored*/
+						if (macro_trigger) {
+							struct s_macro_fast curmacrofast;
+							Automate[' ']=1;
+							Automate['\t']=1;
+							ispace=0;
+							texpr=1;
 #if TRACE_PREPRO
 printf("macro trigger w=[%s]\n",curw.w);
 #endif
-								/* add macro name to instruction pool for preprocessor but not struct or write */
-								if (macro_trigger=='M') {
-									curmacrofast.mnemo=curw.w;
-									curmacrofast.crc=GetCRC(curw.w);
-									ObjectArrayAddDynamicValueConcat((void**)&MacroFast,&idxmacrofast,&maxmacrofast,&curmacrofast,sizeof(struct s_macro_fast));	
-								}
-								macro_trigger=0;
-							} else {
-								int keymatched=0,wlenot;
-								wlenot=strlen(curw.w);
-								if (wlenot<INSTRUCTION_MAXLENGTH && (ifast=ae->fastmatch[(int)curw.w[0]][wlenot])!=-1) {
-									while (instruction[ifast].mnemo[0]==curw.w[0]) {
-										if (strcmp(instruction[ifast].mnemo,curw.w)==0) {
-											keymatched=1;														
-											if (strcmp(curw.w,"MACRO")==0 || strcmp(curw.w,"STRUCT")==0 || strcmp(curw.w,"WRITE")==0) {
+							/* add macro name to instruction pool for preprocessor but not struct or write */
+							if (macro_trigger=='M') {
+								curmacrofast.mnemo=curw.w;
+								curmacrofast.crc=GetCRC(curw.w);
+								curmacrofast.len=curw.len;
+								ObjectArrayAddDynamicValueConcat((void**)&MacroFast,&idxmacrofast,&maxmacrofast,&curmacrofast,sizeof(struct s_macro_fast));	
+							}
+							macro_trigger=0;
+						} else {
+							int keymatched=0;
+							if (curw.len<INSTRUCTION_MAXLENGTH && (ifast=ae->fastmatch[(int)curw.w[0]][curw.len])!=-1) {
+								while (instruction[ifast].mnemo[0]==curw.w[0]) {
+									if (strcmp(instruction[ifast].mnemo,curw.w)==0) {
+										keymatched=1;														
+										if (strcmp(curw.w,"MACRO")==0 || strcmp(curw.w,"STRUCT")==0 || strcmp(curw.w,"WRITE")==0) {
 /* @@TODO AS80 compatibility patch!!! */
-												macro_trigger=curw.w[0];
-											} else {
-												Automate[' ']=1;
-												Automate['\t']=1;
-												ispace=0;
-												/* instruction en cours, le reste est a interpreter comme une expression */
+											macro_trigger=curw.w[0];
+										} else {
+											//curw.fastptr=instruction[ifast].makemnemo;
+											Automate[' ']=1;
+											Automate['\t']=1;
+											ispace=0;
+											/* instruction en cours, le reste est a interpreter comme une expression */
 #if TRACE_PREPRO
 printf("instruction en cours\n");												
 #endif
-												texpr=1;
-											}
-											break;
+											texpr=1;
 										}
-										ifast++;
-									}
-								}
-								if (!keymatched) {
-									int macrocrc;
-									macrocrc=GetCRC(curw.w);
-									for (keymatched=0;keymatched<idxmacrofast;keymatched++) {
-										if (MacroFast[keymatched].crc==macrocrc)
-										if (strcmp(MacroFast[keymatched].mnemo,curw.w)==0) {
-												Automate[' ']=1;
-												Automate['\t']=1;
-												ispace=0;
-												/* macro en cours, le reste est a interpreter comme une expression */
-												texpr=1;
-												break;
-										}
-									}
-								}
-							}
-						}
-					} else {
-						if (hadcomma) {
-							if (!ae->macro_multi_line) {
-								MakeError(ae,0,ae->filename[listing[l].ifile],listing[l].iline,"empty parameter\n");
-							}
-						}
-					}
-					break;
-				case 3:
-					/* fin de ligne, on remet l'automate comme il faut */
-#if TRACE_PREPRO
-printf("EOL\n");																	
-#endif
-					macro_trigger=0;
-					Automate[' ']=2;
-					Automate['\t']=2;
-					ispace=0;
-					texpr=0;
-					/* si le mot lu a plus d'un caractËre */
-					if (lw) {
-						if (!wordlist[nbword-1].t && (wordlist[nbword-1].e || w[0]=='=') && !hadcomma) {
-							/* cas particulier d'ecriture libre */
-							/* bugfix inhibition 19.06.2018 */
-							/* ajout du terminateur? */
-							w[lw]=0;
-#if TRACE_PREPRO
-printf("nbword=%d w=[%s] ->",nbword,w);fflush(stdout);
-#endif
-							nbword--;
-							wordlist[nbword].w=MemRealloc(wordlist[nbword].w,strlen(wordlist[nbword].w)+lw+1);
-							strcat(wordlist[nbword].w,w);
-#if TRACE_PREPRO
-printf("%s\n",wordlist[nbword].w);
-#endif
-							/* on change de type! */
-							wordlist[nbword].t=1;
-							//ObjectArrayAddDynamicValueConcat((void**)&wordlist,&nbword,&maxword,&curw,sizeof(curw));
-							curw.e=0;
-							lw=0;
-							w[lw]=0;
-						} else if (nbword && strcmp(w,"EQU")==0) {
-							/* il y avait un mot avant alors on va reorganiser la ligne */
-							nbword--;
-							lw=0;
-							for (li=0;wordlist[nbword].w[li];li++) {
-								w[lw++]=wordlist[nbword].w[li];
-								StateMachineResizeBuffer(&w,lw,&mw);
-								w[lw]=0;
-							}
-							MemFree(wordlist[nbword].w);
-							/* on ajoute l'egalite ou comparaison! */
-							curw.e=lw+1;
-							w[lw++]='=';
-							StateMachineResizeBuffer(&w,lw,&mw);
-							w[lw]=0;
-							Automate[' ']=1;
-							Automate['\t']=1;
-						} else {
-							/* mot de fin de ligne, ‡ priori pas une expression */
-							curw.w=TxtStrDup(w);
-							curw.l=listing[l].iline;
-							curw.ifile=listing[l].ifile;
-							curw.t=1;
-#if TRACE_PREPRO
-printf("mot de fin de ligne = [%s]\n",curw.w);							
-if (curw.w[0]=='=') {
-	printf("(3) bug prout\n");
-	exit(1);
-}
-#endif
-							ObjectArrayAddDynamicValueConcat((void**)&wordlist,&nbword,&maxword,&curw,sizeof(curw));
-							curw.e=0;
-							lw=0;
-							w[lw]=0;
-							hadcomma=0;
-						}
-					} else {
-						/* sinon c'est le prÈcÈdent qui Ètait terminateur d'instruction */
-						wordlist[nbword-1].t=1;
-						w[lw]=0;
-					}
-					hadcomma=0;
-					break;
-				case 4:
-#if TRACE_PREPRO
-printf("expr operator=%c\n",c);
-#endif
-					/* expression/condition */
-					texpr=1;
-
-					/* patch operator assignment with useless spacing v121 */
-					if (lw==1 && c=='=') {
-						switch (w[0]) {
-							case '[':case ']':case '+':case '*':case '-':case '/':case '|':case '&':
-#if TRACE_PREPRO
-printf("*** patch prepro operator assignment + useless spacing\n");
-#endif
-								opassign=w[0];lw=0;
-								break;
-							default:opassign=0;break;
-						}
-					} else {
-						opassign=0;
-					}
-
-				    if (lw) {
-						Automate[' ']=1;
-						Automate['\t']=1;
-						if (!curw.e) {
-							curw.e=lw+1;
-							w[lw++]=c;
-							StateMachineResizeBuffer(&w,lw,&mw);
-							w[lw]=0;
-						} else {
-							w[lw++]=c;
-							StateMachineResizeBuffer(&w,lw,&mw);
-							w[lw]=0;
-						}
-					} else {
-						/* 2018.06.06 Èvolution sur le ! (not) */
-#if TRACE_PREPRO
-printf("*** operateur commence le mot\n");
-printf("mot precedent=[%s] t=%d\n",wordlist[nbword-1].w,wordlist[nbword-1].t);
-#endif
-						if (hadcomma && c=='!') {
-							/* on peut commencer un argument par un NOT */
-							w[lw++]=c;
-							StateMachineResizeBuffer(&w,lw,&mw);
-							w[lw]=0;
-							/* automate dÈj‡ modifiÈ rien de plus */
-						} else if (!wordlist[nbword-1].t) {
-							/* il y avait un mot avant alors on va reorganiser la ligne */
-							/* patch NOT -> SAUF si c'est une directive */
-							int keymatched=0;
-							int wlenot;
-							wlenot=strlen(wordlist[nbword-1].w);
-							if (wlenot<INSTRUCTION_MAXLENGTH && (ifast=ae->fastmatch[(int)wordlist[nbword-1].w[0]][wlenot])!=-1) {
-								while (instruction[ifast].mnemo[0]==wordlist[nbword-1].w[0]) {
-									if (strcmp(instruction[ifast].mnemo,wordlist[nbword-1].w)==0) {
-										keymatched=1;														
 										break;
 									}
 									ifast++;
@@ -24949,20 +26920,184 @@ printf("mot precedent=[%s] t=%d\n",wordlist[nbword-1].w,wordlist[nbword-1].t);
 							}
 							if (!keymatched) {
 								int macrocrc;
-								macrocrc=GetCRC(wordlist[nbword-1].w);
-								for (i=0;i<idxmacrofast;i++) {
-									if (MacroFast[i].crc==macrocrc)
-									if (strcmp(MacroFast[i].mnemo,wordlist[nbword-1].w)==0) {
-										keymatched=1;
-										break;
+								macrocrc=GetCRC(curw.w);
+								for (keymatched=0;keymatched<idxmacrofast;keymatched++) {
+									if (MacroFast[keymatched].crc==macrocrc)
+									if (strcmp(MacroFast[keymatched].mnemo,curw.w)==0) {
+											Automate[' ']=1;
+											Automate['\t']=1;
+											ispace=0;
+											/* macro en cours, le reste est a interpreter comme une expression */
+											texpr=1;
+#if TRACE_PREPRO
+printf("macro en cours\n");												
+#endif
+											break;
 									}
+								}
+							}
+						}
+					}
+				} else {
+					if (hadcomma) {
+						if (!ae->macro_multi_line) {
+							MakeError(ae,0,ae->filename[listing[l].ifile],listing[l].iline,"empty parameter right after word [%s]\n",nbword>1?wordlist[nbword-1].w:"(null)");
+						}
+					}
+				}
+				break;
+			/*************************************************************
+			**************************************************************
+			****  end of line char ***************************************
+			**************************************************************
+			*************************************************************/
+			case 3:
+				/* fin de ligne, on remet l'automate comme il faut */
+#if TRACE_PREPRO
+printf("=============== EOL ================================\n");																	
+printf("*** EOL='%c'   wordlist.t=%d wordlist.e=%d w=[%s] hadcomma=%d\n",c,wordlist[nbword-1].t, wordlist[nbword-1].e, w,hadcomma);
+#endif
+				macro_trigger=parenth=0; // reset parenth in case of trouble...
+				Automate[',']=2; // and comma too!
+				Automate[' ']=2;
+				Automate['\t']=2;
+				ispace=0;
+				/* si le mot lu a plus d'un caract√®re */
+				if (lw) {
+#if 0
+					// le mot d'avant 
+					if (!wordlist[nbword-1].t && (wordlist[nbword-1].e || w[0]=='=') && !hadcomma) {
+						/* cas particulier d'ecriture libre */
+						/* bugfix inhibition 19.06.2018 */
+						/* ajout du terminateur? */
+						w[lw]=0;
+#if TRACE_PREPRO
+printf("INHIBIT CASE / nbword=%d w=[%s] ->",nbword,w);fflush(stdout);
+#endif
+printf("INHIBIT\n");
+						nbword--;
+						wordlist[nbword].w=MemRealloc(wordlist[nbword].w,wordlist[nbword].len+lw+1);
+						strcat(wordlist[nbword].w,w);
+						wordlist[nbword].len+=lw+1;
+#if TRACE_PREPRO
+printf("after concat [%s]\n",wordlist[nbword].w);
+#endif
+						/* on change de type! => le mot termine l'instruction */
+						wordlist[nbword].t=1;
+						//ObjectArrayAddDynamicValueConcat((void**)&wordlist,&nbword,&maxword,&curw,sizeof(curw));
+						curw.e=0;
+						lw=0;
+						w[lw]=0;
+					} else {
+#endif
+						{
+						/* mot de fin de ligne */
+						curw.len=strlen(w); curw.w=MemMalloc(curw.len+1); memcpy(curw.w,w,curw.len+1);
+						curw.l=listing[l].iline;
+						curw.ifile=listing[l].ifile;
+						curw.t=1;
+						ObjectArrayAddDynamicValueConcat((void**)&wordlist,&nbword,&maxword,&curw,sizeof(curw));
+#if TRACE_PREPRO
+printf("mot de fin de ligne = [%s]\n",curw.w);							
+if (curw.w[0]=='=') {
+printf("(3) bug prout\n");
+exit(1);
+}
+#endif
+						//curw.fastptr=NULL;
+						curw.e=0;
+						lw=0;
+						w[lw]=0;
+						hadcomma=0;
+					}
+				} else {
+					/* sinon c'est le pr√©c√©dent qui √©tait terminateur d'instruction */
+					wordlist[nbword-1].t=1;
+					w[lw]=0;
+				}
+				texpr=0;
+				hadcomma=0;
+				break;
+			/*************************************************************
+			**************************************************************
+			****  operator char    ***************************************
+			**************************************************************
+			*************************************************************/
+			case 4:
+#if TRACE_PREPRO
+printf("============ expr operator=%c ===============\n",c);
+#endif
+				/* expression/condition */
+				texpr=1;
+
+				/* patch operator assignment with useless spacing v121 */
+				if (lw==1 && c=='=') {
+					switch (w[0]) {
+						case '[':case ']':case '+':case '*':case '-':case '/':case '|':case '&':
+#if TRACE_PREPRO
+printf("*** patch prepro operator assignment + useless spacing\n");
+#endif
+							opassign=w[0];lw=0;
+							break;
+						default:opassign=0;break;
+					}
+				} else {
+					opassign=0;
+				}
+
+			    if (lw) {
+					Automate[' ']=1;
+					Automate['\t']=1;
+					if (!curw.e) {
+						curw.e=lw+1;
+						w[lw++]=c;
+						//StateMachineResizeBuffer(&w,lw,&mw);
+						w[lw]=0;
+					} else {
+						w[lw++]=c;
+						//StateMachineResizeBuffer(&w,lw,&mw);
+						w[lw]=0;
+					}
+				} else {
+					/* 2018.06.06 √©volution sur le ! (not) */
+#if TRACE_PREPRO
+printf("*** operateur commence le mot\n");
+printf("mot precedent=[%s] t=%d\n",wordlist[nbword-1].w,wordlist[nbword-1].t);
+#endif
+					if (hadcomma && c=='!') {
+						/* on peut commencer un argument par un NOT */
+						w[lw++]=c;
+						//StateMachineResizeBuffer(&w,lw,&mw);
+						w[lw]=0;
+						/* automate d√©j√† modifi√© rien de plus */
+					} else if (!wordlist[nbword-1].t) {
+						/* il y avait un mot avant alors on va reorganiser la ligne */
+						/* patch NOT -> SAUF si c'est une directive */
+						int keymatched=0;
+						if (wordlist[nbword-1].len<INSTRUCTION_MAXLENGTH && (ifast=ae->fastmatch[(int)wordlist[nbword-1].w[0]][wordlist[nbword-1].len])!=-1) {
+							while (instruction[ifast].mnemo[0]==wordlist[nbword-1].w[0]) {
+								if (strcmp(instruction[ifast].mnemo,wordlist[nbword-1].w)==0) {
+									keymatched=1;														
+									break;
+								}
+								ifast++;
+							}
+						}
+						if (!keymatched) {
+							int macrocrc;
+							macrocrc=GetCRC(wordlist[nbword-1].w);
+							for (i=0;i<idxmacrofast;i++) {
+								if (MacroFast[i].crc==macrocrc)
+								if (strcmp(MacroFast[i].mnemo,wordlist[nbword-1].w)==0) {
+									keymatched=1;
+									break;
 								}
 							}
 							if (!keymatched) {
 								nbword--;
+								//StateMachineResizeBuffer(&w,lw+wordlist[nbword].len+1,&mw);
 								for (li=0;wordlist[nbword].w[li];li++) {
 									w[lw++]=wordlist[nbword].w[li];
-									StateMachineResizeBuffer(&w,lw,&mw);
 									w[lw]=0;
 								}
 								MemFree(wordlist[nbword].w);
@@ -24972,126 +27107,26 @@ printf("mot precedent=[%s] t=%d\n",wordlist[nbword-1].w,wordlist[nbword-1].t);
 									printf("*** patch opassign en finalisation de mot\n");
 									#endif
 									w[lw++]=opassign;
-									StateMachineResizeBuffer(&w,lw,&mw);
+									//StateMachineResizeBuffer(&w,lw,&mw);
 									w[lw]=0;
 								}
 								curw.e=lw+1;
 							}
-							w[lw++]=c;
-							StateMachineResizeBuffer(&w,lw,&mw);
-							w[lw]=0;
-							/* et on modifie l'automate pour la suite! */
-							Automate[' ']=1;
-							Automate['\t']=1;
-						} else {
-							MakeError(ae,0,ae->filename[listing[l].ifile],listing[l].iline,"cannot start expression with '=','!','<','>'\n");
 						}
-					}
-					break;
-				default:
-					rasm_printf(ae,KERROR"Internal error (Automate wrong value=%d)\n",Automate[c]);
-					exit(-1);
-			}
-		} else {
-#if TRACE_PREPRO
-printf("quote start with %c\n",c);
-#endif
-			/* quoted string always starts with a single or a double quote */
-			w[lw++]=c;
-			StateMachineResizeBuffer(&w,lw,&mw);
-			if (c=='\\') {
-				escape_code=1;
-			} else if (c==quote_type) {
-				quote_type=0;
-			}
-
-			if (quote_type) // should not happend but...
-			do {
-				c=listing[l].listing[idx++];
-				if (!c) {
-					MakeError(ae,0,ae->filename[listing[l].ifile],listing[l].iline,"Quoted string must be on a single line!\n");
-					idx=0;
-					l++;
-					lw=0; // to avoid side effects
-					quote_type=0; // leave anyway
-				} else {
-					w[lw++]=c;
-					StateMachineResizeBuffer(&w,lw,&mw);
-
-					// string is stored with quotes
-					if (!escape_code) {
-						if (c=='\\') {
-							escape_code=1;
-						} else if (c==quote_type) {
-							quote_type=0;
-						}
+						w[lw++]=c;
+						//StateMachineResizeBuffer(&w,lw,&mw);
+						w[lw]=0;
+						/* et on modifie l'automate pour la suite! */
+						Automate[' ']=1;
+						Automate['\t']=1;
 					} else {
-						// if previous char is an escape char, do not take care about ending quote
-						escape_code=0;
+						MakeError(ae,0,ae->filename[listing[l].ifile],listing[l].iline,"cannot start expression with '=','!','<','>'\n");
 					}
 				}
-			} while (quote_type);
-			// EOL for new word!
-			w[lw]=0;
-
-			if (ae->utf8enable) {
-				int utidx;
-				for (utidx=0;w[utidx];utidx++) {
-					if ((unsigned char)w[utidx]>126) {
-						switch ((unsigned char)w[utidx]) {
-							case 0xC2:
-								if ((unsigned char)w[utidx+1]==0xBF) w[utidx]=174; else // ø
-								if ((unsigned char)w[utidx+1]==0xA1) w[utidx]=175; else // °
-									MakeError(ae,0,ae->filename[listing[l].ifile],listing[l].iline,"Unsupported UTF8 char for quoted string\n");
-								break;
-							case 0xC3:
-								if ((unsigned char)w[utidx+1]==0xB9) w[utidx]=124; else // ˘
-								if ((unsigned char)w[utidx+1]==0xA9) w[utidx]=123; else // È
-								if ((unsigned char)w[utidx+1]==0xA8) w[utidx]=125; else // Ë
-								if ((unsigned char)w[utidx+1]==0xA0) w[utidx]=64; else  // ‡
-								if ((unsigned char)w[utidx+1]==0x91) w[utidx]=161; else // —
-								if ((unsigned char)w[utidx+1]==0xB1) w[utidx]=171; else // Ò
-								if ((unsigned char)w[utidx+1]==0xA7) {                  // Á
-									w[utidx]=92;
-									w[utidx+1]=92; // conversion to "\\"
-								} else
-									MakeError(ae,0,ae->filename[listing[l].ifile],listing[l].iline,"Unsupported UTF8 char for quoted string\n");
-								break;
-							default:
-								MakeError(ae,0,ae->filename[listing[l].ifile],listing[l].iline,"Unsupported UTF8 char for quoted string\n");
-						}
-						// shift string bytes except for \ char
-						if (w[utidx+1] && w[utidx+1]!=92) {
-							int utshift;
-							utshift=utidx+1; do { w[utshift]=w[utshift+1]; utshift++; } while (w[utshift]);
-						}
-					}
-				}
-			} else if (!ae->freequote) {
-				// control special chars except in freequote mode
-				int utidx;
-				for (utidx=0;w[utidx];utidx++) {
-					if ((w[utidx]>=32 && w[utidx]<127) || w[utidx]=='\t') {
-						// is ok
-					} else {
-						char before[16]={0};
-						int bidx=0,backut;
-						backut=utidx;
-						utidx-=15;
-						if (utidx<0) utidx=0;
-						for (;w[utidx];utidx++) {
-							if (w[utidx]>=32 && w[utidx]<127) before[bidx++]=(unsigned char)w[utidx]; else break;
-						}
-
-						MakeError(ae,0,ae->filename[listing[l].ifile],listing[l].iline,"Invalid char for quoted string [%s(%X)}\n",before,w[utidx]);
-						utidx=backut;
-					}
-				}
-			}
-
-#if TRACE_PREPRO
-printf("quote end w=%s\n",w);
-#endif
+				break;
+			default:
+				rasm_printf(ae,KERROR"Internal error (Automate wrong value=%d)\n",Automate[c]);
+				exit(-1);
 		}
 	}
 
@@ -25104,6 +27139,7 @@ printf("END\n");
 		wordlist[nbword-1].t=1;
 	}
 	curw.w="END";
+	curw.len=4;
 	curw.l=0;
 	curw.t=2;
 	curw.ifile=0;
@@ -25112,6 +27148,12 @@ printf("END\n");
 	rasm_printf(ae,KVERBOSE"wordlist contains %d element%s\n",nbword,nbword>1?"s":"");
 #endif
 	ae->nbword=nbword;
+
+//printf("maxLen=%d\n",midx);
+
+	ae->ctx1.varbuffer=MemMalloc(midx*10);
+	ae->ctx2.varbuffer=MemMalloc(midx*10);
+	ae->fastVarBuffer=MemMalloc(midx*10);
 
 	/* switch words for macro declaration with AS80 & UZ80 */
 	if (param && param->as80) {
@@ -25153,8 +27195,6 @@ printf("free\n");
 		MemFree(param->filename);
 	}
 	if (MacroFast) MemFree(MacroFast);
-	if (TABwindex) MemFree(TABwindex);
-	if (TABrindex) MemFree(TABrindex);
 #if TRACE_PREPRO
 printf("return ae\n");
 #endif
@@ -25167,7 +27207,6 @@ int Rasm(struct s_parameter *param)
 	#define FUNC "Rasm"
 
 	struct s_assenv *ae=NULL;
-
 	/* read and preprocess source */
 	ae=PreProcessing(param->filename,0,NULL,0,param);
 	/* assemble */
@@ -25211,8 +27250,15 @@ int RasmAssembleInfoIntoRAMROM(const char *datain, int lenin, struct s_rasm_info
 
 	ae=PreProcessing(NULL,1,datain,lenin,NULL);
 
-	/* extension 4Mo = 256 slots + 4 slots 64K de RAM par dÈfaut => 260 */
+	/* extension 4Mo = 256 slots + 4 slots 64K de RAM par d√©faut => 260 */
 	maxbank=ramsize>>14;
+	for (i=0;i<maxbank+1;i++) {
+		// go dynamic :)
+		if (!ae->mem[i]) {
+			ae->mem[i]=MemMalloc(65536);
+			memset(ae->mem[i],0,65536);
+		}
+	}
 	for (i=0;i<maxbank;i++) {
 		ramidx=i*16384;
 		for (j=0;j<16384;j++) {
@@ -25244,8 +27290,15 @@ int RasmAssembleInfoIntoRAM(const char *datain, int lenin, struct s_rasm_info **
 
 	ae=PreProcessing(NULL,1,datain,lenin,NULL);
 
-	/* extension 4Mo = 256 slots + 4 slots 64K de RAM par dÈfaut => 260 */
+	/* extension 4Mo = 256 slots + 4 slots 64K de RAM par d√©faut => 260 */
 	maxbank=ramsize>>14;
+	for (i=0;i<maxbank+1;i++) {
+		// go dynamic :)
+		if (!ae->mem[i]) {
+			ae->mem[i]=MemMalloc(65536);
+			memset(ae->mem[i],0,65536);
+		}
+	}
 	for (i=0;i<maxbank;i++) {
 		ramidx=i*16384;
 		for (j=0;j<16384;j++) {
@@ -25293,7 +27346,7 @@ int RasmAssembleInfoParam(const char *datain, int lenin, unsigned char **dataout
 
 #define AUTOTEST_IS_REGISTER "assert is_register('bc')==1 : assert is_register('d')==1 : assert is_register('e')==1 : assert is_register('z')==0 : assert is_register('rr')==0 : nop "
 
-#define AUTOTEST_ACCENT "defb 'grouikÈ'"
+#define AUTOTEST_ACCENT "defb 'grouik√©'"
 
 #define AUTOTEST_QUOTELAST "nop : save'grouik"
 
@@ -25305,7 +27358,7 @@ int RasmAssembleInfoParam(const char *datain, int lenin, unsigned char **dataout
 
 #define AUTOTEST_BADINCBIN "incl49 'truc\n .bin' \n nop nop"
 
-#define AUTOTEST_BADINCLUDE02 "read: ldir : cp ';'"
+#define AUTOTEST_BADINCLUDE02 "include : ldir : cp ';'"
 
 #define AUTOTEST_SETINSIDE "ld hl,0=0xC9FB"
 
@@ -25317,7 +27370,7 @@ int RasmAssembleInfoParam(const char *datain, int lenin, unsigned char **dataout
 
 #define AUTOTEST_UNDEF "mavar=10: ifdef mavar: undef mavar: endif: ifdef mavar: fail 'undef did not work': endif:nop "
 
-#define AUTOTEST_INSTRMUSTFAILED "ld a,b,c:ldi a: ldir bc:exx hl,de:exx de:ex bc,hl:ex hl,bc:ex af,af:ex hl,hl:ex hl:exx hl: "\
+#define AUTOTEST_INSTRMUSTFAILED "ld a,b,c:ldi a: ldir bc:exx hl,de:exx de:ex bc,hl:ex hl,bc:ex af,bc:ex bc,af:ex hl,hl:ex hl:exx hl: "\
 	"neg b:push b:push:pop:pop c:sub ix:add ix:add:sub:di 2:ei 3:ld i,c:ld r,e:rl:rr:rlca a:sla:sll:"\
 	"ldd e:lddr hl:adc ix:adc b,a:xor 12,13:xor b,1:xor:or 12,13:or b,1:or:and 12,13:and b,1:and:inc:dec"
 
@@ -25524,7 +27577,7 @@ int RasmAssembleInfoParam(const char *datain, int lenin, unsigned char **dataout
 #define AUTOTEST_DELAYNUM	"macro test  label:    dw {label}:    endm:    repeat 3, idx:idx2 = idx-1:" \
 				" test label_{idx2}:    rend:repeat 3, idx:label_{idx-1}:nop:rend"
 
-#define AUTOTEST_STR		"CHARSET \" !#$%&'()*+,-./0123456789:;<=>?ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^~abcdefghijklmnopqrstuvwxyzÈË{}|\",0 : "\
+#define AUTOTEST_STR		"CHARSET \" !#$%&'()*+,-./0123456789:;<=>?ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^~abcdefghijklmnopqrstuvwxyz√©√®{}|\",0 : "\
 				"grouik STR 'REGION' : charset : defb 'REGION'"
 
 #define AUTOTEST_STRUCT		"org #1000:label1 :struct male:age    defb 0:height defb 0:endstruct:struct female:" \
@@ -25538,6 +27591,9 @@ int RasmAssembleInfoParam(const char *datain, int lenin, unsigned char **dataout
 
 #define AUTOTEST_STRUCT2	"struct bite: preums defb 0: deuze defw 1: troize defs 10: endstruct:" \
 				" if {sizeof}bite.preums!=1 || {sizeof}bite.deuze!=2 || {sizeof}bite.troize!=10: stop: endif: nop "
+
+#define AUTOTEST_STRUCT3	"struct COORD: x   db #77: y   db #78: endstruct: struct COORD obj_coord, 5: struct st1:"\
+				"  ch1 defw #0201: ch2 defb #03: endstruct: struct metast1: struct st1 pr1: struct st1 pr2: endstruct: struct metast1 bigst "
 
 #define AUTOTEST_REPEAT		"ce=100:repeat 2,ce:repeat 5,cx:repeat 5,cy:defb cx*cy:rend:rend:rend:assert cx==6 && cy==6 && ce==3:" \
 							"cpt=0:repeat:cpt=cpt+1:until cpt>4:assert cpt==5"
@@ -25563,6 +27619,7 @@ int RasmAssembleInfoParam(const char *datain, int lenin, unsigned char **dataout
 
 #define AUTOTEST_CHARSET3	"CHARSET 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',\"QWERTYUIOPASDFGHJKLZXCVBNM\" : DEFB 'THE QUICK BROWN FOX' : nop"
 
+#define AUTOTEST_DEFHEX0    "defb '\\xFFa' : defb 'a\\xFF'"
 
 #define AUTOTEST_NOCODE		"let monorg=$:NoCode:Org 0:Element1 db 0:Element2 dw 3:Element3 ds 50:Element4 defb 'rdd':Org 0:pouet defb 'nop':" \
 							"Code:Org monorg:cpt=$+element2+element3+element4:defs cpt,0"
@@ -25676,6 +27733,13 @@ int RasmAssembleInfoParam(const char *datain, int lenin, unsigned char **dataout
 #define AUTOTEST_ALIGN		"org 0:nop: align 64: defb 64: align 128: defb 128: align 256: defb 255 "
 
 #define AUTOTEST_CONFINE	"org 0: nop: org 250: confine 10: defb #aa: org 500: confine 12: defb #bb: assert $<512 "
+
+#define AUTOTEST_UTF8		"utf8remap '√©',50 : defb '√©' : assert $==1" // outputed code must be 50 !
+
+#define AUTOTEST_UTF8B		" utf8remap '√©',' ': struct ustruct: lab defb '√©douard': endstruct: assert {sizeof}ustruct==7: struct ustruct edouard: assert $==7"
+
+#define AUTOTEST_UTF8C		" utf8remap '√©',20 : struct s_texte : texte defs 10 :  endstruct : struct s_texte unestruct,1,'√©√©√©√©√©√©√©√©√©√©' "
+
 
 #define AUTOTEST_SAVEINVALID0	"repeat 256,x : defb x-1 : rend : save 'rasmoutput.bin',0,$"
 
@@ -25816,6 +27880,7 @@ int RasmAssembleInfoParam(const char *datain, int lenin, unsigned char **dataout
 #define AUTOTEST_LZX0B_E "inczx0b 'autotest_include.raw',0,1000"
 #define AUTOTEST_LZX0B_F "lzx0b : incbin'autotest_include.raw',0,1000 : lzclose"
 
+#define AUTOTEST_SIZEOF_BUG0 "struct MyStruct: val defb: endstruct: assert {sizeof}UnknownStruct==1 "
 
 #define AUTOTEST_MAXERROR	"repeat 20:aglapi:rend:nop"
 
@@ -25901,6 +27966,8 @@ int RasmAssembleInfoParam(const char *datain, int lenin, unsigned char **dataout
 
 #define AUTOTEST_MODULE03 "unglobal: nop: .prox: nop: module un: deuxglobal: nop: .prox: nop: djnz .prox: nop: doublon: nop: module deux: troisglobal: nop: " \
 			" .prox: nop: djnz .prox: nop: doublon: nop: assert doublon>troisglobal: endmodule: jr un_doublon: jr deux_doublon: jr un_deuxglobal.prox: jr deux_troisglobal.prox "
+
+#define AUTOTEST_ROMBANK_RECALL "buildsna: bank 0 : nop: rombank 0: nop: rombank 1: nop 5: rombank 0: assert $==1"
 
 #define AUTOTEST_GETNOP_LD "ticker start,testouille:"\
 			"ld a,1: ld a,b: ld b,a: ld a,i: ld i,a: ld a,r: ld r,a:"\
@@ -26449,6 +28516,20 @@ int RasmAssembleInfoParam(const char *datain, int lenin, unsigned char **dataout
 ":bank:set 7,(iy+#12),e:assert $==getsize('set 7,(iy+#12),e'):bank:set 7,(iy+#12),h:assert $==getsize('set 7,(iy+#12),h'):bank:set 7,(iy+#12),l:assert $==getsize('set 7,(iy+#12),l')" \
 ":bank:set 7,(iy+#12):assert $==getsize('set 7,(iy+#12)'):bank:set 7,(iy+#12),a:assert $==getsize('set 7,(iy+#12),a'):bank:set 7,(iy+#12),a:assert $==getsize('set 7,(iy+#12),a')"
 
+#define AUTOTEST_XY_PATCH "repeat 2 : " \
+	"cp (ix) : ld a,(ix) : ld (ix),a : xor (ix) : and (ix) : or (ix) : sub (ix) : adc (ix) : add (ix) : bit 0,(ix) : " \
+	"set 0,(ix) : res 0,(ix) : rl (ix) : rr (ix) : rlc (ix) : rrc (ix) : sll (ix) : srl (ix) : sla (ix) : sra (ix) : " \
+	"cp (iy) : ld a,(iy) : ld (iy),a : xor (iy) : and (iy) : or (iy) : sub (iy) : adc (iy) : add (iy) : bit 0,(iy) : " \
+	"set 0,(iy) : res 0,(iy) : rl (iy) : rr (iy) : rlc (iy) : rrc (iy) : sll (iy) : srl (iy) : sla (iy) : sra (iy) : " \
+	"cp (ix+5) : ld a,(ix+5) : ld (ix+5),a : xor (ix+5) : and (ix+5) : or (ix+5) : sub (ix+5) : adc (ix+5) : add (ix+5) : bit 0,(ix+5) : " \
+	"set 0,(ix+5) : res 0,(ix+5) : rl (ix+5) : rr (ix+5) : rlc (ix+5) : rrc (ix+5) : sll (ix+5) : srl (ix+5) : sla (ix+5) : sra (ix+5) : " \
+	"cp (iy+9) : ld a,(iy+9) : ld (iy+9),a : xor (iy+9) : and (iy+9) : or (iy+9) : sub (iy+9) : adc (iy+9) : add (iy+9) : bit 0,(iy+9) : " \
+	"set 0,(iy+9) : res 0,(iy+9) : rl (iy+9) : rr (iy+9) : rlc (iy+9) : rrc (iy+9) : sll (iy+9) : srl (iy+9) : sla (iy+9) : sra (iy+9) : " \
+	"cp (ix-5) : ld a,(ix-5) : ld (ix-5),a : xor (ix-5) : and (ix-5) : or (ix-5) : sub (ix-5) : adc (ix-5) : add (ix-5) : bit 0,(ix-5) : " \
+	"set 0,(ix-5) : res 0,(ix-5) : rl (ix-5) : rr (ix-5) : rlc (ix-5) : rrc (ix-5) : sll (ix-5) : srl (ix-5) : sla (ix-5) : sra (ix-5) : " \
+	"cp (iy-9) : ld a,(iy-9) : ld (iy-9),a : xor (iy-9) : and (iy-9) : or (iy-9) : sub (iy-9) : adc (iy-9) : add (iy-9) : bit 0,(iy-9) : " \
+	"set 0,(iy-9) : res 0,(iy-9) : rl (iy-9) : rr (iy-9) : rlc (iy-9) : rrc (iy-9) : sll (iy-9) : srl (iy-9) : sla (iy-9) : sra (iy-9) : rend"
+
 #define AUTOTEST_REPEAT3 "y=0: repeat 0: y+=1: rend: assert y==0: y=0: repeat 1: y+=1: rend: assert y==1:"\
 	"y=0: repeat 5: y+=1: rend: assert y==5: y=1: repeat 5,x: assert y==x: y+=1: rend: y=2: repeat 5,x,2,2: assert x==y:"\
 	"y+=2: rend: startingindex 5: y=5: repeat 2,x: assert x==y: y+=1: rend: startingindex 5,5: y=10: repeat 3,x,10: assert x==y: "\
@@ -26485,13 +28566,14 @@ int RasmAssembleInfoParam(const char *datain, int lenin, unsigned char **dataout
 
 #define AUTOTEST_DEFMOD "nbt=0: module preums: label1 nop: label3: label4: ifdef label1:nbt+=1:endif: ifdef label3:nbt+=1:endif:"\
 "ifdef label4:nbt+=1:endif: ifndef label5:nbt+=1:endif: module deuze: label1 nop: label3: label5: ifdef label1:nbt+=1:endif:"\
-"ifdef label3:nbt+=1:endif: ifndef label4:nbt+=1:endif: ifdef label5:nbt+=1:endif: assert nbt==8:"\
-"module grouik: plop: ifused plop : glop=1 : endif:assert glop==1"
+"ifdef label3:nbt+=1:endif: ifndef label4:nbt+=1:endif: ifdef label5:nbt+=1:endif: assert nbt==8:"
 
 #define AUTOTEST_GTILES    "incbin 'autotest_include.raw',GTILES,4"
 #define AUTOTEST_ITILES    "incbin 'autotest_include.raw',ITILES,4"
 #define AUTOTEST_GTILES_KO "incbin 'autotest_include.raw',GTILES,5"
 #define AUTOTEST_ITILES_KO "incbin 'autotest_include.raw',ITILES,5"
+
+#define AUTOTEST_SUM16 " tot=0: repeat 256: v=rnd(256): defb v: tot+=v: rend: sum16 0,256: defw tot"
 
 
 struct s_autotest_keyword {
@@ -26728,7 +28810,7 @@ struct s_autotest_keyword autotest_keyword[]={
 	{"glop=rnd(5):nop",0},{"glop=rnd(0):nop",1},{"glop=rnd():nop",1},{"glop=rnd(-1):nop",1},{"pifou=8:glop=rnd(pifou):defb glop",0},
 	/* wrong include usage */
 	{"incbin",1},{"include",1},{"incbin'",1},{"include'",1},{"'include",1}, {"'incbin",1},
-	{"incexo",1},{"inczx7",1},{"incaaa",0}, {"inc",1}, {"incl48",1},{"incl49",1},{"incapu",1},{"inclz4",1},
+	{"incexo",1},{"inczx7",1},{"incaaa",0}, {"inc",1}, {"incl48",1},{"incl49",1},{"incapu",1},{"inclz4",1},{"inczx0",1},{"inczx0b",1},
 	{"incexo'",1},{"inczx7'",1},{"incaaa'",1}, {"inc'",1}, {"incl48'",1},{"incl49'",1},{"incapu'",1},{"inclz4'",1},
 	{"incexb",0}, {"includee",0}, {"incexb'",1}, {"includee'",1}, 
 	/* EDSK core simple tests */
@@ -26761,17 +28843,298 @@ struct s_autotest_keyword autotest_keyword[]={
 	"assert {sizeof}metas.ss1==4 : nop",0}, // sizeof substruct in imbricated level 1 struct
 	{"struct s1 : lab1 defw : lab2 defw : endstruct : struct s2 : lab1 defw : lab2 defw : endstruct : struct metas : struct s1 ss1 : struct s2 ss2 : endstruct : "\
 	"assert {sizeof}metas.ss2==4 : nop",0}, // sizeof last substruct in imbricated level 1 struct
+	{"repeat 5 : rend nop",1}, {"repeat 5 : rend : nop",0},
+	{"defs 'roudoudou'",1},
+	{"assert pow2(1)==2:assert pow2(2)==4:assert pow2(4)==16:assert pow2(0.5)==sqrt(2):nop",0},
+	{"buildsna: bankset 0: org 0: run 0: brk: nop 10: defb 0xE5: nop 2: defb #E5,#E5: nop 2: defb #E5,#E5,#E5: nop",0},
+
+	{"org #C000 : breakpoint #1000 : nop",0},
+	{"org #C000 : breakpoint MEM : nop",0},
+	{"org #C000 : breakpoint IO : nop",0},
+	{"org #C000 : breakpoint EXEC : nop",0},
+	{"org #C000 : breakpoint RW : nop",0},
+	{"org #C000 : breakpoint READ : nop",0},
+	{"org #C000 : breakpoint WRITE : nop",0},
+	{"org #C000 : breakpoint READWRITE : nop",0},
+	{"org #C000 : breakpoint EXEC,READWRITE : nop",0},
+	{"org #C000 : breakpoint STOP : nop",0},
+	{"org #C000 : breakpoint STOPPER : nop",0},
+	{"org #C000 : breakpoint WATCH : nop",0},
+	{"org #C000 : breakpoint WATCHER : nop",0},
+	{"org #C000 : breakpoint EXEC,READWRITE,STOPPER : nop",0},
+	{"org #C000 : breakpoint ADDR=grouik : nop : grouik",0},
+	{"org #C000 : breakpoint EXEC,READWRITE,STOPPER,ADDR=grouik : nop : grouik",0},
+	{"org #C000 : breakpoint MASK=0x2222 : nop",0},
+	{"org #C000 : breakpoint EXEC,READWRITE,STOPPER,ADDR=grouik,MASK=0x2222 : nop : grouik",0},
+	{"org #C000 : breakpoint VALUE=0x22 : nop",0},
+	{"org #C000 : breakpoint EXEC,READWRITE,STOPPER,ADDR=grouik,MASK=0x2222,VALUE=0x22 : nop : grouik",0},
+	{"org #C000 : breakpoint VALMASK=0xFF : nop",0},
+	{"org #C000 : breakpoint EXEC,READWRITE,STOPPER,ADDR=grouik,MASK=0x2222,VALUE=0x22,VALMASK=0xFF : nop : grouik",0},
+	{"org #C000 : breakpoint NAME='roudoudou' : nop",0},
+	{"org #C000 : breakpoint EXEC,READWRITE,STOPPER,ADDR=grouik,MASK=0x2222,VALUE=0x22,VALMASK=0xFF,NAME='roudoudou' : nop : grouik",0},
+	{"org #C000 : breakpoint CONDITION='HL=0' : nop",0},
+	{"org #C000 : breakpoint EXEC,READWRITE,STOPPER,ADDR=grouik,MASK=0x2222,VALUE=0x22,VALMASK=0xFF,NAME='roudoudou',CONDITION='HL=0' : nop : grouik",0},
+	{"org #C000 : breakpoint CONDITION='HL=0',NAME='roudoudou',VALMASK=0xFF,VALUE=0x22,MASK=0x2222,ADDR=grouik,STOPPER,READWRITE,EXEC : nop : grouik",0},
+	{"org #C000 : breakpoint CONDITION='HL=0',NAME='roudoudou',VALMASK=0xFF,VALUE=0x22,MSK=0x2222,ADDR=grouik,STOPPER,READWRITE,EXEC : nop : grouik",1}, // typo
+
+	{"struct untab: ch1 defi: ch2 defi: endstruct: struct unegrosse: struct untab mega1: ch1 defb: ch2 defw : ch3 defi: ch4 defb 'roudoudou',0: struct untab mega2: struct unegrosse entite ",1}, // must not hang!
+	{"struct untab: ch1 defi: ch2 defi: endstruct: struct unegrosse: struct untab mega1: ch1 defb: ch2 defw : ch3 defi: ch4 defb 'roudoudou',0: struct untab mega2: endstruct:struct unegrosse entite:assert $==33 ",0},
+	{"struct machin : roudoudou defs 10 : endstruct : struct machin pouet1,1,'roudoudou': assert $==10",0}, // less data in initializer
+	{"struct machin : roudoudou defs 10 : endstruct : struct machin pouet1,1,'roudoudou ': assert $==10",0}, // exact data in initializer
+	{"struct machin : roudoudou defs 10 : endstruct : struct machin pouet1,1,'roudoudou  ': assert $==10",0}, // more data in initialiser (warning)
+	{"struct machin : unbyte defb : endstruct : pouet=50 : struct machin pouet1,1,pouet: assert $==1",0},
+	{"struct machin : unword defw : endstruct : pouet=50 : struct machin pouet1,1,pouet: assert $==2",0},
+	{"struct machin : unInt defi : endstruct : pouet=50 : struct machin pouet1,1,pouet: assert $==4",0},
+	{"struct machin : unReal defr : endstruct : pouet=50 : struct machin pouet1,1,pouet: assert $==5",0},
+	{"defb '\\xF'",1}, {"defb '\\xFg'",1}, {"defb '\\xF-'",1}, {"defb '\\xF '",1},
+	{"defb '\\x'",1}, {"defb '\\xg'",1}, {"defb '\\x-'",1}, {"defb '\\x '",1},
+	{"defb '\\x\\'",1},	// passer une instruction en tant que param√®tre de macro
+	{" macro uneInstruction instr: {instr} de: {instr} hl: mend: uneInstruction inc: uneInstruction dec ",0},
+	{"ld a,50 xor 10: ld a,50^10: ld a,50 mod 12: ld a,50%12: ld a,50 % 12 ",0}, // some prepro enforcing ^_^
+	{" repeat 10,x: bank: module truc{x}: oneTwo nop: rend",0}, // flexible module names
+								    //
+	{"ifused machin : assert 0==1 : endif : nop",0}, // ifused without anything
+	{"machin equ 5 : ifused machin : assert 0==1 : endif : nop",0},
+	{"machin equ 5 : ifused machin : assert 0==1 : endif : ifused machin : assert 0==1 : endif : nop",0},
+	{"machin equ 5 : ld hl,machin : ifnused machin : assert 0==1 : endif ",0},
+	{"truc=50 : ifused truc : assert 0==1 : endif : nop",0},
+	{"truc=50 : ifused truc : assert 0==1 : endif : ifused truc : assert 0==1 : endif : nop",0},
+	{"truc=50 : ld hl,truc : ifnused truc : assert 0==1 : endif ",0},
+	{"labelobleu : ifused labelobleu : assert 0==1 : endif : nop",0},
+	{"labelobleu : ifused labelobleu : assert 0==1 : endif : ifused labelobleu : assert 0==1 : endif : nop",0},
+	{"labelobleu : ld hl,labelobleu : ifnused labelobleu : assert 0==1 : endif ",0},
+	{"labelobleu : noexport labelobleu : ifused labelobleu : assert 0==1 : endif : nop",0},
+	{"labelobleu : enoexport labelobleu : ifused labelobleu : assert 0==1 : endif : nop",0},
+	// label + module + confusion volontaire
+	{"ld hl,plop: module grouik: plop: ifused plop : assert 0==1 : endif: module: ifnused plop : assert 0==1 : endif: plop nop",0},
+
+	{" ifdef bidule : assert 0==1 : endif : nop ",0},
+	{" bidule : ifndef bidule : assert 0==1 : endif : nop ",0},
+	{" bidule equ 5 : ifndef bidule : assert 0==1 : endif : nop ",0},
+	{" bidule=5 : ifndef bidule : assert 0==1 : endif : nop ",0},
+
+	// IX/IY trick removal check :)
+	{"ld hl,ix",1},
+	{"ixab=5:ld h,(ixab)",1},
+	{"ixab=5:ld l,(ixab)",1},
+	{"ixab=5:ld d,(ixab)",1},
+	{"ixab=5:ld e,(ixab)",1},
+	{"ixab=5:ld b,(ixab)",1},
+	{"ixab=5:ld c,(ixab)",1},
+	{"ixab=5:ld xh,(ixab)",1},
+	{"ixab=5:ld yh,(ixab)",1},
+	{"ixab=5:ld xl,(ixab)",1},
+	{"ixab=5:ld yl,(ixab)",1},
+	{"ixab=5:sla (ixab)",1},
+	{"ixab=5:sra (ixab)",1},
+	{"ixab=5:srl (ixab)",1},
+	{"ixab=5:sll (ixab)",1},
+	{"ixab=5:rrc (ixab)",1},
+	{"ixab=5:rr  (ixab)",1},
+	{"ixab=5:rlc (ixab)",1},
+	{"ixab=5:rl  (ixab)",1},
+	{"ixab=5:or  (ixab)",1},
+	{"ixab=5:xor (ixab)",1},
+	{"ixab=5:and (ixab)",1},
+	{"ixab=5:sub (ixab)",1},
+	{"ixab=5:sbc (ixab)",1},
+	{"ixab=5:add (ixab)",1},
+	{"ixab=5:adc (ixab)",1},
+	{"nop : incbin 'ljkhsdlkjksdflkjsdflkjdf.sdfkujhsdjkfh.sdfkjhsdfkjhsfd',EXISTS",0}, // no error with EXISTS option
+	{"cp (ix)",0},{"ld a,(ix)",0},{"ld (ix),a",0}, {"xor (ix)",},{"and (ix)",},{"or (ix)",},{"sub (ix)",},{"adc (ix)",},{"add (ix)",}, {"bit 0,(ix)",},
+	{"set 0,(ix)",},{"res 0,(ix)",},{"rl (ix)",},{"rr (ix)",},{"rlc (ix)",}, {"rrc (ix)",},{"sll (ix)",},{"srl (ix)",}, {"sla (ix)",},{"sra (ix)",},
+	{"cp (iy)",0},{"ld a,(iy)",0},{"ld (iy),a",0}, {"xor (iy)",},{"and (iy)",},{"or (iy)",},{"sub (iy)",},{"adc (iy)",},{"add (iy)",}, {"bit 0,(iy)",},
+	{"set 0,(iy)",},{"res 0,(iy)",},{"rl (iy)",},{"rr (iy)",},{"rlc (iy)",}, {"rrc (iy)",},{"sll (iy)",},{"srl (iy)",}, {"sla (iy)",},{"sra (iy)",},
+	{"varia{cpt}=10",1},
+	{"cpt=1:varia{cpt}=11:cpt+=1:varia{cpt}=22:varcheck=varia1+varia2:assert varcheck==33",0},
+	{"repeat 10,x:mavar{x}=x*5:mavar{x}+=2:rend:total=0:repeat 10,x:total+=mavar{x}:rend:assert total==295:nop",0},
+	{"equ $:nop",1},{"machin equ 50 equ 12:nop",1},{"total=20:equ 40:nop",1}, // invalid EQU
+	{"total=20:bidule=total:equ 20:nop",1},
+
+	{"nop : assert pow(2,5)==32",0},
+	{"nop : a=atan2(0.5,5) : assert a>0.09 : assert a<0.0999",0},
+	{"nop : assert fmod(105,10)==5",0},
+	{"nop : assert hypot(3,4)==5",0},
+	{"nop : a=ldexp(4,5)",0}, // @@TODO
+	{"nop : assert fdim(3.1,5.3)==0 : assert fdim(5.3,3.1)==2.2",0},
+	{"nop : assert fstep(5,4.9)==0 : assert fstep(5,5.1)==1",0},
+	{"nop : assert fmax(1,2)==2 : assert fmax(2,1)==2",0},
+	{"nop : assert fmin(1,2)==1 : assert fmin(2,1)==1",0},
+	{"nop : assert clamp(33,10,20)==20 : assert clamp(-5,10,20)==10",0},
+	{"nop : assert lerp(0,1,0.5)==0.5 : assert lerp(10,20,0.3)==13",0},
+	{"nop : assert isgreater(5,4)==1 : assert isgreater(4,5)==0",0},
+	{"nop : assert isless(5,4)==0 : assert isless(4,5)==1",0},
+	{"nop : assert fremain(29,9)==2",0},
+	{"nop : a=10 and fmin(5,6)",0},
+	{"ld a,10 and fmin(5,6)",0},
+	{"defb 5 and 7,fmin(5,6),5",0},
+	{"defb '(',5.4,5",0},
+	{"defb ')',')',fmin(5,6),5",0},
+	{"nop:print fmin(5,6,7)",1},
+	{"nop:print fmin(7)",1},
+	{"nop:print fmin(5+5*fmin(7)",1},
+	{"form1 equ fmin(5,6) : ld a,form1+fmin(5,6) : assert form1==fmin(5,6)",0},
+	// test des erreurs en cas de manque de param√®tres
+	{"nop : a=pow(2)",1},
+	{"nop : a=5*pow(2)",1},
+	{"nop : a=pow()",1},
+	{"nop : a=fmod(2)",1},
+	{"nop : a=5*fmod(2)",1},
+	{"nop : a=fmod()",1},
+	{"nop : a=atan2(0.5) ",1},
+	{"nop : a=5*atan2(0.5) ",1},
+	{"nop : a=atan2() ",1},
+	{"nop : a=hypot(3)",1},
+	{"nop : a=5*hypot(3)",1},
+	{"nop : a=hypot()",1},
+	{"nop : a=ldexp(4)",1},
+	{"nop : a=5*ldexp(4)",1},
+	{"nop : a=ldexp()",1},
+	{"nop : a=fdim(3.1)",1},
+	{"nop : a=5*fdim(3.1)",1},
+	{"nop : a=fdim()",1},
+	{"nop : a=fstep(5) ",1},
+	{"nop : a=5*fstep(5) ",1},
+	{"nop : a=fstep() ",1},
+	{"nop : a=fmax(1)",1},
+	{"nop : a=5*fmax(1)",1},
+	{"nop : a=fmax()",1},
+	{"nop : a=fmin(1)",1},
+	{"nop : a=5*fmin(1)",1},
+	{"nop : a=fmin()",1},
+	{"nop : a=clamp(33,20)",1},
+	{"nop : a=5*clamp(33,20)",1},
+	{"nop : a=clamp(33)",1},
+	{"nop : a=clamp()",1},
+	{"nop : a=clamp()",1},
+	{"nop : a=lerp(0,1)",1},
+	{"nop : a=5*lerp(0,1)",1},
+	{"nop : a=lerp(0)",1},
+	{"nop : a=lerp()",1},
+	{"nop : a=isgreater(5)",1},
+	{"nop : a=5*isgreater(5)",1},
+	{"nop : a=isgreater()",1},
+	{"nop : a=isless(5)",1},
+	{"nop : a=5*isless(5)",1},
+	{"nop : a=isless()",1},
+	{"nop : a=fremain(29)",1},
+	{"nop : a=5*fremain(29)",1},
+	{"nop : a=fremain()",1},
+
+	{"nop : a=rnd()",1},
+	{"nop : a=5+rnd()",1},
+	{"nop : a=5*rnd()",1},
+	{"nop : a=hi()",1},
+	{"nop : a=5+hi()",1},
+	{"nop : a=5*hi()",1},
+
+	// binary, octal, decimal, hex check
+	{"nop : assert %1010==10 : assert %1001==9",0},
+	{"nop : assert 1010b==10 : assert 1001b==9",0},
+	{"nop : assert 37==5+5+5+5+5+5+7",0},
+	{"nop : assert 0o45==37",0},
+	{"nop : assert @45==37",0},
+	{"nop : assert @45==0o45",0},
+	{"nop : assert 0xAA==AAh : assert #AA==0xAA",0},
+	{"nop : ld hl,%101010101010",0},
+	{"nop : ld hl,%101012101010",1},
+	{"nop : ld hl,101010101010b",0},
+	{"nop : ld hl,101012101010b",1},
+	{"nop : ld hl,11b : assert 11b==%11",0}, // try suffix confusion
+	{"nop : ld hl,0o777",0},
+	{"nop : ld hl,0o787",1},
+	{"nop : ld hl,@777",0},
+	{"nop : ld hl,@787",1},
+	{"nop : ld hl,#00",0},
+	{"nop : ld hl,#11",0},
+	{"nop : ld hl,#21",0},
+	{"nop : ld hl,11h : assert 11h==0x11",0}, // try suffix confusion
+	{"nop : ld hl,#FF",0},
+	{"nop : ld hl,FFh",0},
+	{"nop : ld hl,#GG",1},
+	{"nop : ld hl,0xGG",1},
+	{"nop : ld hl,GGh",1},
+	
+	{"ex af,af'",0}, // testing quote as last char for AF'
+	{"defb 'roudoudou'",0},
+	{"defb \"roudoudou\"",0},
+	{"defb 'roudo\nudou'",1},
+	{"defb \"roudo\nudou\"",1},
+	{"defb 'roudo\ndefb 'udou'",1},
+	{"defb \"roudo\ndefb \"udou\"",1},
+	{"defb \"roudoudou\" 	 \\   \n  \"-grouik\"",0}, // merge strings
+	{"defb 'virgule', 	 \\ 	 	 \n'dessus'\\\n,'dessous'",0},
+	{"defb 'virgule\\\ndessous'",1},
+	{"nop : defb ''",0},{"nop : str ''",0}, // empty strings are OK but will warn user
+	{"nop : defb 'grouik','','pifou'",0},{"nop : str 'grouik','','pifou'",0},
+	{"ixabelle=10: xor (ixabelle)*5",0},
+	{"ixabelle=10: or  (ixabelle)*5",0},
+	{"ixabelle=10: cp  (ixabelle)*5",0},
+	{"ixabelle=10: and (ixabelle)*5",0},
+	{"ixabelle=10: sub (ixabelle)*5",0},
+	{"ixabelle=10: add (ixabelle)*5",0},
+	{"ixabelle=10: adc (ixabelle)*5",0},
+	{"ixabelle=10: sbc (ixabelle)*5",0},
+	{"ixabelle=10: bit (ixabelle)-5,a",0},
+	{"ixabelle=10: res (ixabelle)-5,a",0},
+	{"ixabelle=10: set (ixabelle)-5,a",0},
+	{"ixabelle=10: ld a,(ixabelle)-5",0},
+	{"ixabelle=10: ld (hl),(ixabelle)-5",0},
+
+	{"iyabelle=10: xor (iyabelle)*5",0},
+	{"iyabelle=10: or  (iyabelle)*5",0},
+	{"iyabelle=10: cp  (iyabelle)*5",0},
+	{"iyabelle=10: and (iyabelle)*5",0},
+	{"iyabelle=10: sub (iyabelle)*5",0},
+	{"iyabelle=10: add (iyabelle)*5",0},
+	{"iyabelle=10: adc (iyabelle)*5",0},
+	{"iyabelle=10: sbc (iyabelle)*5",0},
+	{"iyabelle=10: bit (iyabelle)-5,a",0},
+	{"iyabelle=10: res (iyabelle)-5,a",0},
+	{"iyabelle=10: set (iyabelle)-5,a",0},
+	{"iyabelle=10: ld a,(iyabelle)-5",0},
+	{"iyabelle=10: ld (hl),(iyabelle)-5",0},
+
+	{"ixabelle=10: jp (ixabelle+2)*5",0},
+	{"ixabelle=10: jp z,(ixabelle+2)*5",0},
+	{"iyabelle=10: jp (iyabelle+2)*5",0},
+	{"iyabelle=10: jp z,(iyabelle+2)*5",0},
+	{"jp (ix) : jp ix",0}, // is ok
+	{"jp (iy) : jp iy",0}, // is ok
+	{"jp z,(ix)",1}, // must fail
+	{"jp z,(iy)",1}, // must fail
+	{"vara=-(-(8)) : assert vara==8 : nop",0},
+	{"vara equ -(-(8)) : assert vara==8 : nop",0},
+	{"equa=8 : assert equa==8 : nop",0},
+	{"vara equ -(-(-(8))) : assert vara==-8 : nop",0},
+	{"lzsa1 : repeat 40000 : xor a : inc a : rend : lzclose : grouik : ret ",1}, // LZSA cannot crunch moar than 64K
+	{"lzsa2 : repeat 40000 : xor a : inc a : rend : lzclose : grouik : ret ",1}, // LZSA cannot crunch moar than 64K
+	{"lz49 : repeat 40000 : xor a : inc a : rend : lzclose : grouik : ret ",0}, // but LZ49 can ^_^
+										    //
+	{"bank 0 : nop : bank next : nop ",0},
+	{"bank 0 : nop : bank 10 : nop ",0},
+	{"bank : nop : bank next : nop",0},
+	{"bank : nop : bank 10 : nop",0},
+
+	{"redefine_brk : nop",1}, // need one param or more
+	{"redefine_brk 'grouik' : nop",1}, // no string with this
+	{"redefine_brk ' ' : nop",0}, // but single char is OK
+	{"redefine_brk 0,1,2,3,4,5,6,7,8 : brk : redefine_brk 9 : brk : redefine_brk 0,1,2,3,4,5,6,7,8,9,10,11,12,13 : brk : assert $==24",0}, // multiple redefine is ok + size
+																	       //
+	{"repeat 256,x:defb x-1:rend:save 'autotest_fast.raw',0,$ : save 'autotest_fast2.raw',0,$ ",0}, // write all bytes
+	{"incbin 'autotest_fast.raw' : assert $==256",0}, // check size
+	{"assert filebyte('autotest_fast.raw',200)==200",0}, // check one byte
+	{"repeat 256,x : assert filebyte('autotest_fast.raw',x-1)==x-1 : rend ",0}, // check all bytes
+	{"repeat 256,x : assert filebyte('autotest_fast.raw',x-1)==x-1 : assert filebyte('autotest_fast2.raw',x-1)==x-1 : rend ",0}, // check all bytes on multiple files
 	/*
 	 *
 	 * will need to test resize + format then meta review test!
 	 *
 	 *
+	 *
 	{"",},
-	{"",},
-	{"",},
-	{"",},
-	{"",},
-	{"",},
+	{"",},{"",},
+	{"",},{"",},{"",},
 	{"",},{"",},{"",},{"",},{"",},
 	{"",},{"",},{"",},{"",},{"",},{"",},
 	{"",},{"",},{"",},{"",},{"",},{"",},{"",},{"",},{"",},{"",},{"",},{"",},
@@ -26792,23 +29155,54 @@ void MiniDump(unsigned char *opcode, int opcodelen) {
 	}
 	printf("\n");
 }
-						
+
+#ifndef NO_3RD_PARTIES
+#ifndef NOAPULTRA
+int z80_runTest( z80* const z, unsigned short int z80pc, unsigned short int z80pcEnd, long nbInstrMax, unsigned char *binaryData, int dataStart, int dataLen, unsigned short int minPC, unsigned short int maxPC) {
+  z80_init(z);
+  z->pc = z80pc;
+
+  if (dataStart+dataLen<=65536) memcpy(&z->userdata[0]+dataStart,binaryData,dataLen); else { printf("Z80 simulation ERROR : cannot store %d len to #%04X\n",dataLen,dataStart);return 0;}
+
+  while (z->nbinstructions<nbInstrMax && z->pc!=z80pcEnd) {
+    // warning: the following line will output dozens of GB of data.
+    //z80_debug_output(z);
+    z80_step(z);
+    z->nbinstructions++;
+    if (z->pc<minPC || z->pc>maxPC) {printf("z80 PC out of limits!\n");exit(1);}
+  }
+
+  if (z->pc==z80pcEnd) return 1; else return 0;
+}
+#endif
+#endif
+
 void RasmAutotest(void)
 {
 	#undef FUNC
 	#define FUNC "RasmAutotest"
 
+#ifndef NO_3RD_PARTIES
+#ifndef NOAPULTRA
+	z80 myCPU;
+	unsigned char *lzCompare;
+	int lzSize;
+#endif
+#endif
 	struct s_parameter param;
 	struct s_rasm_info *debug;
 	unsigned char *opcode=NULL;
 	int opcodelen,ret;
-	int cpt=0,chk,i,j,k,idx,sko=0;
+	int cpt=0,chk,i,j,k,idx,sko=0,ASize;
 	char *tmpstr3,**tmpsplit;
+	char *ABuf;
 	unsigned char RealDump[65]={00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0x00,0x00,0x00,0x80,0x80,0x00,0x00,0x80,
 		0x2d,0x86,0x9e,0xda,0x0f,0x49,0x82,0x00,0x00,0x00,0x80,0x7f,0x20,0x84,0xdb,0x7f,0x80,0xcd,0x85,0xdb,0x7f,
 		0x80,0x20,0x84,0xdb,0xff,0x80,0xcd,0x85,0xdb,0xff,0x80,0xc8,0xdd,0xd6,0x7c,0x7d,0x53,0x51,0x06,0x1e,0x81,
 		0xBE,0xF6,0xCC,0x12,0x73};
-
+	unsigned char crlfbug[32]={0x20,0x0d,0x0a,0x0d,0x0a,0xa,0xa,0xd,0xd,0x20,0x0d,0x0a,0x0d,0x0a,0xa,0xa,
+				0x20,0x0d,0x0a,0x0d,0x0a,0xa,0xa,0xd,0xd,0x20,0x0d,0x0a,0x0d,0x0a,0xa,0xa};
+	unsigned char *include01="ld a,5";
 
 #ifdef RDD
 	printf("\n%d bytes\n",_static_library_memory_used);
@@ -26830,8 +29224,73 @@ printf("testing rasm source integrity : activebank and maxptr update OK\n");
 	} else {
 		printf("rasm.c not found, skipping integrity tests\n");
 	}
+
+	if (GetCRC("SWITCH")!=CRC_SWITCH) {printf("Autotest %03d ERROR (testing CRC on 'switch')\n",cpt);exit(-1);} else cpt++;
+	if (GetCRC("ELSEIFNOT")!=CRC_ELSEIFNOT) {printf("Autotest %03d ERROR (testing CRC on 'elseifnot')\n",cpt);exit(-1);} else cpt++;
+	if (GetCRC("ELSE")!=CRC_ELSE) {printf("Autotest %03d ERROR (testing CRC on 'else')\n",cpt);exit(-1);} else cpt++;
+	if (GetCRC("IF")!=CRC_IF) {printf("Autotest %03d ERROR (testing CRC on 'if')\n",cpt);exit(-1);} else cpt++;
+	if (GetCRC("ENDSWITCH")!=CRC_ENDSWITCH) {printf("Autotest %03d ERROR (testing CRC on 'endswitch')\n",cpt);exit(-1);} else cpt++;
+	printf("testing current CRC with some defined keywords OK\n");
+
+	ABuf=NULL;
+	ASize=0;
+	StateMachineResizeBuffer(&ABuf,16,&ASize);
+	if (ASize<16) {printf("Autotest %03d ERROR (testing StateMachineResizeBuffer 16 bytes %d allocated)\n",cpt,ASize);exit(-1);} else cpt++;
+	StateMachineResizeBuffer(&ABuf,40000,&ASize);
+	if (ASize<40000) {printf("Autotest %03d ERROR (testing StateMachineResizeBuffer 40k bytes %d allocated)\n",cpt,ASize);exit(-1);} else cpt++;
+	memset(ABuf,0,ASize);
+	printf("testing StateMachineResizeBuffer OK\n");
+
+
+	/* unit testing */
+	opcode=MemMalloc(64);
+	FileRemoveIfExists("rasmoutput_CRLF.raw");
+	if (FileWriteBinary("rasmoutput_CRLF.raw",(char *)crlfbug,32)!=32) {printf("Autotest %03d ERROR (Binary write must return outputed byte number)\n",cpt);exit(-1);} else cpt++;
+	printf("testing pure binary write OK\n");
+	FileWriteBinaryClose("rasmoutput_CRLF.raw");
+	if (FileGetSize("rasmoutput_CRLF.raw")!=32) {printf("Autotest %03d ERROR (Binary write must not change 0x0D or 0x0A output)\n",cpt);exit(-1);} else cpt++;
+	printf("testing pure binary write + GetSize OK\n");
+	if (!FileExists("rasmoutput_CRLF.raw")) {printf("Autotest %03d ERROR (fileExists KO)\n",cpt);exit(-1);} else cpt++;
+	printf("testing file exists OK\n");
+        if (FileReadBinary("rasmoutput_CRLF.raw",(char*)opcode,FileGetSize("rasmoutput_CRLF.raw"))!=32) {printf("Autotest %03d ERROR (Binary read must not change 0x0D or 0x0A output)\n",cpt);exit(-1);} else cpt++;
+	printf("testing pure binary file read OK\n");
+	FileRemoveIfExists("rasmoutput_CRLF.raw");
+	if (FileExists("rasmoutput_CRLF.raw")) {printf("Autotest %03d ERROR (cannot remove file or fileExists KO)\n",cpt);exit(-1);} else cpt++;
+	printf("testing file remove OK\n");
+	MemFree(opcode);opcode=NULL;
+
+	if (!StringIsMem("(45+3*12+tartampion)")) {printf("Autotest %03d ERROR (StringIsMem KO)\n",cpt);exit(-1);} else cpt++; 
+	if (StringIsMem("(45+3*12+tartampion)*2")) {printf("Autotest %03d ERROR (StringIsMem KO)\n",cpt);exit(-1);} else cpt++; 
+	if (StringIsMem("2*(45+3*12+tartampion)")) {printf("Autotest %03d ERROR (StringIsMem KO)\n",cpt);exit(-1);} else cpt++; 
+	if (StringIsMem("+(45+3*12+tartampion)")) {printf("Autotest %03d ERROR (StringIsMem KO)\n",cpt);exit(-1);} else cpt++; 
+	if (StringIsMem("(45+3*12+tartampion)+")) {printf("Autotest %03d ERROR (StringIsMem KO)\n",cpt);exit(-1);} else cpt++; 
+	if (StringIsMem("a(45+3*12+tartampion)")) {printf("Autotest %03d ERROR (StringIsMem KO)\n",cpt);exit(-1);} else cpt++; 
+	if (StringIsMem("(45+3*12+tartampion)a")) {printf("Autotest %03d ERROR (StringIsMem KO)\n",cpt);exit(-1);} else cpt++; 
+	if (StringIsMem("(45+3*12+tartampion\"")) {printf("Autotest %03d ERROR (StringIsMem KO)\n",cpt);exit(-1);} else cpt++; 
+	if (!StringIsMem("(45+3*12+tartampion\\)")) {printf("Autotest %03d ERROR (StringIsMem KO)\n",cpt);exit(-1);} else cpt++; 
+	printf("testing StringIsMem (9 tests) OK\n");
+	if (!StringIsQuote("'grouik'")) {printf("Autotest %03d ERROR (StringIsQuote KO)\n",cpt);exit(-1);} else cpt++;
+	if (!StringIsQuote("\"grouik\"")) {printf("Autotest %03d ERROR (StringIsQuote KO)\n",cpt);exit(-1);} else cpt++;
+	if (StringIsQuote("\"grouik\'")) {printf("Autotest %03d ERROR (StringIsQuote KO)\n",cpt);exit(-1);} else cpt++;
+	if (StringIsQuote("\'grouik\"")) {printf("Autotest %03d ERROR (StringIsQuote KO)\n",cpt);exit(-1);} else cpt++;
+	if (StringIsQuote("'grouik")) {printf("Autotest %03d ERROR (StringIsQuote KO)\n",cpt);exit(-1);} else cpt++;
+	if (StringIsQuote("grouik'")) {printf("Autotest %03d ERROR (StringIsQuote KO)\n",cpt);exit(-1);} else cpt++;
+	if (StringIsQuote("g'rouik'")) {printf("Autotest %03d ERROR (StringIsQuote KO)\n",cpt);exit(-1);} else cpt++;
+	if (StringIsQuote("'grou'ik")) {printf("Autotest %03d ERROR (StringIsQuote KO)\n",cpt);exit(-1);} else cpt++;
+	printf("testing StringIsQuote (8 tests) OK\n");
+
 	
 	/* Autotest preprocessing */
+	FileRemoveIfExists("rasmTesting01.asm");
+	FileWriteBinary("rasmTesting01.asm",(char *)include01,strlen(include01));
+	FileWriteBinaryClose("rasmTesting01.asm");
+#define AUTOTEST_PROPER_INCLUDE "nop:include'rasmTesting01.asm':nop:include 'rasmTesting01.asm' : nop"
+	ret=RasmAssemble(AUTOTEST_PROPER_INCLUDE,strlen(AUTOTEST_PROPER_INCLUDE),&opcode,&opcodelen);
+	FileRemoveIfExists("rasmTesting01.asm");
+	if (!ret && opcodelen==7 && opcode[5]==5) {} else {printf("Autotest %03d ERROR (include text files) ret=%d\n",cpt,ret);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing preprocessor text file inclusion OK\n");
+
 	ret=RasmAssemble(AUTOTEST_VIRGULE,strlen(AUTOTEST_VIRGULE),&opcode,&opcodelen);
 	if (ret) {} else {printf("Autotest %03d ERROR (double comma must trigger an error) ret=%d\n",cpt,ret);exit(-1);}
 	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
@@ -26921,6 +29380,13 @@ printf("testing all opcodes OK\n");
 	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
 	RasmFreeInfoStruct(debug);
 printf("testing command line parameter -amper OK\n");
+
+	#define AUTOTEST_AMPER "defb 'machin&truc : ld a,&12 : bidule',0"
+	ret=RasmAssembleInfoParam(AUTOTEST_AMPER,strlen(AUTOTEST_AMPER),&opcode,&opcodelen,&debug,&param);
+	if (!ret && !strchr(opcode,'#')) {} else {printf("Autotest %03d ERROR (testing ampersand with strings)\n",cpt);MiniDump(opcode,opcodelen);for (i=0;i<debug->nberror;i++) printf("%d -> %s\n",i,debug->error[i].msg);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+	RasmFreeInfoStruct(debug);
+printf("testing ampersand with strings OK\n");
 
 	#define AUTOTEST_PARAM_MAXAM "aaa=10+5*3 : assert aaa==45 : nop"
 	memset(&param,0,sizeof(struct s_parameter));
@@ -27040,6 +29506,7 @@ printf("testing %d various opcode tests OK\n",i);
 		}
 		if (opcode) MemFree(opcode);opcode=NULL;
 		idx++;
+		if ((idx%100)==0) printf("testing %d moar various opcode tests...\n",idx);
 	}
 	cpt++;
 printf("testing %d moar various opcode tests OK\n",idx);
@@ -27073,6 +29540,11 @@ printf("testing error code OK\n");
 	if (!ret) {} else {printf("Autotest %03d ERROR (REBANK)\n",cpt);exit(-1);}
 	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
 printf("testing REBANK OK\n");
+
+	ret=RasmAssemble(AUTOTEST_ROMBANK_RECALL,strlen(AUTOTEST_ROMBANK_RECALL),&opcode,&opcodelen);
+	if (!ret) {} else {printf("Autotest %03d ERROR (ROMBANK RECALL)\n",cpt);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing ROMBANK RECALL OK\n");
 
 	ret=RasmAssemble(AUTOTEST_BANKORG,strlen(AUTOTEST_BANKORG),&opcode,&opcodelen);
 	if (!ret) {} else {printf("Autotest %03d ERROR (BANK org adr)\n",cpt);exit(-1);}
@@ -27331,6 +29803,30 @@ printf("testing LZ4 segment OK\n");
 	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
 printf("testing DEFS OK\n");
 
+#define AUTOTEST_STRCHAR0 "str 'roudou',0+'d','ou'"
+	ret=RasmAssemble(AUTOTEST_STRCHAR0,strlen(AUTOTEST_STRCHAR0),&opcode,&opcodelen);
+	if (!ret && opcodelen==9 && strncmp(opcode,"roudoudo",8)==0 && opcode[8]==('u'|0x80)) {} else {printf("Autotest %03d ERROR (STR+single byte)\n",cpt);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing STR evolution (single byte) OK\n");
+
+#define AUTOTEST_STRCHAR1 "str 'roudou','grouik'"
+	ret=RasmAssemble(AUTOTEST_STRCHAR1,strlen(AUTOTEST_STRCHAR1),&opcode,&opcodelen);
+	if (!ret && opcodelen==12 && opcode[5]==('u'|0x80) && opcode[11]==('k'|0x80)) {} else {printf("Autotest %03d ERROR (STR+single byte bis)\n",cpt);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing STR evolution (single byte bis) OK\n");
+
+#define AUTOTEST_STRCHAR2 "str 'roudou','grouik',45"
+	ret=RasmAssemble(AUTOTEST_STRCHAR2,strlen(AUTOTEST_STRCHAR2),&opcode,&opcodelen);
+	if (!ret && opcodelen==13 && opcode[5]==('u'|0x80) && opcode[11]=='k' && opcode[12]==45) {} else {printf("Autotest %03d ERROR (STR+single byte ter)\n",cpt);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing STR evolution (single byte ter) OK\n");
+
+#define AUTOTEST_STRHEX "str 'roud\x4Fudou'"
+	ret=RasmAssemble(AUTOTEST_STRHEX,strlen(AUTOTEST_STRHEX),&opcode,&opcodelen);
+	if (!ret && opcodelen==9 && strncmp(opcode,"roudOudo",8)==0 && opcode[8]==('u'|0x80)) {} else {printf("Autotest %03d ERROR (STR+Hex escape sequence)\n",cpt);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing STR evolution (Hex escape sequence) OK\n");
+
 	ret=RasmAssemble(AUTOTEST_BANKSET,strlen(AUTOTEST_BANKSET),&opcode,&opcodelen);
 	if (!ret) {} else {printf("Autotest %03d ERROR (bank/bankset)\n",cpt);exit(-1);}
 	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
@@ -27429,7 +29925,12 @@ printf("testing extended charset OK\n");
 	if (!ret && strcmp(opcode,"ZIT JXOEA WKGVF YGB")==0) {} else {printf("Autotest %03d ERROR (charset string string)\n",cpt);exit(-1);}
 	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
 printf("testing charset string string OK\n");
-	
+
+	ret=RasmAssemble(AUTOTEST_DEFHEX0,strlen(AUTOTEST_DEFHEX0),&opcode,&opcodelen);
+	if (!ret && opcodelen==4 && opcode[0]==0xFF && opcode[3]==0xFF) {} else {printf("Autotest %03d ERROR (hex value in DEFB)\n",cpt);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing hex value in DEFB string OK\n");
+
 	ret=RasmAssemble(AUTOTEST_QUOTES,strlen(AUTOTEST_QUOTES),&opcode,&opcodelen);
 	if (!ret && opcodelen==10 && opcode[5]==0xE4 && opcode[6]==0x0D && opcode[7]==0x64 && opcode[8]==0x0D && opcode[9]==0xE4) {}
 		else {printf("Autotest %03d ERROR (quotes & escaped chars)\n",cpt);MiniDump(opcode,opcodelen);exit(-1);}
@@ -27506,6 +30007,14 @@ printf("testing variables in labels OK\n");
 	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
 printf("testing variables in aliases OK\n");
 
+#define AUTOTEST_EQU_PREC "nop : equ 25 : nop"
+	ret=RasmAssembleInfo(AUTOTEST_EQU_PREC,strlen(AUTOTEST_EQU_PREC),&opcode,&opcodelen,&debug);
+	if (ret) {} // must be error
+	else {printf("Autotest %03d ERROR (EQU precedence check failed)\n",cpt);MiniDump(opcode,opcodelen);for (i=0;i<debug->nberror;i++) printf("%d -> %s\n",i,debug->error[i].msg);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+	RasmFreeInfoStruct(debug);
+printf("testing EQU precedence OK\n");
+
 	ret=RasmAssemble(AUTOTEST_EQUDOLLAR,strlen(AUTOTEST_EQUDOLLAR),&opcode,&opcodelen);
 	if (!ret) {} else {printf("Autotest %03d ERROR (delayed EQU + $) r=%d l=%d\n",cpt,ret,opcodelen);MiniDump(opcode,opcodelen);exit(-1);}
 	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
@@ -27565,6 +30074,30 @@ printf("testing BANK tag + proximity labels OK\n");
 	RasmFreeInfoStruct(debug);
 printf("testing STR end mark OK (thanks to Golem)\n");
 
+	/* utf8 */
+	memset(&param,0,sizeof(struct s_parameter));
+	param.freequote=1;
+	ret=RasmAssembleInfoParam(AUTOTEST_UTF8,strlen(AUTOTEST_UTF8),&opcode,&opcodelen,&debug,&param);
+	if (!ret && opcodelen==1 && opcode[0]==50) {} else {printf("Autotest %03d ERROR (UTF8 remapping)\n",cpt);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+	RasmFreeInfoStruct(debug);
+printf("testing UTF8 remapping\n");
+
+	memset(&param,0,sizeof(struct s_parameter));
+	param.freequote=1;
+	ret=RasmAssembleInfoParam(AUTOTEST_UTF8B,strlen(AUTOTEST_UTF8B),&opcode,&opcodelen,&debug,&param);
+	if (!ret && opcodelen==7 && opcode[0]==' ') {} else {printf("Autotest %03d ERROR (UTF8 remapping inside struct)\n",cpt);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+	RasmFreeInfoStruct(debug);
+printf("testing UTF8 remapping inside structure declaration\n");
+
+	memset(&param,0,sizeof(struct s_parameter));
+	param.freequote=1;
+	ret=RasmAssembleInfoParam(AUTOTEST_UTF8C,strlen(AUTOTEST_UTF8C),&opcode,&opcodelen,&debug,&param);
+	if (!ret && opcodelen==10 && opcode[0]==20 && opcode[1]==20 && opcode[2]==20) {} else {printf("Autotest %03d ERROR (UTF8 remapping inside inline struct with param overload)\n",cpt);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+	RasmFreeInfoStruct(debug);
+printf("testing UTF8 remapping inside inline structure with param overload\n");
 
 	memset(&param,0,sizeof(struct s_parameter));
 	param.erronwarn=1;
@@ -27582,6 +30115,13 @@ printf("testing structs OK\n");
 	if (!ret && opcodelen==1) {} else {printf("Autotest %03d ERROR (sizeof struct fields)\n",cpt);exit(-1);}
 	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
 printf("testing SIZEOF struct fields OK\n");
+
+	ret=RasmAssemble(AUTOTEST_STRUCT3,strlen(AUTOTEST_STRUCT3),&opcode,&opcodelen);
+	if (!ret && opcodelen==16 && opcode[0]==opcode[2] && opcode[2]==0x77
+			&& opcode[10]==1 && opcode[11]==2 && opcode[11]==opcode[14]
+			&& opcode[15]==3) {} else {printf("Autotest %03d ERROR (sizeof data struct fields with meta structs)\n",cpt);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing SIZEOF data struct fields with meta struct (regression test) OK\n");
 
 	ret=RasmAssemble(AUTOTEST_REPEAT,strlen(AUTOTEST_REPEAT),&opcode,&opcodelen);
 	if (!ret) {} else {printf("Autotest %03d ERROR (extended repeat)\n",cpt);exit(-1);}
@@ -27610,6 +30150,11 @@ printf("testing ticker OK\n");
 	if (!ret) {} else {printf("Autotest %03d ERROR (ifdef ifused)\n",cpt);exit(-1);}
 	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
 printf("testing IFDEF / IFUSED OK\n");
+
+	ret=RasmAssemble(AUTOTEST_SIZEOF_BUG0,strlen(AUTOTEST_SIZEOF_BUG0),&opcode,&opcodelen); // bug report Anrikun
+	if (ret) {} else {printf("Autotest %03d ERROR (must not sizeof an unknown struct)\n",cpt);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing SIZEOF bug OK\n");
 
 	ret=RasmAssemble(AUTOTEST_SAVEINVALID0,strlen(AUTOTEST_SAVEINVALID0),&opcode,&opcodelen);
 	if (!ret && FileGetSize("rasmoutput.bin")==256) { } else {printf("Autotest %03d ERROR (invalid file size on DISK with SAVE => mostly a pure windows compilation error)\n",cpt);exit(-1);}
@@ -27752,6 +30297,11 @@ printf("testing GETSIZE integrity 7/8 OK\n");
 	RasmFreeInfoStruct(debug);
 printf("testing GETSIZE integrity 8/8 ALL opcodes OK\n");
 
+	ret=RasmAssemble(AUTOTEST_XY_PATCH,strlen(AUTOTEST_XY_PATCH),&opcode,&opcodelen);
+	if (!ret && memcmp(opcode,opcode+opcodelen/2,opcodelen/2)==0) {} else {printf("Autotest %03d ERROR (IX patch must not alter expression reference for loops)\n",cpt);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing IX/IY patch with repeats OK\n");
+
 	ret=RasmAssemble(AUTOTEST_GETNOP_LD,strlen(AUTOTEST_GETNOP_LD),&opcode,&opcodelen);
 	if (!ret) {} else {printf("Autotest %03d ERROR (math function GETNOP with multiple LD syncronised with TICKER)\n",cpt);exit(-1);}
 	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
@@ -27781,17 +30331,244 @@ printf("testing formula function for Plus color management OK\n");
 	if (!ret) {} else {printf("Autotest %03d ERROR (formula func FRAC)\n",cpt);exit(-1);}
 	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
 printf("testing formula FRAC function OK\n");
+
+	ret=RasmAssemble(AUTOTEST_SUM16,strlen(AUTOTEST_SUM16),&opcode,&opcodelen);
+	if (!ret && opcodelen==260 && opcode[256]==opcode[258] && opcode[257]==opcode[259]) {} else {printf("Autotest %03d ERROR (SUMMEM16)\n",cpt);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing directive SUMMEM16 OK\n");
 	
 	ret=RasmAssemble(AUTOTEST_RND,strlen(AUTOTEST_RND),&opcode,&opcodelen);
 	if (!ret) {} else {printf("Autotest %03d ERROR (formula func RND)\n",cpt);exit(-1);}
 	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
 printf("testing formula RND function OK\n");
-	
-	ret=RasmAssemble(AUTOTEST_UNDERVAR,strlen(AUTOTEST_UNDERVAR),&opcode,&opcodelen);
-	if (!ret && opcodelen==4) {} else {printf("Autotest %03d ERROR (var starting with _)\n",cpt);exit(-1);}
+
+#define AUTOTEST_EDSK_OVERWRITE_FILE0 "EDSK create,'rasmoutput_test.dsk',DATA,OVERWRITE:bank:" \
+"org #100 : defb 'roudoudou' : save 'machin.bin',#100,$-#100,DSK,'rasmoutput_test.dsk' : " \
+"save '1:machin.bin',#100,$-#100,DSK,'rasmoutput_test.dsk'" 
+	memset(&param,0,sizeof(struct s_parameter));
+	//param.edskoverwrite=1; // else it wont work!
+	ret=RasmAssembleInfoParam(AUTOTEST_EDSK_OVERWRITE_FILE0,strlen(AUTOTEST_EDSK_OVERWRITE_FILE0),&opcode,&opcodelen,&debug,&param);
+	if (!ret) {} else {printf("Autotest %03d ERROR (testing EDSK create+multiple saves with different users)\n",cpt);
+		for (i=0;i<debug->nberror;i++) printf("%d -> %s\n",i,debug->error[i].msg);
+		exit(-1);}
 	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
-printf("testing var names starting with '_' OK\n");
-	
+printf("testing EDSK create+multiple saves with different users and same name\n");
+
+#define AUTOTEST_EDSK_OVERWRITE_FILE1 "contreMesure:"\
+"defb #00,#4d,#41,#43,#48,#49,#4e,#20,#20,#42,#49,#4e,#00,#00,#00,#02:"\
+"defb #02,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00:"\
+"defb #01,#4d,#41,#43,#48,#49,#4e,#20,#20,#42,#49,#4e,#00,#00,#00,#02:"\
+"defb #03,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00:"\
+"defb #e5,#e5,#e5,#e5,#e5,#e5,#e5,#e5,#e5,#e5,#e5,#e5,#e5,#e5,#e5,#e5:"\
+"lafin:"\
+"edsk check,'rasmoutput_test.dsk','0:#C1',lafin-contreMesure,contreMesure"
+	ret=RasmAssembleInfoParam(AUTOTEST_EDSK_OVERWRITE_FILE1,strlen(AUTOTEST_EDSK_OVERWRITE_FILE1),&opcode,&opcodelen,&debug,&param);
+	if (!ret && opcodelen==5*16) {} else {printf("Autotest %03d ERROR (testing EDSK multiple users+generated edsk)\n",cpt);
+		for (i=0;i<debug->nberror;i++) printf("%d -> %s\n",i,debug->error[i].msg);
+		exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing EDSK multiple users with same names on generated edsk\n");
+
+#define AUTOTEST_EDSK_OVERWRITE_FILE2 "defs 1024,#AA : save 'machin.bin',0,$,DSK,'rasmoutput_test.dsk' "
+	memset(&param,0,sizeof(struct s_parameter));
+	param.edskoverwrite=1; // else it wont work!
+	ret=RasmAssembleInfoParam(AUTOTEST_EDSK_OVERWRITE_FILE2,strlen(AUTOTEST_EDSK_OVERWRITE_FILE2),&opcode,&opcodelen,&debug,&param);
+	if (!ret) {} else {printf("Autotest %03d ERROR (testing EDSK overwrite file proper update with eo option)\n",cpt);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing EDSK overwrite file proper update with eo option\n");
+
+#define AUTOTEST_EDSK_OVERWRITE_FILE3 "contreMesure:"\
+"defb #00,#4d,#41,#43,#48,#49,#4e,#20,#20,#42,#49,#4e,#00,#00,#00,#09:"\
+"defb #02,#04,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00:"\
+"defb #01,#4d,#41,#43,#48,#49,#4e,#20,#20,#42,#49,#4e,#00,#00,#00,#02:"\
+"defb #03,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00:"\
+"defb #e5,#e5,#e5,#e5,#e5,#e5,#e5,#e5,#e5,#e5,#e5,#e5,#e5,#e5,#e5,#e5:"\
+"lafin:"\
+"edsk check,'rasmoutput_test.dsk','0:#C1',lafin-contreMesure,contreMesure:"\
+"pleindeAA:defs 512,#AA:finAA:"\
+"edsk check,'rasmoutput_test.dsk','0:#C6',512,pleindeAA:"
+	ret=RasmAssembleInfoParam(AUTOTEST_EDSK_OVERWRITE_FILE3,strlen(AUTOTEST_EDSK_OVERWRITE_FILE3),&opcode,&opcodelen,&debug,&param);
+	if (!ret && opcodelen==5*16+512) {} else {printf("Autotest %03d ERROR (testing EDSK realloc block when overwriting)\n",cpt);
+		for (i=0;i<debug->nberror;i++) printf("%d -> %s\n",i,debug->error[i].msg);
+		exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing EDSK realloc blocks when overwriting + effective overwrite\n");
+
+
+#define AUTOTEST_EDSK_OVERWRITE_FILE4 "EDSK create,'rasmoutput_test.dsk',DATA,OVERWRITE:defs 16384,#BB:"\
+"save 'gros01.bin',0,16384,DSK,'rasmoutput_test.dsk':"\
+"save 'gros02.bin',0,16384,DSK,'rasmoutput_test.dsk':"\
+"save 'gros03.bin',0,16384,DSK,'rasmoutput_test.dsk':"\
+"save 'gros04.bin',0,16384,DSK,'rasmoutput_test.dsk':"\
+"save 'gros05.bin',0,16384,DSK,'rasmoutput_test.dsk':"\
+"save 'gros06.bin',0,16384,DSK,'rasmoutput_test.dsk':"\
+"save 'gros07.bin',0,16384,DSK,'rasmoutput_test.dsk':"\
+"save 'gros08.bin',0,16384,DSK,'rasmoutput_test.dsk':"\
+"save 'gros09.bin',0,16384,DSK,'rasmoutput_test.dsk':"\
+"save 'gros0a.bin',0,16384,DSK,'rasmoutput_test.dsk'"
+	ret=RasmAssembleInfoParam(AUTOTEST_EDSK_OVERWRITE_FILE4,strlen(AUTOTEST_EDSK_OVERWRITE_FILE4),&opcode,&opcodelen,&debug,&param);
+	if (!ret) {} else {printf("Autotest %03d ERROR (testing EDSK realloc block floppy is almost full 1/3)\n",cpt);
+		for (i=0;i<debug->nberror;i++) printf("%d -> %s\n",i,debug->error[i].msg);
+		exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing EDSK realloc blocks when floppy is almost full 1/3\n");
+
+
+#define AUTOTEST_EDSK_OVERWRITE_FILE5 "defs 16384,#CC:"\
+"save 'gros04.bin',0,16384,DSK,'rasmoutput_test.dsk':"
+	ret=RasmAssembleInfoParam(AUTOTEST_EDSK_OVERWRITE_FILE5,strlen(AUTOTEST_EDSK_OVERWRITE_FILE5),&opcode,&opcodelen,&debug,&param);
+	if (!ret) {} else {printf("Autotest %03d ERROR (testing EDSK realloc block floppy is almost full 2/3)\n",cpt);
+		for (i=0;i<debug->nberror;i++) printf("%d -> %s\n",i,debug->error[i].msg);
+		exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing EDSK realloc blocks when floppy is almost full 2/3\n");
+
+#define AUTOTEST_EDSK_OVERWRITE_FILE6 "defs 512,#CC:defs 512,#BB:"\
+"edsk check,'rasmoutput_test.dsk','11:#C9',512,0:"\
+"edsk check,'rasmoutput_test.dsk','11:#C5',512,512:"\
+"edsk check,'rasmoutput_test.dsk','5:#C8',512,512:"\
+"edsk check,'rasmoutput_test.dsk','0:#C8',512,512:"
+
+	ret=RasmAssembleInfoParam(AUTOTEST_EDSK_OVERWRITE_FILE6,strlen(AUTOTEST_EDSK_OVERWRITE_FILE6),&opcode,&opcodelen,&debug,&param);
+	if (!ret) {} else {printf("Autotest %03d ERROR (testing EDSK realloc block floppy is almost full 3/3)\n",cpt);
+		for (i=0;i<debug->nberror;i++) printf("%d -> %s\n",i,debug->error[i].msg);
+		exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing EDSK realloc blocks when floppy is almost full 3/3\n");
+
+
+#define AUTOTEST_EDSK_READFILE00 "EDSK create,'rasmoutput_test.dsk',DATA,OVERWRITE:bank" \
+":defs 4096,#DD: defs 16384-4096,#EE: defs 24000,#FF:"\
+"save 'g4k.bin',0,4096,DSK,'rasmoutput_test.dsk': save 'g16k.bin',0,16384,DSK,'rasmoutput_test.dsk': save 'g36k.bin',0,1024*36,DSK,'rasmoutput_test.dsk' "
+
+	ret=RasmAssemble(AUTOTEST_EDSK_READFILE00,strlen(AUTOTEST_EDSK_READFILE00),&opcode,&opcodelen);
+	if (!ret) {} else {printf("Autotest %03d ERROR (testing EDSK create+save)\n",cpt);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing EDSK create+save\n");
+
+#define AUTOTEST_EDSK_READFILE01 "contreMesure:"\
+"defb #00,#47,#34,#4b,#20,#20,#20,#20,#20,#42,#49,#4e,#00,#00,#00,#21 :"\
+"defb #02,#03,#04,#05,#06,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00 :"\
+"defb #00,#47,#31,#36,#4b,#20,#20,#20,#20,#42,#49,#4e,#00,#00,#00,#80 :"\
+"defb #07,#08,#09,#0a,#0b,#0c,#0d,#0e,#0f,#10,#11,#12,#13,#14,#15,#16:"\
+"defb #00,#47,#31,#36,#4b,#20,#20,#20,#20,#42,#49,#4e,#01,#00,#00,#01:"\
+"defb #17,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00:"\
+"defb #00,#47,#33,#36,#4b,#20,#20,#20,#20,#42,#49,#4e,#00,#00,#00,#80:"\
+"defb #18,#19,#1a,#1b,#1c,#1d,#1e,#1f,#20,#21,#22,#23,#24,#25,#26,#27:"\
+"defb #00,#47,#33,#36,#4b,#20,#20,#20,#20,#42,#49,#4e,#01,#00,#00,#80:"\
+"defb #28,#29,#2a,#2b,#2c,#2d,#2e,#2f,#30,#31,#32,#33,#34,#35,#36,#37:"\
+"defb #00,#47,#33,#36,#4b,#20,#20,#20,#20,#42,#49,#4e,#02,#00,#00,#21:"\
+"defb #38,#39,#3a,#3b,#3c,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00:"\
+"lafin:"\
+"edsk check,'rasmoutput_test.dsk','0:#C1',lafin-contreMesure,contreMesure"
+
+	ret=RasmAssemble(AUTOTEST_EDSK_READFILE01,strlen(AUTOTEST_EDSK_READFILE01),&opcode,&opcodelen);
+	if (!ret && opcodelen==6*32) {} else {printf("Autotest %03d ERROR (testing EDSK check+generated edsk)\n",cpt);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing EDSK check+generated edsk\n");
+
+#define AUTOTEST_EDSK_READFILE02 "bank: edsk readfile,'rasmoutput_test.dsk','g4k.bin': assert $==4096:"\
+"bank: edsk readfile,'rasmoutput_test.dsk','g16k.bin': assert $==16384:"\
+"bank: edsk readfile,'rasmoutput_test.dsk','g36k.bin': assert $==1024*36:"\
+"bank: edsk readfile,'rasmoutput_test.dsk','g16k.bin',4096 : assert $==16384-4096"
+
+	ret=RasmAssemble(AUTOTEST_EDSK_READFILE02,strlen(AUTOTEST_EDSK_READFILE02),&opcode,&opcodelen);
+	if (!ret && opcodelen==16384-4096) {} else {printf("Autotest %03d ERROR (testing EDSK readfile)\n",cpt);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing EDSK readfile\n");
+
+#define AUTOTEST_EDSK_READFILE03 "EDSK delfile,'rasmoutput_test.dsk','g4k.bin':"\
+"EDSK delfile,'rasmoutput_test.dsk','g16k.bin':"\
+"EDSK delfile,'rasmoutput_test.dsk','g36k.bin':"\
+"contreMesure:"\
+"defb #E5,#47,#34,#4b,#20,#20,#20,#20,#20,#42,#49,#4e,#00,#00,#00,#21:"\
+"defb #02,#03,#04,#05,#06,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00:"\
+"defb #E5,#47,#31,#36,#4b,#20,#20,#20,#20,#42,#49,#4e,#00,#00,#00,#80:"\
+"defb #07,#08,#09,#0a,#0b,#0c,#0d,#0e,#0f,#10,#11,#12,#13,#14,#15,#16:"\
+"defb #E5,#47,#31,#36,#4b,#20,#20,#20,#20,#42,#49,#4e,#01,#00,#00,#01:"\
+"defb #17,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00:"\
+"defb #E5,#47,#33,#36,#4b,#20,#20,#20,#20,#42,#49,#4e,#00,#00,#00,#80:"\
+"defb #18,#19,#1a,#1b,#1c,#1d,#1e,#1f,#20,#21,#22,#23,#24,#25,#26,#27:"\
+"defb #E5,#47,#33,#36,#4b,#20,#20,#20,#20,#42,#49,#4e,#01,#00,#00,#80:"\
+"defb #28,#29,#2a,#2b,#2c,#2d,#2e,#2f,#30,#31,#32,#33,#34,#35,#36,#37:"\
+"defb #E5,#47,#33,#36,#4b,#20,#20,#20,#20,#42,#49,#4e,#02,#00,#00,#21:"\
+"defb #38,#39,#3a,#3b,#3c,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00:"\
+"defb #E5:"\
+"lafin:"\
+"edsk check,'rasmoutput_test.dsk','0:#C1',lafin-contreMesure,contreMesure"
+
+	ret=RasmAssemble(AUTOTEST_EDSK_READFILE03,strlen(AUTOTEST_EDSK_READFILE03),&opcode,&opcodelen);
+	if (!ret && opcodelen==6*32+1) {} else {printf("Autotest %03d ERROR (testing EDSK delfile)\n",cpt);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing EDSK delfile\n");
+
+
+
+#define AUTOTEST_EDSK_READFILE00V "EDSK create,'rasmoutput_test.dsk',VENDOR,OVERWRITE:bank" \
+":defs 4096,#DD: defs 16384-4096,#EE: defs 24000,#FF:"\
+"save 'g4k.bin',0,4096,DSK,'rasmoutput_test.dsk': save 'g16k.bin',0,16384,DSK,'rasmoutput_test.dsk': save 'g36k.bin',0,1024*36,DSK,'rasmoutput_test.dsk' "
+
+	ret=RasmAssemble(AUTOTEST_EDSK_READFILE00V,strlen(AUTOTEST_EDSK_READFILE00V),&opcode,&opcodelen);
+	if (!ret) {} else {printf("Autotest %03d ERROR (testing EDSK create+save+overwrite) vendor\n",cpt);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing EDSK create+save+overwrite (vendor)\n");
+
+#define AUTOTEST_EDSK_READFILE01V "contreMesure:"\
+"defb #00,#47,#34,#4b,#20,#20,#20,#20,#20,#42,#49,#4e,#00,#00,#00,#21 :"\
+"defb #02,#03,#04,#05,#06,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00 :"\
+"defb #00,#47,#31,#36,#4b,#20,#20,#20,#20,#42,#49,#4e,#00,#00,#00,#80 :"\
+"defb #07,#08,#09,#0a,#0b,#0c,#0d,#0e,#0f,#10,#11,#12,#13,#14,#15,#16:"\
+"defb #00,#47,#31,#36,#4b,#20,#20,#20,#20,#42,#49,#4e,#01,#00,#00,#01:"\
+"defb #17,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00:"\
+"defb #00,#47,#33,#36,#4b,#20,#20,#20,#20,#42,#49,#4e,#00,#00,#00,#80:"\
+"defb #18,#19,#1a,#1b,#1c,#1d,#1e,#1f,#20,#21,#22,#23,#24,#25,#26,#27:"\
+"defb #00,#47,#33,#36,#4b,#20,#20,#20,#20,#42,#49,#4e,#01,#00,#00,#80:"\
+"defb #28,#29,#2a,#2b,#2c,#2d,#2e,#2f,#30,#31,#32,#33,#34,#35,#36,#37:"\
+"defb #00,#47,#33,#36,#4b,#20,#20,#20,#20,#42,#49,#4e,#02,#00,#00,#21:"\
+"defb #38,#39,#3a,#3b,#3c,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00:"\
+"lafin:"\
+"edsk check,'rasmoutput_test.dsk','2:#41',lafin-contreMesure,contreMesure"
+
+	ret=RasmAssemble(AUTOTEST_EDSK_READFILE01V,strlen(AUTOTEST_EDSK_READFILE01V),&opcode,&opcodelen);
+	if (!ret && opcodelen==6*32) {} else {printf("Autotest %03d ERROR (testing EDSK check+generated edsk) vendor\n",cpt);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing EDSK check+generated edsk (vendor)\n");
+
+	ret=RasmAssemble(AUTOTEST_EDSK_READFILE02,strlen(AUTOTEST_EDSK_READFILE02),&opcode,&opcodelen);
+	if (!ret && opcodelen==16384-4096) {} else {printf("Autotest %03d ERROR (testing EDSK readfile) vendor\n",cpt);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing EDSK readfile on vendor\n");
+
+#define AUTOTEST_EDSK_READFILE03V "EDSK delfile,'rasmoutput_test.dsk','g4k.bin':"\
+"EDSK delfile,'rasmoutput_test.dsk','g16k.bin':"\
+"EDSK delfile,'rasmoutput_test.dsk','g36k.bin':"\
+"contreMesure:"\
+"defb #E5,#47,#34,#4b,#20,#20,#20,#20,#20,#42,#49,#4e,#00,#00,#00,#21:"\
+"defb #02,#03,#04,#05,#06,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00:"\
+"defb #E5,#47,#31,#36,#4b,#20,#20,#20,#20,#42,#49,#4e,#00,#00,#00,#80:"\
+"defb #07,#08,#09,#0a,#0b,#0c,#0d,#0e,#0f,#10,#11,#12,#13,#14,#15,#16:"\
+"defb #E5,#47,#31,#36,#4b,#20,#20,#20,#20,#42,#49,#4e,#01,#00,#00,#01:"\
+"defb #17,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00:"\
+"defb #E5,#47,#33,#36,#4b,#20,#20,#20,#20,#42,#49,#4e,#00,#00,#00,#80:"\
+"defb #18,#19,#1a,#1b,#1c,#1d,#1e,#1f,#20,#21,#22,#23,#24,#25,#26,#27:"\
+"defb #E5,#47,#33,#36,#4b,#20,#20,#20,#20,#42,#49,#4e,#01,#00,#00,#80:"\
+"defb #28,#29,#2a,#2b,#2c,#2d,#2e,#2f,#30,#31,#32,#33,#34,#35,#36,#37:"\
+"defb #E5,#47,#33,#36,#4b,#20,#20,#20,#20,#42,#49,#4e,#02,#00,#00,#21:"\
+"defb #38,#39,#3a,#3b,#3c,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00,#00:"\
+"defb #E5:"\
+"lafin:"\
+"edsk check,'rasmoutput_test.dsk','2:#41',lafin-contreMesure,contreMesure"
+
+	ret=RasmAssemble(AUTOTEST_EDSK_READFILE03V,strlen(AUTOTEST_EDSK_READFILE03V),&opcode,&opcodelen);
+	if (!ret && opcodelen==6*32+1) {} else {printf("Autotest %03d ERROR (testing EDSK delfile) vendor\n",cpt);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing EDSK delfile on vendor\n");
+
+        ret=RasmAssemble(AUTOTEST_UNDERVAR,strlen(AUTOTEST_UNDERVAR),&opcode,&opcodelen);
+        if (!ret && opcodelen==4) {} else {printf("Autotest %03d ERROR (var starting with _)\n",cpt);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing underscore + var\n");
+
 	ret=RasmAssemble(AUTOTEST_NOEXPORT,strlen(AUTOTEST_NOEXPORT),&opcode,&opcodelen);
 	if (!ret && opcodelen==2) {} else {printf("Autotest %03d ERROR (noexport/enoexport)\n",cpt);exit(-1);}
 	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
@@ -27892,6 +30669,20 @@ printf("testing delayed alias regression bugfix OK\n");
 /*************************************************************/
 
 
+#define AUTOTEST_REDEFINE_BRK "brk:redefine_brk 0xCF:brk:brk"
+	ret=RasmAssembleInfo(AUTOTEST_REDEFINE_BRK,strlen(AUTOTEST_REDEFINE_BRK),&opcode,&opcodelen,&debug);
+	if (!ret && opcodelen==4 && opcode[2]==opcode[3] && opcode[3]==0xCF) {} else {printf("Autotest %03d ERROR (REDEFINE_BRK)\n",cpt);MiniDump(opcode,opcodelen);for (i=0;i<debug->nberror;i++) printf("%d -> %s\n",i,debug->error[i].msg);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+	RasmFreeInfoStruct(debug);
+printf("testing REDEFINE_BRK directive OK\n");
+
+#define AUTOTEST_REDEFINE_BRKX "brk:redefine_brk 0xCF:brk:brk:redefine_brk 0xED,#FF:brk"
+	ret=RasmAssembleInfo(AUTOTEST_REDEFINE_BRKX,strlen(AUTOTEST_REDEFINE_BRKX),&opcode,&opcodelen,&debug);
+	if (!ret && opcodelen==6 && opcode[2]==opcode[3] && opcode[3]==0xCF && opcode[0]==opcode[4] && opcode[1]==opcode[5]) {} else {printf("Autotest %03d ERROR (REDEFINE_BRK extended test)\n",cpt);MiniDump(opcode,opcodelen);for (i=0;i<debug->nberror;i++) printf("%d -> %s\n",i,debug->error[i].msg);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+	RasmFreeInfoStruct(debug);
+printf("testing REDEFINE_BRK directive OK\n");
+
 	ret=RasmAssembleInfo(AUTOTEST_SNASET,strlen(AUTOTEST_SNASET),&opcode,&opcodelen,&debug);
 	if (!ret) {} else {printf("Autotest %03d ERROR (snapshot settings)\n",cpt);MiniDump(opcode,opcodelen);for (i=0;i<debug->nberror;i++) printf("%d -> %s\n",i,debug->error[i].msg);exit(-1);}
 	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
@@ -27921,6 +30712,11 @@ printf("testing page tag with generated label name OK\n");
 		MiniDump(opcode,opcodelen);exit(-1);}
 	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
 printf("testing internal error struct OK\n");
+
+#define AUTOTEST_INCLUDE_MISSING "include 'rien' : nop"
+	ret=RasmAssembleInfo(AUTOTEST_INCLUDE_MISSING,strlen(AUTOTEST_INCLUDE_MISSING),&opcode,&opcodelen,&debug);
+	if (debug->nberror==1 && strstr(debug->error[0].msg,"File to include was not found")) {}
+	else {printf("Autotest %03d ERROR (include missing file test)\n",cpt);MiniDump(opcode,opcodelen);exit(-1);}
 
 	ret=RasmAssembleInfo(AUTOTEST_EMBEDDED_LABELS,strlen(AUTOTEST_EMBEDDED_LABELS),&opcode,&opcodelen,&debug);
 	if (!ret && debug->nbsymbol==5) {
@@ -28298,6 +31094,435 @@ printf("*** LZSA2 and INCLZSA2 tests disabled as there is no LZSA v2 support for
 #endif
 
 
+	/********************************************************************************************
+	 *
+	 *     autotestings with z80 simulator
+	 *
+	 *******************************************************************************************/
+#ifndef NO_3RD_PARTIES
+#ifndef NOAPULTRA
+
+printf("###########################################################\n");
+printf("#  using z80 simulator to validate crunchers+decrunchers  #\n");
+printf("###########################################################\n");
+
+	#define AUTOTEST_Z80_LZX0_CRUNCH "inczx0 './decrunch/lzDataTest.bin' : save './decrunch/lzDataTest.zx0',0,$ "
+	ret=RasmAssemble(AUTOTEST_Z80_LZX0_CRUNCH,strlen(AUTOTEST_Z80_LZX0_CRUNCH),&opcode,&opcodelen);
+	if (!ret && FileGetSize("./decrunch/lzDataTest.zx0")==10860) {} else {printf("Autotest %03d ERROR (crunching lzDataTest with ZX0 ret=%d len=%d)\n",cpt,ret,opcodelen);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing ZX0 (crunching with INCZX0) OK\n");
+
+	#define AUTOTEST_Z80_ZX0_DECRUNCH "org #100 : include './decrunch/dzx0_standard.asm' : ld sp,#38 : ld hl,#C000 : ld de,#1000 : call unzx0 : jr #FE : unzx0 dzx0_standard (void) : org #C000 : incbin './decrunch/lzDataTest.zx0' "
+	ret=RasmAssemble(AUTOTEST_Z80_ZX0_DECRUNCH,strlen(AUTOTEST_Z80_ZX0_DECRUNCH),&opcode,&opcodelen);
+	if (!ret) {} else {printf("Autotest %03d ERROR (assembling decrunch tester for Z80 simulation)\n",cpt);exit(-1);}
+printf("testing ZX0 (assembling decruncher with crunched lzDataTest) OK\n");cpt++;
+	if (!z80_runTest(&myCPU,0x100, 0xFE, 20000000,opcode,0x100,opcodelen,0xFE,0x180)) { printf("Autotest %d ERROR : Z80 emulation took too much time\n",cpt);exit(-1); }
+	if (opcode) MemFree(opcode);opcode=NULL;
+	// check decrunched data is valid
+	lzCompare=_internal_readbinaryfile("./decrunch/lzDataTest.bin",&lzSize);
+	if (myCPU.nbinstructions!=188550 || lzSize!=29158 || memcmp(lzCompare,&myCPU.userdata[0]+0x1000,29158)) { printf("Autotest %d ERROR : Z80 emulation for ZX0 decrunch failed (size=%d)\n",cpt,lzSize);exit(-1); } 
+printf("testing ZX0 (Z80 simulation with dzx0_standard) OK\n");cpt++;
+
+	#define AUTOTEST_Z80_ZX0F_DECRUNCH "org #100 : include './decrunch/dzx0_fast.asm' : ld sp,#38 : ld hl,#C000 : ld de,#1000 : call unzx0 : jr #FE : unzx0 decompresszx0 (void) : org #C000 : incbin './decrunch/lzDataTest.zx0' "
+	ret=RasmAssemble(AUTOTEST_Z80_ZX0F_DECRUNCH,strlen(AUTOTEST_Z80_ZX0F_DECRUNCH),&opcode,&opcodelen);
+	if (!ret) {} else {printf("Autotest %03d ERROR (assembling decrunch tester for Z80 simulation)\n",cpt);exit(-1);}
+printf("testing ZX0 (assembling fast decruncher with crunched lzDataTest) OK\n");cpt++;
+	if (!z80_runTest(&myCPU,0x100, 0xFE, 20000000,opcode,0x100,opcodelen,0xFE,0x280)) { printf("Autotest %d ERROR : Z80 emulation took too much time\n",cpt);exit(-1); }
+	if (opcode) MemFree(opcode);opcode=NULL;
+	// check decrunched data is valid
+	lzCompare=_internal_readbinaryfile("./decrunch/lzDataTest.bin",&lzSize);
+	//printf("nbinstr=%ld\n",myCPU.nbinstructions);
+	if (myCPU.nbinstructions!=150154 || lzSize!=29158 || memcmp(lzCompare,&myCPU.userdata[0]+0x1000,29158)) { printf("Autotest %d ERROR : Z80 emulation for ZX0 decrunch failed (size=%d)\n",cpt,lzSize);exit(-1); } 
+printf("testing ZX0 (Z80 simulation with dzx0_fast) OK\n");cpt++;
+
+	FileRemoveIfExists("./decrunch/lzDataTest.zx0");
+
+	#define AUTOTEST_Z80_LZX0I_CRUNCH "lzx0 : incbin './decrunch/lzDataTest.bin' : lzclose : lafin : save './decrunch/lzDataTest.zx0',0,lafin "
+	ret=RasmAssemble(AUTOTEST_Z80_LZX0I_CRUNCH,strlen(AUTOTEST_Z80_LZX0I_CRUNCH),&opcode,&opcodelen);
+	if (!ret && FileGetSize("./decrunch/lzDataTest.zx0")==10860) {} else {printf("Autotest %03d ERROR (crunching lzDataTest with LZZX0 ret=%d len=%d)\n",cpt,ret,opcodelen);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing ZX0 (crunching with LZX0) OK\n");
+
+	#define AUTOTEST_Z80_ZX0_DECRUNCH "org #100 : include './decrunch/dzx0_standard.asm' : ld sp,#38 : ld hl,#C000 : ld de,#1000 : call unzx0 : jr #FE : unzx0 dzx0_standard (void) : org #C000 : incbin './decrunch/lzDataTest.zx0' "
+	ret=RasmAssemble(AUTOTEST_Z80_ZX0_DECRUNCH,strlen(AUTOTEST_Z80_ZX0_DECRUNCH),&opcode,&opcodelen);
+	if (!ret) {} else {printf("Autotest %03d ERROR (assembling decrunch tester for Z80 simulation)\n",cpt);exit(-1);}
+	if (!z80_runTest(&myCPU,0x100, 0xFE, 20000000,opcode,0x100,opcodelen,0xFE,0x180)) { printf("Autotest %d ERROR : Z80 emulation took too much time\n",cpt);exit(-1); }
+	if (opcode) MemFree(opcode);opcode=NULL;
+	// check decrunched data is valid
+	lzCompare=_internal_readbinaryfile("./decrunch/lzDataTest.bin",&lzSize);
+	if (myCPU.nbinstructions!=188550 || lzSize!=29158 || memcmp(lzCompare,&myCPU.userdata[0]+0x1000,29158)) { printf("Autotest %d ERROR : Z80 emulation for ZX0 decrunch failed (size=%d)\n",cpt,lzSize);exit(-1); } 
+printf("testing ZX0 (Z80 simulation with dzx0_standard) OK\n");cpt++;
+
+	FileRemoveIfExists("./decrunch/lzDataTest.zx0");
+
+	#define AUTOTEST_Z80_ZX0B__CRUNCH "inczx0b './decrunch/lzDataTest.bin' : save './decrunch/lzDataTest.zx0b',0,$ "
+	ret=RasmAssemble(AUTOTEST_Z80_ZX0B__CRUNCH,strlen(AUTOTEST_Z80_ZX0B__CRUNCH),&opcode,&opcodelen);
+	if (!ret && FileGetSize("./decrunch/lzDataTest.zx0b")==10851) {} else {printf("Autotest %03d ERROR (crunching lzDataTest with ZX0 backward ret=%d len=%d)\n",cpt,ret,opcodelen);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing EXO (crunching with INCZX0B (backward) OK\n");
+
+	#define AUTOTEST_Z80_ZX0B__DECRUNCH "org #100 : ld sp,#38 : ld hl,lastb-1 : ld de,#1000+FileSize('./decrunch/lzDataTest.bin')-1 : call mizou : jr #FE : include 'decrunch/dzx0_standard_back.asm' : mizou dzx0_standard_back (void) : org #C000 : incbin './decrunch/lzDataTest.zx0b' : lastb"
+	ret=RasmAssemble(AUTOTEST_Z80_ZX0B__DECRUNCH,strlen(AUTOTEST_Z80_ZX0B__DECRUNCH),&opcode,&opcodelen);
+	if (!ret) {} else {printf("Autotest %03d ERROR (assembling decrunch tester for Z80 simulation)\n",cpt);exit(-1);}
+printf("testing ZX0B (assembling decruncher with crunched lzDataTest) OK\n");cpt++;
+	if (!z80_runTest(&myCPU,0x100, 0xFE, 20000000,opcode,0x100,opcodelen,0xFE,0x2A0)) { printf("Autotest %d ERROR : Z80 emulation took too much time\n",cpt);exit(-1); }
+	if (opcode) MemFree(opcode);opcode=NULL;
+	// check decrunched data is valid
+	lzCompare=_internal_readbinaryfile("./decrunch/lzDataTest.bin",&lzSize);
+	//printf("nbinstr=%ld\n",myCPU.nbinstructions);
+	if (myCPU.nbinstructions!=199877 || lzSize!=29158 || memcmp(lzCompare,&myCPU.userdata[0]+0x1000,29158)) { printf("Autotest %d ERROR : Z80 emulation for ZX0B (backward) decrunch failed (size=%d)\n",cpt,lzSize);exit(-1); } 
+printf("testing ZX0B (Z80 simulation with dzx0_standard_back) OK\n");cpt++;
+
+	FileRemoveIfExists("./decrunch/lzDataTest.zx0b");
+
+	#define AUTOTEST_Z80_ZX0Bi_CRUNCH "lzx0b : incbin './decrunch/lzDataTest.bin' : lzclose : lafin : save './decrunch/lzDataTest.zx0b',0,lafin "
+	ret=RasmAssemble(AUTOTEST_Z80_ZX0Bi_CRUNCH,strlen(AUTOTEST_Z80_ZX0Bi_CRUNCH),&opcode,&opcodelen);
+	if (!ret && FileGetSize("./decrunch/lzDataTest.zx0b")==10851) {} else {printf("Autotest %03d ERROR (crunching lzDataTest with LZX0B ret=%d len=%d)\n",cpt,ret,opcodelen);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing LZX0B (crunching with ZX0B (backward) OK\n");
+
+	ret=RasmAssemble(AUTOTEST_Z80_ZX0B__DECRUNCH,strlen(AUTOTEST_Z80_ZX0B__DECRUNCH),&opcode,&opcodelen);
+	if (!ret) {} else {printf("Autotest %03d ERROR (assembling decrunch tester for Z80 simulation)\n",cpt);exit(-1);}
+	if (!z80_runTest(&myCPU,0x100, 0xFE, 20000000,opcode,0x100,opcodelen,0xFE,0x2A0)) { printf("Autotest %d ERROR : Z80 emulation took too much time\n",cpt);exit(-1); }
+	if (opcode) MemFree(opcode);opcode=NULL;
+	// check decrunched data is valid
+	lzCompare=_internal_readbinaryfile("./decrunch/lzDataTest.bin",&lzSize);
+	//printf("nbinstr=%ld\n",myCPU.nbinstructions);
+	if (myCPU.nbinstructions!=199877 || lzSize!=29158 || memcmp(lzCompare,&myCPU.userdata[0]+0x1000,29158)) { printf("Autotest %d ERROR : Z80 emulation for EXO decrunch failed (size=%d)\n",cpt,lzSize);exit(-1); } 
+printf("testing EXO (Z80 simulation with exo_docent) OK\n");cpt++;
+
+	FileRemoveIfExists("./decrunch/lzDataTest.zx0b");
+
+	// LZSA-1
+
+	#define AUTOTEST_Z80_LZSA1_CRUNCH "inclzsa1 './decrunch/lzDataTest.bin' : save './decrunch/lzDataTest.lzsa1',0,$ "
+	ret=RasmAssemble(AUTOTEST_Z80_LZSA1_CRUNCH,strlen(AUTOTEST_Z80_LZSA1_CRUNCH),&opcode,&opcodelen);
+	if (!ret && FileGetSize("./decrunch/lzDataTest.lzsa1")==13835) {} else {printf("Autotest %03d ERROR (crunching lzDataTest with LZSA1 ret=%d len=%d)\n",cpt,ret,opcodelen);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing LZSA-1 (crunching with INCLZSA1) OK\n");
+
+	#define AUTOTEST_Z80_LZSA1_DECRUNCH "org #100 : include './decrunch/unlzsa1_fast.asm' : ld sp,#38 : ld hl,#C000 : ld de,#1000 : call unlzsa1 : jr #FE : unlzsa1 DecompressLZSA1 (void) : org #C000 : incbin './decrunch/lzDataTest.lzsa1' "
+	ret=RasmAssemble(AUTOTEST_Z80_LZSA1_DECRUNCH,strlen(AUTOTEST_Z80_LZSA1_DECRUNCH),&opcode,&opcodelen);
+	if (!ret) {} else {printf("Autotest %03d ERROR (assembling decrunch tester for Z80 simulation)\n",cpt);exit(-1);}
+printf("testing LZSA-1 (assembling decruncher with crunched lzDataTest) OK\n");cpt++;
+	if (!z80_runTest(&myCPU,0x100, 0xFE, 20000000,opcode,0x100,opcodelen,0xFE,0x180)) { printf("Autotest %d ERROR : Z80 emulation took too much time\n",cpt);exit(-1); }
+	if (opcode) MemFree(opcode);opcode=NULL;
+	// check decrunched data is valid
+	lzCompare=_internal_readbinaryfile("./decrunch/lzDataTest.bin",&lzSize);
+	//printf("nbinstr=%ld\n",myCPU.nbinstructions);
+	if (myCPU.nbinstructions!=57574 || lzSize!=29158 || memcmp(lzCompare,&myCPU.userdata[0]+0x1000,29158)) { printf("Autotest %d ERROR : Z80 emulation for LZSA-1 decrunch failed (size=%d)\n",cpt,lzSize);exit(-1); } 
+printf("testing LZSA-1 (Z80 simulation with unlzsa1_fast) OK\n");cpt++;
+
+	FileRemoveIfExists("./decrunch/lzDataTest.lzsa1");
+
+	#define AUTOTEST_Z80_LZSA1i_CRUNCH "lzsa1 : incbin './decrunch/lzDataTest.bin' : lzclose : lafin : save './decrunch/lzDataTest.lzsa1',0,lafin "
+	ret=RasmAssemble(AUTOTEST_Z80_LZSA1i_CRUNCH,strlen(AUTOTEST_Z80_LZSA1i_CRUNCH),&opcode,&opcodelen);
+	if (!ret && FileGetSize("./decrunch/lzDataTest.lzsa1")==13835) {} else {printf("Autotest %03d ERROR (crunching lzDataTest with LZSA1 ret=%d len=%d)\n",cpt,ret,opcodelen);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing LZSA-1 (crunching with LZSA1) OK\n");
+
+	ret=RasmAssemble(AUTOTEST_Z80_LZSA1_DECRUNCH,strlen(AUTOTEST_Z80_LZSA1_DECRUNCH),&opcode,&opcodelen);
+	if (!ret) {} else {printf("Autotest %03d ERROR (assembling decrunch tester for Z80 simulation)\n",cpt);exit(-1);}
+	if (!z80_runTest(&myCPU,0x100, 0xFE, 20000000,opcode,0x100,opcodelen,0xFE,0x180)) { printf("Autotest %d ERROR : Z80 emulation took too much time\n",cpt);exit(-1); }
+	if (opcode) MemFree(opcode);opcode=NULL;
+	// check decrunched data is valid
+	lzCompare=_internal_readbinaryfile("./decrunch/lzDataTest.bin",&lzSize);
+	//printf("nbinstr=%ld\n",myCPU.nbinstructions);
+	if (myCPU.nbinstructions!=57574 || lzSize!=29158 || memcmp(lzCompare,&myCPU.userdata[0]+0x1000,29158)) { printf("Autotest %d ERROR : Z80 emulation for LZSA-1 decrunch failed (size=%d)\n",cpt,lzSize);exit(-1); } 
+printf("testing LZSA-1 (Z80 simulation with unlzsa1_fast) OK\n");cpt++;
+
+	FileRemoveIfExists("./decrunch/lzDataTest.lzsa1");
+
+	// LZSA-2
+
+	#define AUTOTEST_Z80_LZSA2_CRUNCH "inclzsa2 './decrunch/lzDataTest.bin' : save './decrunch/lzDataTest.lzsa2',0,$ "
+	ret=RasmAssemble(AUTOTEST_Z80_LZSA2_CRUNCH,strlen(AUTOTEST_Z80_LZSA2_CRUNCH),&opcode,&opcodelen);
+	if (!ret && FileGetSize("./decrunch/lzDataTest.lzsa2")==11555) {} else {printf("Autotest %03d ERROR (crunching lzDataTest with LZSA2 ret=%d len=%d)\n",cpt,ret,opcodelen);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing LZSA-2 (crunching with INCLZSA2) OK\n");
+
+	#define AUTOTEST_Z80_LZSA2_DECRUNCH "org #100 : include './decrunch/unlzsa2_fast.asm' : ld sp,#38 : ld hl,#C000 : ld de,#1000 : call unlzsa2 : jr #FE : unlzsa2 DecompressLZSA2 (void) : org #C000 : incbin './decrunch/lzDataTest.lzsa2' "
+	ret=RasmAssemble(AUTOTEST_Z80_LZSA2_DECRUNCH,strlen(AUTOTEST_Z80_LZSA2_DECRUNCH),&opcode,&opcodelen);
+	if (!ret) {} else {printf("Autotest %03d ERROR (assembling decrunch tester for Z80 simulation)\n",cpt);exit(-1);}
+printf("testing LZSA-2 (assembling decruncher with crunched lzDataTest) OK\n");cpt++;
+	if (!z80_runTest(&myCPU,0x100, 0xFE, 20000000,opcode,0x100,opcodelen,0xFE,0x280)) { printf("Autotest %d ERROR : Z80 emulation took too much time\n",cpt);exit(-1); }
+	if (opcode) MemFree(opcode);opcode=NULL;
+	// check decrunched data is valid
+	lzCompare=_internal_readbinaryfile("./decrunch/lzDataTest.bin",&lzSize);
+	//printf("nbinstr=%ld\n",myCPU.nbinstructions);
+	if (myCPU.nbinstructions!=130585 || lzSize!=29158 || memcmp(lzCompare,&myCPU.userdata[0]+0x1000,29158)) { printf("Autotest %d ERROR : Z80 emulation for LZSA-2 decrunch failed (size=%d)\n",cpt,lzSize);exit(-1); } 
+printf("testing LZSA-2 (Z80 simulation with unlzsa2_fast) OK\n");cpt++;
+
+	FileRemoveIfExists("./decrunch/lzDataTest.lzsa2");
+
+	#define AUTOTEST_Z80_LZSA2i_CRUNCH "lzsa2 : incbin './decrunch/lzDataTest.bin' : lzclose : lafin : save './decrunch/lzDataTest.lzsa2',0,lafin "
+	ret=RasmAssemble(AUTOTEST_Z80_LZSA2i_CRUNCH,strlen(AUTOTEST_Z80_LZSA2i_CRUNCH),&opcode,&opcodelen);
+	if (!ret && FileGetSize("./decrunch/lzDataTest.lzsa2")==11555) {} else {printf("Autotest %03d ERROR (crunching lzDataTest with LZSA2 ret=%d len=%d)\n",cpt,ret,opcodelen);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing LZSA-2 (crunching with LZSA2) OK\n");
+
+	ret=RasmAssemble(AUTOTEST_Z80_LZSA2_DECRUNCH,strlen(AUTOTEST_Z80_LZSA2_DECRUNCH),&opcode,&opcodelen);
+	if (!ret) {} else {printf("Autotest %03d ERROR (assembling decrunch tester for Z80 simulation)\n",cpt);exit(-1);}
+	if (!z80_runTest(&myCPU,0x100, 0xFE, 20000000,opcode,0x100,opcodelen,0xFE,0x280)) { printf("Autotest %d ERROR : Z80 emulation took too much time\n",cpt);exit(-1); }
+	if (opcode) MemFree(opcode);opcode=NULL;
+	// check decrunched data is valid
+	lzCompare=_internal_readbinaryfile("./decrunch/lzDataTest.bin",&lzSize);
+	//printf("nbinstr=%ld\n",myCPU.nbinstructions);
+	if (myCPU.nbinstructions!=130585 || lzSize!=29158 || memcmp(lzCompare,&myCPU.userdata[0]+0x1000,29158)) { printf("Autotest %d ERROR : Z80 emulation for LZSA-2 decrunch failed (size=%d)\n",cpt,lzSize);exit(-1); } 
+printf("testing LZSA-2 (Z80 simulation with unlzsa2_fast) OK\n");cpt++;
+
+	FileRemoveIfExists("./decrunch/lzDataTest.lzsa2");
+
+	// AP-Ultra
+
+	#define AUTOTEST_Z80_APULT_CRUNCH "incapu './decrunch/lzDataTest.bin' : save './decrunch/lzDataTest.apu',0,$ "
+	ret=RasmAssemble(AUTOTEST_Z80_APULT_CRUNCH,strlen(AUTOTEST_Z80_APULT_CRUNCH),&opcode,&opcodelen);
+	if (!ret && FileGetSize("./decrunch/lzDataTest.apu")==11032) {} else {printf("Autotest %03d ERROR (crunching lzDataTest with APULTRA ret=%d len=%d)\n",cpt,ret,opcodelen);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing AP-Ultra (crunching with INCAPU) OK\n");
+
+	#define AUTOTEST_Z80_APULT_DECRUNCH "org #100 : ld sp,#38 : ld hl,#C000 : ld de,#1000 : call depack : jr #FE : include 'decrunch/unaplib.asm' : org #C000 : incbin './decrunch/lzDataTest.apu' "
+	ret=RasmAssemble(AUTOTEST_Z80_APULT_DECRUNCH,strlen(AUTOTEST_Z80_APULT_DECRUNCH),&opcode,&opcodelen);
+	if (!ret) {} else {printf("Autotest %03d ERROR (assembling decrunch tester for Z80 simulation)\n",cpt);exit(-1);}
+printf("testing AP-Ultra (assembling decruncher with crunched lzDataTest) OK\n");cpt++;
+	if (!z80_runTest(&myCPU,0x100, 0xFE, 20000000,opcode,0x100,opcodelen,0xFE,0x280)) { printf("Autotest %d ERROR : Z80 emulation took too much time\n",cpt);exit(-1); }
+	if (opcode) MemFree(opcode);opcode=NULL;
+	// check decrunched data is valid
+	lzCompare=_internal_readbinaryfile("./decrunch/lzDataTest.bin",&lzSize);
+	//printf("nbinstr=%ld\n",myCPU.nbinstructions);
+	if (myCPU.nbinstructions!=644166 || lzSize!=29158 || memcmp(lzCompare,&myCPU.userdata[0]+0x1000,29158)) { printf("Autotest %d ERROR : Z80 emulation for APULTRA decrunch failed (size=%d)\n",cpt,lzSize);exit(-1); } 
+printf("testing AP-Ultra (Z80 simulation with unaplib) OK\n");cpt++;
+
+	FileRemoveIfExists("./decrunch/lzDataTest.apu");
+
+	#define AUTOTEST_Z80_APULTi_CRUNCH "lzapu : incbin './decrunch/lzDataTest.bin' : lzclose : lafin : save './decrunch/lzDataTest.apu',0,lafin "
+	ret=RasmAssemble(AUTOTEST_Z80_APULTi_CRUNCH,strlen(AUTOTEST_Z80_APULTi_CRUNCH),&opcode,&opcodelen);
+	if (!ret && FileGetSize("./decrunch/lzDataTest.apu")==11032) {} else {printf("Autotest %03d ERROR (crunching lzDataTest with APULTRA ret=%d len=%d)\n",cpt,ret,opcodelen);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing AP-Ultra (crunching with APULTRA) OK\n");
+
+	#define AUTOTEST_Z80_APULT_DECRUNCHF "org #100 : ld sp,#38 : ld hl,#C000 : ld de,#1000 : call depack : jr #FE : include 'decrunch/unaplib_fast.asm' : depack ApUnpack (void) : org #C000 : incbin './decrunch/lzDataTest.apu' "
+	ret=RasmAssemble(AUTOTEST_Z80_APULT_DECRUNCHF,strlen(AUTOTEST_Z80_APULT_DECRUNCHF),&opcode,&opcodelen);
+	if (!ret) {} else {printf("Autotest %03d ERROR (assembling decrunch tester for Z80 simulation)\n",cpt);exit(-1);}
+printf("testing AP-Ultra (assembling decruncher with crunched lzDataTest) OK\n");cpt++;
+	if (!z80_runTest(&myCPU,0x100, 0xFE, 20000000,opcode,0x100,opcodelen,0xFE,0x280)) { printf("Autotest %d ERROR : Z80 emulation took too much time\n",cpt);exit(-1); }
+	if (opcode) MemFree(opcode);opcode=NULL;
+	// check decrunched data is valid
+	lzCompare=_internal_readbinaryfile("./decrunch/lzDataTest.bin",&lzSize);
+	//printf("nbinstr=%ld\n",myCPU.nbinstructions);
+	if (myCPU.nbinstructions!=259190 || lzSize!=29158 || memcmp(lzCompare,&myCPU.userdata[0]+0x1000,29158)) { printf("Autotest %d ERROR : Z80 emulation for APULTRA fast decrunch failed (size=%d)\n",cpt,lzSize);exit(-1); } 
+printf("testing AP-Ultra (Z80 simulation with unaplib_fast) OK\n");cpt++;
+
+	FileRemoveIfExists("./decrunch/lzDataTest.apu");
+
+	// ZX7 (almost deprecated...)
+
+	#define AUTOTEST_Z80_ZX7___CRUNCH "inczx7 './decrunch/lzDataTest.bin' : save './decrunch/lzDataTest.zx7',0,$ "
+	ret=RasmAssemble(AUTOTEST_Z80_ZX7___CRUNCH,strlen(AUTOTEST_Z80_ZX7___CRUNCH),&opcode,&opcodelen);
+	if (!ret && FileGetSize("./decrunch/lzDataTest.zx7")==11853) {} else {printf("Autotest %03d ERROR (crunching lzDataTest with ZX7 ret=%d len=%d)\n",cpt,ret,opcodelen);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing ZX7 (crunching with INCZX7) OK\n");
+
+	#define AUTOTEST_Z80_ZX7___DECRUNCH "org #100 : ld sp,#38 : ld hl,#C000 : ld de,#1000 : call dzx7_turbo : jr #FE : include 'decrunch/dzx7_turbo.asm' : org #C000 : incbin './decrunch/lzDataTest.zx7' "
+	ret=RasmAssemble(AUTOTEST_Z80_ZX7___DECRUNCH,strlen(AUTOTEST_Z80_ZX7___DECRUNCH),&opcode,&opcodelen);
+	if (!ret) {} else {printf("Autotest %03d ERROR (assembling decrunch tester for Z80 simulation)\n",cpt);exit(-1);}
+printf("testing ZX7 (assembling decruncher with crunched lzDataTest) OK\n");cpt++;
+	if (!z80_runTest(&myCPU,0x100, 0xFE, 20000000,opcode,0x100,opcodelen,0xFE,0x280)) { printf("Autotest %d ERROR : Z80 emulation took too much time\n",cpt);exit(-1); }
+	if (opcode) MemFree(opcode);opcode=NULL;
+	// check decrunched data is valid
+	lzCompare=_internal_readbinaryfile("./decrunch/lzDataTest.bin",&lzSize);
+	//printf("nbinstr=%ld\n",myCPU.nbinstructions);
+	if (myCPU.nbinstructions!=208094 || lzSize!=29158 || memcmp(lzCompare,&myCPU.userdata[0]+0x1000,29158)) { printf("Autotest %d ERROR : Z80 emulation for ZX7 decrunch failed (size=%d)\n",cpt,lzSize);exit(-1); } 
+printf("testing ZX7 (Z80 simulation with dzx7_turbo) OK\n");cpt++;
+
+	FileRemoveIfExists("./decrunch/lzDataTest.zx7");
+
+	#define AUTOTEST_Z80_ZX7__i_CRUNCH "lzx7 : incbin './decrunch/lzDataTest.bin' : lzclose : lafin : save './decrunch/lzDataTest.zx7',0,lafin "
+	ret=RasmAssemble(AUTOTEST_Z80_ZX7__i_CRUNCH,strlen(AUTOTEST_Z80_ZX7__i_CRUNCH),&opcode,&opcodelen);
+	if (!ret && FileGetSize("./decrunch/lzDataTest.zx7")==11853) {} else {printf("Autotest %03d ERROR (crunching lzDataTest with ZX7 ret=%d len=%d)\n",cpt,ret,opcodelen);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing ZX7 (crunching with ZX7) OK\n");
+
+	ret=RasmAssemble(AUTOTEST_Z80_ZX7___DECRUNCH,strlen(AUTOTEST_Z80_ZX7___DECRUNCH),&opcode,&opcodelen);
+	if (!ret) {} else {printf("Autotest %03d ERROR (assembling decrunch tester for Z80 simulation)\n",cpt);exit(-1);}
+	if (!z80_runTest(&myCPU,0x100, 0xFE, 20000000,opcode,0x100,opcodelen,0xFE,0x280)) { printf("Autotest %d ERROR : Z80 emulation took too much time\n",cpt);exit(-1); }
+	if (opcode) MemFree(opcode);opcode=NULL;
+	// check decrunched data is valid
+	lzCompare=_internal_readbinaryfile("./decrunch/lzDataTest.bin",&lzSize);
+	//printf("nbinstr=%ld\n",myCPU.nbinstructions);
+	if (myCPU.nbinstructions!=208094 || lzSize!=29158 || memcmp(lzCompare,&myCPU.userdata[0]+0x1000,29158)) { printf("Autotest %d ERROR : Z80 emulation for ZX7 decrunch failed (size=%d)\n",cpt,lzSize);exit(-1); } 
+printf("testing ZX7 (Z80 simulation with dzx7_turbo) OK\n");cpt++;
+
+	FileRemoveIfExists("./decrunch/lzDataTest.zx7");
+
+	// LZ48
+
+	#define AUTOTEST_Z80_LZ48__CRUNCH "incl48 './decrunch/lzDataTest.bin' : save './decrunch/lzDataTest.l48',0,$ "
+	ret=RasmAssemble(AUTOTEST_Z80_LZ48__CRUNCH,strlen(AUTOTEST_Z80_LZ48__CRUNCH),&opcode,&opcodelen);
+	if (!ret && FileGetSize("./decrunch/lzDataTest.l48")==14167) {} else {printf("Autotest %03d ERROR (crunching lzDataTest with LZ48 ret=%d len=%d)\n",cpt,ret,opcodelen);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing LZ48 (crunching with INCLZ48 OK\n");
+
+	#define AUTOTEST_Z80_LZ48__DECRUNCH "org #100 : ld sp,#38 : ld hl,#C000 : ld de,#1000 : call LZ48_decrunch : jr #FE : include 'decrunch/lz48decrunch_v006b.asm' : org #C000 : incbin './decrunch/lzDataTest.l48' "
+	ret=RasmAssemble(AUTOTEST_Z80_LZ48__DECRUNCH,strlen(AUTOTEST_Z80_LZ48__DECRUNCH),&opcode,&opcodelen);
+	if (!ret) {} else {printf("Autotest %03d ERROR (assembling decrunch tester for Z80 simulation)\n",cpt);exit(-1);}
+printf("testing LZ48 (assembling decruncher with crunched lzDataTest) OK\n");cpt++;
+	if (!z80_runTest(&myCPU,0x100, 0xFE, 20000000,opcode,0x100,opcodelen,0xFE,0x180)) { printf("Autotest %d ERROR : Z80 emulation took too much time\n",cpt);exit(-1); }
+	if (opcode) MemFree(opcode);opcode=NULL;
+	// check decrunched data is valid
+	lzCompare=_internal_readbinaryfile("./decrunch/lzDataTest.bin",&lzSize);
+	//printf("nbinstr=%ld\n",myCPU.nbinstructions);
+	if (myCPU.nbinstructions!=86471 || lzSize!=29158 || memcmp(lzCompare,&myCPU.userdata[0]+0x1000,29158)) { printf("Autotest %d ERROR : Z80 emulation for LZ48 decrunch failed (size=%d)\n",cpt,lzSize);exit(-1); } 
+printf("testing LZ48 (Z80 simulation with lz48_decrunch) OK\n");cpt++;
+
+	FileRemoveIfExists("./decrunch/lzDataTest.l48");
+
+	#define AUTOTEST_Z80_LZ48_i_CRUNCH "lz48 : incbin './decrunch/lzDataTest.bin' : lzclose : lafin : save './decrunch/lzDataTest.l48',0,lafin "
+	ret=RasmAssemble(AUTOTEST_Z80_LZ48_i_CRUNCH,strlen(AUTOTEST_Z80_LZ48_i_CRUNCH),&opcode,&opcodelen);
+	if (!ret && FileGetSize("./decrunch/lzDataTest.l48")==14167) {} else {printf("Autotest %03d ERROR (crunching lzDataTest with LZ48ret=%d len=%d)\n",cpt,ret,opcodelen);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing LZ48 (crunching with LZ48 OK\n");
+
+	ret=RasmAssemble(AUTOTEST_Z80_LZ48__DECRUNCH,strlen(AUTOTEST_Z80_LZ48__DECRUNCH),&opcode,&opcodelen);
+	if (!ret) {} else {printf("Autotest %03d ERROR (assembling decrunch tester for Z80 simulation)\n",cpt);exit(-1);}
+	if (!z80_runTest(&myCPU,0x100, 0xFE, 20000000,opcode,0x100,opcodelen,0xFE,0x180)) { printf("Autotest %d ERROR : Z80 emulation took too much time\n",cpt);exit(-1); }
+	if (opcode) MemFree(opcode);opcode=NULL;
+	// check decrunched data is valid
+	lzCompare=_internal_readbinaryfile("./decrunch/lzDataTest.bin",&lzSize);
+	//printf("nbinstr=%ld\n",myCPU.nbinstructions);
+	if (myCPU.nbinstructions!=86471 || lzSize!=29158 || memcmp(lzCompare,&myCPU.userdata[0]+0x1000,29158)) { printf("Autotest %d ERROR : Z80 emulation for LZ48 decrunch failed (size=%d)\n",cpt,lzSize);exit(-1); } 
+printf("testing LZ48 (Z80 simulation with lz48_decrunch) OK\n");cpt++;
+
+	FileRemoveIfExists("./decrunch/lzDataTest.l48");
+
+	// LZ49
+
+	#define AUTOTEST_Z80_LZ49__CRUNCH "incl49 './decrunch/lzDataTest.bin' : save './decrunch/lzDataTest.l49',0,$ "
+	ret=RasmAssemble(AUTOTEST_Z80_LZ49__CRUNCH,strlen(AUTOTEST_Z80_LZ49__CRUNCH),&opcode,&opcodelen);
+	if (!ret && FileGetSize("./decrunch/lzDataTest.l49")==13493) {} else {printf("Autotest %03d ERROR (crunching lzDataTest with LZ49 ret=%d len=%d)\n",cpt,ret,opcodelen);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing LZ49 (crunching with INCLZ49 OK\n");
+
+	#define AUTOTEST_Z80_LZ49__DECRUNCH "org #100 : ld sp,#38 : ld hl,#C000 : ld de,#1000 : call LZ49_decrunch : jr #FE : include 'decrunch/lz49decrunch_v001.asm' : org #C000 : incbin './decrunch/lzDataTest.l49' "
+	ret=RasmAssemble(AUTOTEST_Z80_LZ49__DECRUNCH,strlen(AUTOTEST_Z80_LZ49__DECRUNCH),&opcode,&opcodelen);
+	if (!ret) {} else {printf("Autotest %03d ERROR (assembling decrunch tester for Z80 simulation)\n",cpt);exit(-1);}
+printf("testing LZ49 (assembling decruncher with crunched lzDataTest) OK\n");cpt++;
+	if (!z80_runTest(&myCPU,0x100, 0xFE, 20000000,opcode,0x100,opcodelen,0xFE,0x180)) { printf("Autotest %d ERROR : Z80 emulation took too much time\n",cpt);exit(-1); }
+	if (opcode) MemFree(opcode);opcode=NULL;
+	// check decrunched data is valid
+	lzCompare=_internal_readbinaryfile("./decrunch/lzDataTest.bin",&lzSize);
+	//printf("nbinstr=%ld\n",myCPU.nbinstructions);
+	if (myCPU.nbinstructions!=102176 || lzSize!=29158 || memcmp(lzCompare,&myCPU.userdata[0]+0x1000,29158)) { printf("Autotest %d ERROR : Z80 emulation for LZ49 decrunch failed (size=%d)\n",cpt,lzSize);exit(-1); } 
+printf("testing LZ49 (Z80 simulation with lz49_decrunch) OK\n");cpt++;
+
+	FileRemoveIfExists("./decrunch/lzDataTest.l49");
+
+	#define AUTOTEST_Z80_LZ49_i_CRUNCH "lz49 : incbin './decrunch/lzDataTest.bin' : lzclose : lafin : save './decrunch/lzDataTest.l49',0,lafin "
+	ret=RasmAssemble(AUTOTEST_Z80_LZ49_i_CRUNCH,strlen(AUTOTEST_Z80_LZ49_i_CRUNCH),&opcode,&opcodelen);
+	if (!ret && FileGetSize("./decrunch/lzDataTest.l49")==13493) {} else {printf("Autotest %03d ERROR (crunching lzDataTest with LZ49ret=%d len=%d)\n",cpt,ret,opcodelen);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing LZ49 (crunching with LZ49 OK\n");
+
+	ret=RasmAssemble(AUTOTEST_Z80_LZ49__DECRUNCH,strlen(AUTOTEST_Z80_LZ49__DECRUNCH),&opcode,&opcodelen);
+	if (!ret) {} else {printf("Autotest %03d ERROR (assembling decrunch tester for Z80 simulation)\n",cpt);exit(-1);}
+	if (!z80_runTest(&myCPU,0x100, 0xFE, 20000000,opcode,0x100,opcodelen,0xFE,0x180)) { printf("Autotest %d ERROR : Z80 emulation took too much time\n",cpt);exit(-1); }
+	if (opcode) MemFree(opcode);opcode=NULL;
+	// check decrunched data is valid
+	lzCompare=_internal_readbinaryfile("./decrunch/lzDataTest.bin",&lzSize);
+	//printf("nbinstr=%ld\n",myCPU.nbinstructions);
+	if (myCPU.nbinstructions!=102176 || lzSize!=29158 || memcmp(lzCompare,&myCPU.userdata[0]+0x1000,29158)) { printf("Autotest %d ERROR : Z80 emulation for LZ49 decrunch failed (size=%d)\n",cpt,lzSize);exit(-1); } 
+printf("testing LZ49 (Z80 simulation with lz49_decrunch) OK\n");cpt++;
+
+	FileRemoveIfExists("./decrunch/lzDataTest.l49");
+
+	// LZ4
+
+	#define AUTOTEST_Z80_LZ4__CRUNCH "inclz4 './decrunch/lzDataTest.bin' : save './decrunch/lzDataTest.lz4',0,$ "
+	ret=RasmAssemble(AUTOTEST_Z80_LZ4__CRUNCH,strlen(AUTOTEST_Z80_LZ4__CRUNCH),&opcode,&opcodelen);
+	if (!ret && FileGetSize("./decrunch/lzDataTest.lz4")==14160) {} else {printf("Autotest %03d ERROR (crunching lzDataTest with LZ4 ret=%d len=%d)\n",cpt,ret,opcodelen);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing LZ4 (crunching with INCLZ4 OK\n");
+
+	#define AUTOTEST_Z80_LZ4__DECRUNCH "org #100 : ld sp,#38 : ld hl,#C000 : ld de,#1000 : ld bc,14160 : call unlz4 : jr #FE : unlz4 include 'decrunch/lz4_docent.asm' : org #C000 : incbin './decrunch/lzDataTest.lz4' "
+	ret=RasmAssemble(AUTOTEST_Z80_LZ4__DECRUNCH,strlen(AUTOTEST_Z80_LZ4__DECRUNCH),&opcode,&opcodelen);
+	if (!ret) {} else {printf("Autotest %03d ERROR (assembling decrunch tester for Z80 simulation)\n",cpt);exit(-1);}
+printf("testing LZ4 (assembling decruncher with crunched lzDataTest) OK\n");cpt++;
+	if (!z80_runTest(&myCPU,0x100, 0xFE, 20000000,opcode,0x100,opcodelen,0xFE,0x1A0)) { printf("Autotest %d ERROR : Z80 emulation took too much time\n",cpt);exit(-1); }
+	if (opcode) MemFree(opcode);opcode=NULL;
+	// check decrunched data is valid
+	lzCompare=_internal_readbinaryfile("./decrunch/lzDataTest.bin",&lzSize);
+	//printf("nbinstr=%ld\n",myCPU.nbinstructions);
+	if (myCPU.nbinstructions!=95351 || lzSize!=29158 || memcmp(lzCompare,&myCPU.userdata[0]+0x1000,29158)) { printf("Autotest %d ERROR : Z80 emulation for LZ4 decrunch failed (size=%d)\n",cpt,lzSize);exit(-1); } 
+printf("testing LZ4 (Z80 simulation with lz4_docent) OK\n");cpt++;
+
+	FileRemoveIfExists("./decrunch/lzDataTest.lz4");
+
+	#define AUTOTEST_Z80_LZ4_i_CRUNCH "lz4 : incbin './decrunch/lzDataTest.bin' : lzclose : lafin : save './decrunch/lzDataTest.lz4',0,lafin "
+	ret=RasmAssemble(AUTOTEST_Z80_LZ4_i_CRUNCH,strlen(AUTOTEST_Z80_LZ4_i_CRUNCH),&opcode,&opcodelen);
+	if (!ret && FileGetSize("./decrunch/lzDataTest.lz4")==14160) {} else {printf("Autotest %03d ERROR (crunching lzDataTest with LZ4 ret=%d len=%d)\n",cpt,ret,opcodelen);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing LZ4 (crunching with LZ4 OK\n");
+
+	ret=RasmAssemble(AUTOTEST_Z80_LZ4__DECRUNCH,strlen(AUTOTEST_Z80_LZ4__DECRUNCH),&opcode,&opcodelen);
+	if (!ret) {} else {printf("Autotest %03d ERROR (assembling decrunch tester for Z80 simulation)\n",cpt);exit(-1);}
+	if (!z80_runTest(&myCPU,0x100, 0xFE, 20000000,opcode,0x100,opcodelen,0xFE,0x1A0)) { printf("Autotest %d ERROR : Z80 emulation took too much time\n",cpt);exit(-1); }
+	if (opcode) MemFree(opcode);opcode=NULL;
+	// check decrunched data is valid
+	lzCompare=_internal_readbinaryfile("./decrunch/lzDataTest.bin",&lzSize);
+	//printf("nbinstr=%ld\n",myCPU.nbinstructions);
+	if (myCPU.nbinstructions!=95351 || lzSize!=29158 || memcmp(lzCompare,&myCPU.userdata[0]+0x1000,29158)) { printf("Autotest %d ERROR : Z80 emulation for LZ4 decrunch failed (size=%d)\n",cpt,lzSize);exit(-1); } 
+printf("testing LZ4 (Z80 simulation with lz4_docent) OK\n");cpt++;
+
+	FileRemoveIfExists("./decrunch/lzDataTest.lz4");
+
+	// EXO (v2 almost deprecated also, but overall usage far away from unusable v3)
+
+	#define AUTOTEST_Z80_EXO__CRUNCH "incexo './decrunch/lzDataTest.bin' : save './decrunch/lzDataTest.exo',0,$ "
+	ret=RasmAssemble(AUTOTEST_Z80_EXO__CRUNCH,strlen(AUTOTEST_Z80_EXO__CRUNCH),&opcode,&opcodelen);
+	if (!ret && FileGetSize("./decrunch/lzDataTest.exo")==11162) {} else {printf("Autotest %03d ERROR (crunching lzDataTest with EXO ret=%d len=%d)\n",cpt,ret,opcodelen);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing EXO (crunching with INCEXO OK\n");
+
+	#define AUTOTEST_Z80_EXO__DECRUNCH "org #100 : ld sp,#38 : ld hl,#C000 : ld de,#1000 : call mizou : jr #FE : mizou include 'decrunch/deexo.asm' : Mizoumizeur (void) : org #C000 : incbin './decrunch/lzDataTest.exo' "
+	ret=RasmAssemble(AUTOTEST_Z80_EXO__DECRUNCH,strlen(AUTOTEST_Z80_EXO__DECRUNCH),&opcode,&opcodelen);
+	if (!ret) {} else {printf("Autotest %03d ERROR (assembling decrunch tester for Z80 simulation)\n",cpt);exit(-1);}
+printf("testing EXO (assembling decruncher with crunched lzDataTest) OK\n");cpt++;
+	if (!z80_runTest(&myCPU,0x100, 0xFE, 20000000,opcode,0x100,opcodelen,0xFE,0x2A0)) { printf("Autotest %d ERROR : Z80 emulation took too much time\n",cpt);exit(-1); }
+	if (opcode) MemFree(opcode);opcode=NULL;
+	// check decrunched data is valid
+	lzCompare=_internal_readbinaryfile("./decrunch/lzDataTest.bin",&lzSize);
+	//printf("nbinstr=%ld\n",myCPU.nbinstructions);
+	if (myCPU.nbinstructions!=618822 || lzSize!=29158 || memcmp(lzCompare,&myCPU.userdata[0]+0x1000,29158)) { printf("Autotest %d ERROR : Z80 emulation for EXO decrunch failed (size=%d)\n",cpt,lzSize);exit(-1); } 
+printf("testing EXO (Z80 simulation with exo_docent) OK\n");cpt++;
+
+	FileRemoveIfExists("./decrunch/lzDataTest.exo");
+
+	#define AUTOTEST_Z80_EXO_i_CRUNCH "lzexo : incbin './decrunch/lzDataTest.bin' : lzclose : lafin : save './decrunch/lzDataTest.exo',0,lafin "
+	ret=RasmAssemble(AUTOTEST_Z80_EXO_i_CRUNCH,strlen(AUTOTEST_Z80_EXO_i_CRUNCH),&opcode,&opcodelen);
+	if (!ret && FileGetSize("./decrunch/lzDataTest.exo")==11162) {} else {printf("Autotest %03d ERROR (crunching lzDataTest with EXO ret=%d len=%d)\n",cpt,ret,opcodelen);exit(-1);}
+	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
+printf("testing EXO (crunching with EXO OK\n");
+
+	ret=RasmAssemble(AUTOTEST_Z80_EXO__DECRUNCH,strlen(AUTOTEST_Z80_EXO__DECRUNCH),&opcode,&opcodelen);
+	if (!ret) {} else {printf("Autotest %03d ERROR (assembling decrunch tester for Z80 simulation)\n",cpt);exit(-1);}
+	if (!z80_runTest(&myCPU,0x100, 0xFE, 20000000,opcode,0x100,opcodelen,0xFE,0x2A0)) { printf("Autotest %d ERROR : Z80 emulation took too much time\n",cpt);exit(-1); }
+	if (opcode) MemFree(opcode);opcode=NULL;
+	// check decrunched data is valid
+	lzCompare=_internal_readbinaryfile("./decrunch/lzDataTest.bin",&lzSize);
+	//printf("nbinstr=%ld\n",myCPU.nbinstructions);
+	if (myCPU.nbinstructions!=618822 || lzSize!=29158 || memcmp(lzCompare,&myCPU.userdata[0]+0x1000,29158)) { printf("Autotest %d ERROR : Z80 emulation for EXO decrunch failed (size=%d)\n",cpt,lzSize);exit(-1); } 
+printf("testing EXO (Z80 simulation with exo_docent) OK\n");cpt++;
+
+	FileRemoveIfExists("./decrunch/lzDataTest.exo");
+
+
+
+
+
+#endif
+#endif
+
+
 	ret=RasmAssemble(AUTOTEST_ECPR1,strlen(AUTOTEST_ECPR1),&opcode,&opcodelen);
 	if (!ret) {} else {printf("Autotest %03d ERROR (extended CPR test 1)\n",cpt);exit(-1);}
 	if (opcode) MemFree(opcode);opcode=NULL;cpt++;
@@ -28305,6 +31530,8 @@ printf("testing simple extended CPR behaviour OK\n");
 
 
 	// remove workfiles
+	FileRemoveIfExists("autotest_fast.raw");
+	FileRemoveIfExists("autotest_fast2.raw");
 	FileRemoveIfExists("autotest_include.raw");
 	FileRemoveIfExists("rasmoutput.xpr");
 	FileRemoveIfExists("rasmoutput.cpr");
@@ -28552,7 +31779,6 @@ unsigned char *LZ49_encode_legacy(unsigned char *data, int length, int *retlengt
 	return odata;
 }
 
-
 /***************************************
 	semi-generic body of program
 ***************************************/
@@ -28568,9 +31794,10 @@ void Usage(int help)
 	#undef FUNC
 	#define FUNC "Usage"
 	
-	printf(KLCYAN"%s - "KLMAGENTA"%s"KLWHITE"\n(c) 2017 Edouard BERGE (use -n option to display all licenses / -autotest for self-testing)\n",RASM_VERSION,RELEASE_NAME);
+	printf(KLCYAN"%s - "KLORANGE"%s"KLWHITE"\n(c) 2017 Edouard BERGE (use -n option to display all licenses\n",RASM_VERSION,RELEASE_NAME);
 	#ifndef NO_3RD_PARTIES
-	printf(KLGREEN"LZ4 (c) Yann Collet / ZX0 & ZX7 (c) Einar Saukas / Exomizer 2 (c) Magnus Lind / LZSA & AP-Ultra (c) Emmanuel Marty\n"KNORMAL);
+	printf(KLGREEN"Thanks to Yann Collet, Einar Saukas, Magnus Lind and Emmanuel Marty for their respective crunchers\n"KNORMAL);
+	printf(KLGREEN"Thanks to Nicolas Allemand for his z80 simulator used for testing purpose\n"KNORMAL);
 	#endif
 	printf("\n");
 	printf(KLWHITE"SYNTAX:"KNORMAL" rasm <inputfile> [options]\n");
@@ -28628,6 +31855,7 @@ void Usage(int help)
 		printf("-quick           enable fast mode for ZX0 crunching\n");
 		printf("-cprquiet        do not display ROM detailed informations\n");
 		printf("-map             display information during early assembling stages\n");
+		printf("-inline 'text'   assemble text from command line\n");
 		printf(KLWHITE"EDSK generation/update:\n"KNORMAL);
 		printf("-eo              overwrite files on disk if it already exists\n");
 		printf(KLWHITE"SNAPSHOT:\n"KNORMAL);
@@ -28639,6 +31867,7 @@ void Usage(int help)
 		printf("-twe             treat warnings as errors\n");
 		printf("-xr              extended error display\n");
 		printf("-w               disable warnings\n");
+		printf("-wc              disable warnings about slow crunch in progress\n");
 		printf("-void            force void usage with macro without parameter\n");
 		printf("-mml             allow macro usage with parameters on multiple lines\n");
 		printf("\n");
@@ -28730,7 +31959,7 @@ printf(" - LZ4 source repository : https://github.com/lz4/lz4\n");
 
 
 printf("\n\n\n\n");
-printf("******* license for ZX0 / ZX7 cruncher / sources were modified ***********\n\n\n\n");
+printf("******* license for ZX7 cruncher / sources were modified ***********\n\n\n\n");
 printf("BSD 3-Clause License\n");
 printf(" * (c) Copyright 2012/2021 by Einar Saukas. All rights reserved.\n");
 printf(" *\n");
@@ -28786,7 +32015,7 @@ printf(" *   specific prior written permission.\n");
 
 
 printf("\n\n\n\n");
-printf("******* license for AP-Ultra & LZSA crunchers ****************************\n\n\n\n");
+printf("******* license for ZX0 Salvador, AP-Ultra & LZSA crunchers ********************\n\n\n\n");
 printf(" * apultra.c - command line compression utility for the apultra library\n");
 printf(" * Copyright (C) 2019 Emmanuel Marty\n");
 printf(" *          https://github.com/emmanuel-marty\n");
@@ -28820,6 +32049,29 @@ printf(" * With help and support from spke <zxintrospec@gmail.com>\n");
 printf("\n\n\n\n");
 printf("*** license for CDT export (record11() function and some other code extracts) ***\n\n\n\n");
 printf("Author: CNGSoft http://cngsoft.no-ip.org , the tool is in GPL2 licence,\nCopyright (C) 2007 Free Software Foundation, Inc. https://fsf.org\n");
+printf("\n");
+printf("******* license for Z80 emulator, used for testing purpose *****************\n\n\n\n");
+printf("MIT License\n");
+printf("\n");
+printf("Copyright (c) 2019 Nicolas Allemand\n");
+printf("\n");
+printf("Permission is hereby granted, free of charge, to any person obtaining a copy\n");
+printf("of this software and associated documentation files (the \"Software\"), to deal\n");
+printf("in the Software without restriction, including without limitation the rights\n");
+printf("to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n");
+printf("copies of the Software, and to permit persons to whom the Software is\n");
+printf("furnished to do so, subject to the following conditions:\n");
+printf("\n");
+printf("The above copyright notice and this permission notice shall be included in all\n");
+printf("copies or substantial portions of the Software.\n");
+printf("\n");
+printf("THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n");
+printf("IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n");
+printf("FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n");
+printf("AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n");
+printf("LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n");
+printf("OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n");
+printf("SOFTWARE.\n");
 printf("\n");
 printf("\n");
 #endif
@@ -28905,6 +32157,10 @@ int ParseOptions(char **argv,int argc, struct s_parameter *param)
 		param->warn_unused=1;
 	} else if (strcmp(argv[i],"-xpr")==0) {
 		param->xpr=1;
+	} else if (strcmp(argv[i],"-inline")==0) {
+		if (i+1<argc && param->inline_asm==NULL) {
+			param->inline_asm=argv[++i];
+		}
 	} else if (strcmp(argv[i],"-dams")==0) {
 	} else if (strcmp(argv[i],"-void")==0) {
 		param->macrovoid=1;
@@ -28924,18 +32180,26 @@ int ParseOptions(char **argv,int argc, struct s_parameter *param)
 		param->checkmode=1;
 	} else if (strcmp(argv[i],"-no")==0) {
 		param->checkmode=1;
+	} else if (strcmp(argv[i],"-wc")==0) {
+		param->nocrunchwarning=1;
 	} else if (strcmp(argv[i],"-w")==0) {
 		param->nowarning=1;
 	} else if (argv[i][0]=='-')	{
 		switch(argv[i][1])
 		{
 			case 'I':
-				if (argv[i][2]) {
+				if (argv[i][2] || (i+1<argc)) {
 					char *curpath;
-					int l;
+					int l,boffset=2;
+
+					if (!argv[i][2]) {
+						boffset=0;
+						i++;
+					}
+
 					l=strlen(argv[i]);
-					curpath=MemMalloc(l); /* strlen(path)+2 */
-					strcpy(curpath,argv[i]+2);
+					curpath=MemMalloc(l+2);
+					strcpy(curpath,argv[i]+boffset);
 					
 #ifdef OS_WIN
 					if (argv[i][l-1]!='/' && argv[i][l-1]!='\\') strcat(curpath,"\\");
@@ -28954,7 +32218,9 @@ printf("curpath=[%s]\n",curpath);
 			case 'D':
 				if ((sep=strchr(argv[i],'='))!=NULL) {
 					if (sep!=argv[i]+2) {
+						int icc;
 						FieldArrayAddDynamicValueConcat(&param->symboldef,&param->nsymb,&param->msymb,argv[i]+2);
+						for (icc=0;param->symboldef[param->nsymb-1][icc];icc++) param->symboldef[param->nsymb-1][icc]=toupper(param->symboldef[param->nsymb-1][icc]);
 					} else {
 						Usage(1);
 					}
@@ -29019,7 +32285,7 @@ printf("curpath=[%s]\n",curpath);
 					case 's':
 						param->export_local=1;
 						param->export_sym=1;
-						param->export_sna=1;return 0;
+						return 0;
 					default:
 						Usage(1);
 						break;
@@ -29149,7 +32415,7 @@ void GetParametersFromCommandLine(int argc, char **argv, struct s_parameter *par
 	for (i=1;i<argc;i++)
 		i+=ParseOptions(&argv[i],argc-i,param);
 
-	if (!param->filename) Usage(0);
+	if (!param->filename && !param->inline_asm) Usage(0);
 }
 
 /*

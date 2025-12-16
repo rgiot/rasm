@@ -1,9 +1,10 @@
 #define PROGRAM_NAME      "RASM"
-#define PROGRAM_VERSION   "2.1"
-#define PROGRAM_SUBVERSION   ".5"
-#define PROGRAM_DATE      "xx/12/2023"
+#define PROGRAM_VERSION   "3.0"
+#define PROGRAM_SUBVERSION   ".3"
+#define PROGRAM_VERSION_FLOAT   "3.03"
+#define PROGRAM_DATE      "xx/1x/2025"
 #define PROGRAM_COPYRIGHT "© 2017 BERGE Edouard / roudoudou from Praline"
-#define RELEASE_NAME      "Gerieh Yasmana"
+#define RELEASE_NAME      "Polaris"
 
 #define RASM_VERSION PROGRAM_NAME" v"PROGRAM_VERSION""PROGRAM_SUBVERSION" (build "PROGRAM_DATE")"
 #define RASM_SNAP_VERSION PROGRAM_NAME" v"PROGRAM_VERSION
@@ -24,6 +25,7 @@ struct s_parameter {
 	int export_snabrk;
 	int export_brk;
 	int nowarning;
+	int nocrunchwarning;
 	int erronwarn;
 	int utf8enable;
 	int freequote;
@@ -50,6 +52,7 @@ struct s_parameter {
 	char **symboldef;
 	int nsymb,msymb;
 	char **pathdef;
+	char *inline_asm;
 	int npath,mpath;
 	int noampersand;
 	int cprinfo,cprinfoexport;
